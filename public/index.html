@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Diagnóstico de Saúde do Posto · ClubPetro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --accent:#f26600; --accent-deep:#d4540a; --accent-soft:#ff8a3d;
+  --ink:#1a1612; --ink-soft:#4a4038; --ink-mute:#8a7d6f;
+  --paper:#fbf7f0; --card:#ffffff; --warm:#fff1e3;
+  --rule:#ece3d6; --good:#5f7a3a;
+  --serif:'Fraunces',Georgia,serif; --sans:'Inter Tight',system-ui,sans-serif;
+  --shadow:0 4px 24px rgba(60,40,20,.08); --shadow-lg:0 12px 40px rgba(60,40,20,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--sans);color:var(--ink);background:var(--paper);
+  background-image:radial-gradient(120% 60% at 50% -10%, #ffe6cf 0%, rgba(255,230,207,0) 55%);
+  background-attachment:fixed;line-height:1.5;-webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;align-items:flex-start}
+.app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;padding:0 20px;position:relative}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 6px}
+.brand{font-family:var(--sans);font-weight:700;font-size:.95rem;letter-spacing:-.01em;color:var(--ink)}
+.brand b{color:var(--accent)}
+.pill{font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--warm);padding:.3rem .6rem;border-radius:20px}
+.progress{height:5px;background:var(--rule);border-radius:10px;margin:10px 0 0;overflow:hidden;opacity:0;transition:opacity .3s}
+.progress.show{opacity:1}
+.progress .bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-soft));border-radius:10px;transition:width .45s cubic-bezier(.4,0,.2,1)}
+.screens{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 0 28px}
+.screen{display:none;animation:rise .45s cubic-bezier(.2,.7,.2,1)}
+.screen.active{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.intro-mark{font-family:var(--serif);font-size:2.4rem;line-height:1.05;font-weight:500;letter-spacing:-.02em;margin:8px 0 14px}
+.intro-mark em{font-style:italic;color:var(--accent)}
+.intro p{font-size:1.02rem;color:var(--ink-soft);margin-bottom:14px}
+.intro p strong{color:var(--ink);font-weight:600}
+.field{margin:18px 0 8px}
+.field label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.field input{width:100%;font-family:var(--sans);font-size:1.05rem;padding:14px 16px;border:1.5px solid var(--rule);border-radius:14px;background:var(--card);color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(242,102,0,.12)}
+.qcount{font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.qtext{font-family:var(--serif);font-size:1.5rem;line-height:1.22;font-weight:500;letter-spacing:-.01em;margin-bottom:22px}
+.options{display:flex;flex-direction:column;gap:11px}
+.opt{display:flex;align-items:center;gap:13px;width:100%;text-align:left;font-family:var(--sans);font-size:1rem;font-weight:500;color:var(--ink-soft);background:var(--card);border:1.5px solid var(--rule);border-radius:15px;padding:16px 16px;cursor:pointer;transition:transform .12s,border-color .18s,background .18s;box-shadow:var(--shadow);min-height:44px}
+.opt:hover{border-color:var(--accent-soft)}
+.opt:active{transform:scale(.985)}
+.opt .dot{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid var(--rule);transition:border-color .18s,background .18s;position:relative}
+.opt.sel{border-color:var(--accent);background:var(--warm);color:var(--ink)}
+.opt.sel .dot{border-color:var(--accent);background:var(--accent)}
+.opt.sel .dot::after{content:"";position:absolute;inset:5px;background:var(--card);border-radius:50%}
+.nav{display:flex;align-items:center;gap:12px;margin-top:22px}
+.btn{font-family:var(--sans);font-weight:600;font-size:1.02rem;border:none;border-radius:14px;padding:15px 22px;cursor:pointer;transition:transform .12s,box-shadow .2s,background .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(242,102,0,.32);flex:1}
+.btn-primary:hover{background:var(--accent-deep)}
+.btn-primary:disabled{background:var(--rule);color:var(--ink-mute);box-shadow:none;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--ink-mute);padding:15px 8px;font-size:.95rem}
+.hint{font-size:.82rem;color:var(--ink-mute);margin-top:14px;text-align:center}
+.result{text-align:center}
+.result .lead-in{font-size:.92rem;color:var(--ink-mute);margin-bottom:6px}
+.result .lead-in b{color:var(--ink);font-weight:600}
+.gauge{position:relative;width:200px;height:200px;margin:8px auto 6px}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num .v{font-family:var(--serif);font-size:3.4rem;font-weight:600;line-height:1;color:var(--ink);letter-spacing:-.02em}
+.gauge .num .of{font-size:.8rem;color:var(--ink-mute);font-weight:600;letter-spacing:.04em;margin-top:2px}
+.lvl-badge{display:inline-block;font-family:var(--sans);font-weight:600;font-size:.92rem;color:#fff;padding:.4rem .9rem;border-radius:20px;margin:6px 0 14px}
+.result .msg{font-family:var(--serif);font-size:1.12rem;line-height:1.5;color:var(--ink-soft);margin:0 auto 22px;max-width:30em}
+.cta-wrap{display:flex;flex-direction:column;gap:10px}
+.btn-wa{background:var(--accent);color:#fff;width:100%;box-shadow:0 6px 18px rgba(242,102,0,.32);font-size:1.05rem;padding:17px}
+.btn-wa:hover{background:var(--accent-deep)}
+.savemsg{font-size:.74rem;color:var(--ink-mute);margin-top:4px;min-height:1em}
+.foot{font-size:.74rem;color:var(--ink-mute);padding:14px 0 26px;text-align:center;border-top:1px solid var(--rule);margin-top:auto}
+.foot b{color:var(--accent)}
+@media(max-width:380px){.qtext{font-size:1.32rem}.intro-mark{font-size:2.1rem}.gauge{width:172px;height:172px}.gauge .num .v{font-size:3rem}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">Club<b>Petro</b></div>
+    <div class="pill" id="pill">Diagnóstico</div>
+  </div>
+  <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
+  <div class="screens" id="screens">
+    <section class="screen active" id="s-intro">
+      <div class="intro">
+        <h1 class="intro-mark">Como está a <em>saúde</em> do seu posto?</h1>
+        <p>Olá! Aqui é do <strong>ClubPetro</strong>. Vimos que você baixou nosso material de <strong>Escala de Frentistas</strong>, ótima escolha pra organizar a rotina da equipe.</p>
+        <p>Preparamos um diagnóstico rápido que mostra a saúde da operação do seu posto numa nota de <strong>0 a 100</strong>. São 9 perguntas e leva cerca de 2 minutos.</p>
+        <div class="field">
+          <label for="nome">Como podemos te chamar?</label>
+          <input id="nome" type="text" placeholder="Seu nome" autocomplete="given-name">
+        </div>
+        <div class="nav"><button class="btn btn-primary" id="start">Começar diagnóstico</button></div>
+        <p class="hint">Suas respostas ficam só entre você e o ClubPetro.</p>
+      </div>
+    </section>
+    <section class="screen" id="s-question">
+      <div class="qcount" id="qcount"></div>
+      <h2 class="qtext" id="qtext"></h2>
+      <div class="options" id="options"></div>
+      <div class="nav"><button class="btn btn-ghost" id="back">Voltar</button></div>
+    </section>
+    <section class="screen" id="s-result">
+      <div class="result">
+        <p class="lead-in"><b id="r-nome">Seu posto</b>, a saúde da sua operação é</p>
+        <div class="gauge">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="86" fill="none" stroke="#ece3d6" stroke-width="16"/>
+            <circle id="arc" cx="100" cy="100" r="86" fill="none" stroke="#f26600" stroke-width="16" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
+          </svg>
+          <div class="num"><span class="v" id="r-score">0</span><span class="of">de 100</span></div>
+        </div>
+        <span class="lvl-badge" id="r-badge"></span>
+        <p class="msg" id="r-msg"></p>
+        <div class="cta-wrap">
+          <button class="btn btn-wa" id="r-cta">Quero ver os pontos de melhoria</button>
+          <p class="savemsg" id="savemsg"></p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="foot">Diagnóstico de Saúde do Posto · <b>ClubPetro</b></div>
+</div>
+
+<script>
+/* ===========================================================================
+   CONFIG  ·  PREENCHA ANTES DE PUBLICAR
+   ---------------------------------------------------------------------------
+   Backend Supabase configurado e testado em 21/05/2026
+   Projeto: "Inteligencia Comercial CP" (ref azmtxhjtqodtaeoshrye)
+   Tabela: public.diagnostico_respostas  ·  RLS ligado  ·  policy: INSERT anonimo
+   =========================================================================== */
+const CONFIG = {
+  CLUBPETRO_WHATSAPP: "5531992697762",      // WhatsApp (Guilherme): 55 Brasil + 31 DDD + 992697762
+  SUPABASE_URL:       "https://azmtxhjtqodtaeoshrye.supabase.co",   // URL base do projeto (o supabase-js adiciona /rest/v1/ sozinho)
+  SUPABASE_ANON_KEY:  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0"   // chave anon/public (pode ser publica; NUNCA use a service_role aqui)
+};
+/* =========================================================================== */
+
+// inicia o cliente Supabase apenas se as credenciais estiverem preenchidas
+let sb = null;
+if (CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.includes("SEU-PROJETO") && window.supabase) {
+  try { sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
+  catch (e) { console.error("Supabase init falhou:", e); }
+}
+
+// 6 perguntas de saude (somam 100) + 3 de qualificacao
+const QUESTIONS = [
+  { id:"q1", scored:true, text:"Pense na última vez que um frentista faltou ou pediu troca de turno em cima da hora. Como o seu posto resolveu?",
+    options:[
+      {label:"Tranquilo, tenho um processo ou sistema que cobre isso sem eu precisar entrar",pts:20},
+      {label:"Resolvi, mas tomou meu tempo e tive que remanejar tudo na mão",pts:10},
+      {label:"Virou aperto, acabei apagando incêndio ou cobrindo pessoalmente",pts:0}
+    ]},
+  { id:"q2", scored:true, text:"Montar e ajustar a escala da equipe, com folgas, turnos e trocas, consome quanto do seu tempo numa semana comum?",
+    options:[
+      {label:"Pouco, está organizado e quase não penso nisso",pts:15},
+      {label:"Um tempo razoável, é chato mas eu dou conta",pts:8},
+      {label:"Muito, isso vira uma novela toda semana",pts:0}
+    ]},
+  { id:"q3", scored:true, text:"Se você pudesse ver como cada frentista atende um cliente novo na pista agora, o que encontraria?",
+    options:[
+      {label:"Todos seguem o mesmo padrão de atendimento que combinamos",pts:15},
+      {label:"Cada um atende do seu jeito, depende muito da pessoa",pts:8},
+      {label:"Sinceramente não sei, não tenho como acompanhar isso",pts:0}
+    ]},
+  { id:"q4", scored:true, text:"Você consegue dizer hoje quais frentistas mais vendem e ajudam a fidelizar, e quais ficam pra trás?",
+    options:[
+      {label:"Sim, acompanho por metas e números de cada um",pts:20},
+      {label:"Tenho uma noção pela observação, mas sem números",pts:10},
+      {label:"Não tenho como saber, todos entram no mesmo balde",pts:0}
+    ]},
+  { id:"q5", scored:true, text:"Como você descreveria a motivação da sua equipe de pista no dia a dia?",
+    options:[
+      {label:"Engajada, vestem a camisa e buscam resultado",pts:15},
+      {label:"Oscila, depende do dia e da pessoa",pts:8},
+      {label:"Desmotivada, é difícil manter o time animado",pts:0}
+    ]},
+  { id:"q6", scored:true, text:"Para organizar a rotina, o atendimento e o relacionamento com o cliente, no que você se apoia hoje?",
+    options:[
+      {label:"Num sistema ou ferramenta que centraliza tudo isso",pts:15},
+      {label:"Em planilhas e no WhatsApp, cada coisa num canto",pts:8},
+      {label:"Na memória e no improviso, sem ferramenta nenhuma",pts:0}
+    ]},
+  { id:"q7", scored:false, key:"papel", text:"Pra gente personalizar o seu resultado, qual é o seu papel no posto?",
+    options:[{label:"Sou dono ou sócio",val:"Dono/sócio"},{label:"Sou gerente ou responsável pela operação",val:"Gerente"},{label:"Outro (administrativo, financeiro)",val:"Outro"},{label:"Trabalho na pista (frentista)",val:"Frentista"}]},
+  { id:"q8", scored:false, key:"conhece", text:"E sobre o ClubPetro, em que ponto você está hoje?",
+    options:[{label:"Já sou ou já fui cliente",val:"Já usou"},{label:"Conheço, mas nunca cheguei a usar",val:"Conhece"},{label:"Já ouvi falar por cima",val:"Ouviu falar"},{label:"É a primeira vez que ouço falar",val:"Não conhece"}]},
+  { id:"q9", scored:false, key:"interesse", text:"Pensando no próximo passo do seu posto, o que você gostaria de destravar primeiro?",
+    options:[{label:"Organizar a equipe e a operação do dia a dia",val:"Equipe e operação"},{label:"Fazer o cliente voltar mais vezes e abastecer mais",val:"Recorrência do cliente"},{label:"Vender mais na loja de conveniência e na pista",val:"Vendas da loja e pista"},{label:"Entender de verdade quem é o meu cliente",val:"Dados do cliente"}]}
+];
+
+const LEVELS = [
+  {min:0,max:30,name:"Operação no aperto",color:"#a64545",msg:"Sua operação roda bastante no improviso e na sua mão. O bom é que tem solução, e organizar isso costuma destravar venda rápido."},
+  {min:31,max:60,name:"Operação em ajuste",color:"#d4540a",msg:"Você já tem uma base, mas ainda escapa venda no atendimento e na rotina da pista. Alguns ajustes simples mudam esse jogo."},
+  {min:61,max:80,name:"Operação organizada",color:"#5f7a3a",msg:"Sua operação está organizada, isso é mais raro do que parece. O próximo passo é fazer o cliente voltar mais e gastar mais."},
+  {min:81,max:100,name:"Operação madura",color:"#1a1612",msg:"Seu posto está acima da média na organização. Quem está nesse nível costuma ganhar muito com fidelização e dado de cliente."}
+];
+
+const answers = {};
+let order = [], pos = 0, nome = "";
+const el = id => document.getElementById(id);
+const screens = { intro:el("s-intro"), q:el("s-question"), result:el("s-result") };
+
+function show(scr){ Object.values(screens).forEach(s=>s.classList.remove("active")); scr.classList.add("active"); window.scrollTo({top:0,behavior:"smooth"}); }
+
+el("start").addEventListener("click", ()=>{
+  nome = el("nome").value.trim();
+  order = QUESTIONS.map((_,i)=>i); pos = 0;
+  el("progress").classList.add("show"); renderQuestion(); show(screens.q);
+});
+el("nome").addEventListener("keydown", e=>{ if(e.key==="Enter") el("start").click(); });
+el("back").addEventListener("click", ()=>{ if(pos===0){ show(screens.intro); el("progress").classList.remove("show"); return; } pos--; renderQuestion(); });
+
+function renderQuestion(){
+  const q = QUESTIONS[order[pos]];
+  el("pill").textContent = (pos+1)+" de "+QUESTIONS.length;
+  el("bar").style.width = (pos/QUESTIONS.length)*100 + "%";
+  el("qcount").textContent = "Pergunta "+(pos+1);
+  el("qtext").textContent = q.text;
+  const wrap = el("options"); wrap.innerHTML = "";
+  q.options.forEach((o,idx)=>{
+    const b = document.createElement("button");
+    b.className = "opt"; b.type = "button";
+    const prev = answers[q.id]; if(prev && prev.idx===idx) b.classList.add("sel");
+    b.innerHTML = '<span class="dot"></span><span>'+o.label+'</span>';
+    b.addEventListener("click", ()=>{ answers[q.id] = {idx, ...o}; [...wrap.children].forEach(c=>c.classList.remove("sel")); b.classList.add("sel"); setTimeout(next,230); });
+    wrap.appendChild(b);
+  });
+}
+function next(){ if(pos < QUESTIONS.length-1){ pos++; renderQuestion(); } else finish(); }
+function levelFor(score){ return LEVELS.find(l=>score>=l.min && score<=l.max) || LEVELS[0]; }
+
+function finish(){
+  el("bar").style.width = "100%";
+  let score = 0;
+  QUESTIONS.forEach(q=>{ if(q.scored && answers[q.id]) score += answers[q.id].pts; });
+  if(score>100) score = 100;
+  const lvl = levelFor(score);
+
+  el("r-nome").textContent = nome || "Seu posto";
+  el("r-badge").textContent = lvl.name; el("r-badge").style.background = lvl.color;
+  el("r-msg").textContent = lvl.msg; el("arc").setAttribute("stroke", lvl.color);
+
+  const papel = answers.q7 ? answers.q7.val : null;
+  const conhece = answers.q8 ? answers.q8.val : null;
+  const interesse = answers.q9 ? answers.q9.val : null;
+
+  // mensagem pronta de WhatsApp (handoff manual de backup)
+  const txt = "Olá! Acabei de fazer o diagnóstico de saúde do posto do ClubPetro.%0A%0A"+
+    (nome?("Nome: "+encodeURIComponent(nome)+"%0A"):"")+
+    "Nota: "+score+" de 100 ("+encodeURIComponent(lvl.name)+")%0A"+
+    "Meu papel: "+encodeURIComponent(papel||"não informado")+"%0A"+
+    "Quero melhorar: "+encodeURIComponent(interesse||"não informado")+"%0A"+
+    "Conhece o ClubPetro: "+encodeURIComponent(conhece||"não informado")+"%0A%0A"+
+    "Quero ver os pontos de melhoria do meu posto.";
+  el("r-cta").onclick = ()=> window.open("https://wa.me/"+CONFIG.CLUBPETRO_WHATSAPP+"?text="+txt, "_blank");
+
+  // salva no Supabase (validacao de respostas)
+  const respostas = {};
+  QUESTIONS.forEach(q=>{ respostas[q.id] = answers[q.id] ? answers[q.id].label : null; });
+  salvarSupabase({ nome: nome || null, score, nivel: lvl.name, papel, conhece, interesse, respostas });
+
+  show(screens.result); el("pill").textContent = "Resultado"; animateScore(score);
+}
+
+async function salvarSupabase(payload){
+  if(!sb){ console.log("Supabase nao configurado, pulei o salvamento.", payload); return; }
+  try{
+    const { error } = await sb.from("diagnostico_respostas").insert(payload);
+    if(error){ console.error("Erro ao salvar:", error); }
+    else{ el("savemsg").textContent = "Respostas registradas."; }
+  }catch(e){ console.error("Falha no salvamento:", e); }
+}
+
+function animateScore(target){
+  const arc = el("arc"), numEl = el("r-score");
+  const circ = 540, fill = circ - (circ*(target/100));
+  arc.style.transition = "none"; arc.setAttribute("stroke-dashoffset", circ); numEl.textContent = "0";
+  requestAnimationFrame(()=>{ arc.style.transition = "stroke-dashoffset 1.2s cubic-bezier(.3,.8,.3,1)"; arc.setAttribute("stroke-dashoffset", fill); });
+  const dur = 1100, t0 = performance.now();
+  function tick(t){ const p = Math.min((t-t0)/dur,1); const e = 1-Math.pow(1-p,3); numEl.textContent = Math.round(e*target); if(p<1) requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>
