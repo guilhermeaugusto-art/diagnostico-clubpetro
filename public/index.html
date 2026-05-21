@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Diagnóstico de Saúde do Posto · ClubPetro</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- fontes: carregamento nao-bloqueante (a pagina renderiza na hora, com fallback) -->
@@ -30,10 +31,8 @@ body{font-family:var(--sans);color:var(--ink);background:var(--paper);
 .app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;padding:0 20px;position:relative}
 
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 6px}
-.brand{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:700;font-size:.95rem;letter-spacing:-.01em;color:var(--ink)}
-.brand b{color:var(--accent)}
-.brand .mark{width:22px;height:22px;border-radius:8px;background:linear-gradient(135deg,var(--accent-soft),var(--accent-deep));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(242,102,0,.4)}
-.brand .mark::after{content:"";width:8px;height:8px;background:#fff;border-radius:50% 50% 50% 0;transform:rotate(45deg)}
+.brand{display:inline-flex;align-items:center;background:var(--ink);padding:9px 13px;border-radius:12px;box-shadow:var(--shadow)}
+.brand-logo{height:20px;width:auto;display:block}
 .pill{font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--warm);padding:.3rem .6rem;border-radius:20px;transition:background .25s}
 
 .progress{height:6px;background:var(--rule);border-radius:10px;margin:11px 0 0;overflow:hidden;opacity:0;transform:scaleX(.4);transform-origin:left;transition:opacity .35s,transform .5s var(--ease)}
@@ -56,6 +55,7 @@ body{font-family:var(--sans);color:var(--ink);background:var(--paper);
 .intro>*:nth-child(4){animation-delay:.28s}
 .intro>*:nth-child(5){animation-delay:.36s}
 .intro>*:nth-child(6){animation-delay:.44s}
+.intro>*:nth-child(7){animation-delay:.52s}
 
 .field{margin:18px 0 8px}
 .field label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
@@ -122,7 +122,7 @@ body{font-family:var(--sans);color:var(--ink);background:var(--paper);
 <body>
 <div class="app">
   <div class="topbar">
-    <div class="brand"><span class="mark"></span><span>Club<b>Petro</b></span></div>
+    <div class="brand"><img class="brand-logo" src="/clubpetro-logo.png" alt="ClubPetro"></div>
     <div class="pill" id="pill">Diagnóstico</div>
   </div>
   <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
@@ -136,7 +136,11 @@ body{font-family:var(--sans);color:var(--ink);background:var(--paper);
           <label for="nome">Como podemos te chamar?</label>
           <input id="nome" type="text" placeholder="Seu nome" autocomplete="given-name">
         </div>
-        <div class="nav"><button class="btn btn-primary" id="start">Começar diagnóstico</button></div>
+        <div class="field">
+          <label for="telefone">Seu WhatsApp</label>
+          <input id="telefone" type="tel" inputmode="tel" placeholder="(DD) 9 9999-9999" autocomplete="tel">
+        </div>
+        <div class="nav"><button class="btn btn-primary" id="start" disabled>Começar diagnóstico</button></div>
         <p class="hint">Suas respostas ficam só entre você e o ClubPetro.</p>
       </div>
     </section>
@@ -249,7 +253,7 @@ const LEVELS = [
 ];
 
 const answers = {};
-let order = [], pos = 0, nome = "";
+let order = [], pos = 0, nome = "", telefone = "";
 const el = id => document.getElementById(id);
 const screens = { intro:el("s-intro"), q:el("s-question"), result:el("s-result") };
 
@@ -257,12 +261,22 @@ function show(scr){ Object.values(screens).forEach(s=>s.classList.remove("active
 // re-dispara uma animacao CSS num elemento ja existente (forca reflow no meio)
 function replayAnim(node){ node.style.animation="none"; void node.offsetWidth; node.style.animation=""; }
 
+// telefone obrigatorio: o botao "Comecar" so libera com um numero valido (>=10 digitos)
+function telefoneValido(){ return el("telefone").value.replace(/\D/g,"").length >= 10; }
+function validarInicio(){ el("start").disabled = !telefoneValido(); }
+el("telefone").addEventListener("input", validarInicio);
+validarInicio();
+
 el("start").addEventListener("click", ()=>{
+  if(el("start").disabled) return;
   nome = el("nome").value.trim();
+  telefone = el("telefone").value.trim();
   order = QUESTIONS.map((_,i)=>i); pos = 0;
   el("progress").classList.add("show"); renderQuestion(); show(screens.q);
 });
-el("nome").addEventListener("keydown", e=>{ if(e.key==="Enter") el("start").click(); });
+[el("nome"), el("telefone")].forEach(inp=>{
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter") el("start").click(); });
+});
 el("back").addEventListener("click", ()=>{ if(pos===0){ show(screens.intro); el("progress").classList.remove("show"); return; } pos--; renderQuestion(); });
 
 function renderQuestion(){
@@ -309,6 +323,7 @@ function finish(){
   // mensagem pronta de WhatsApp (handoff manual de backup)
   const txt = "Olá! Acabei de fazer o diagnóstico de saúde do posto do ClubPetro.%0A%0A"+
     (nome?("Nome: "+encodeURIComponent(nome)+"%0A"):"")+
+    (telefone?("Telefone: "+encodeURIComponent(telefone)+"%0A"):"")+
     "Nota: "+score+" de 100 ("+encodeURIComponent(lvl.name)+")%0A"+
     "Meu papel: "+encodeURIComponent(papel||"não informado")+"%0A"+
     "Quero melhorar: "+encodeURIComponent(interesse||"não informado")+"%0A"+
@@ -319,7 +334,7 @@ function finish(){
   // salva no Supabase (validacao de respostas)
   const respostas = {};
   QUESTIONS.forEach(q=>{ respostas[q.id] = answers[q.id] ? answers[q.id].label : null; });
-  salvarSupabase({ nome: nome || null, score, nivel: lvl.name, papel, conhece, interesse, respostas });
+  salvarSupabase({ nome: nome || null, telefone: telefone || null, score, nivel: lvl.name, papel, conhece, interesse, respostas });
 
   show(screens.result); el("pill").textContent = "Resultado"; animateScore(score);
 }
