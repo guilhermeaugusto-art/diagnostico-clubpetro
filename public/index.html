@@ -320,16 +320,32 @@ function finish(){
   const conhece = answers.q8 ? answers.q8.val : null;
   const interesse = answers.q9 ? answers.q9.val : null;
 
-  // mensagem pronta de WhatsApp (handoff manual de backup)
-  const txt = "Olá! Acabei de fazer o diagnóstico de saúde do posto do ClubPetro.%0A%0A"+
-    (nome?("Nome: "+encodeURIComponent(nome)+"%0A"):"")+
-    (telefone?("Telefone: "+encodeURIComponent(telefone)+"%0A"):"")+
-    "Nota: "+score+" de 100 ("+encodeURIComponent(lvl.name)+")%0A"+
-    "Meu papel: "+encodeURIComponent(papel||"não informado")+"%0A"+
-    "Quero melhorar: "+encodeURIComponent(interesse||"não informado")+"%0A"+
-    "Conhece o ClubPetro: "+encodeURIComponent(conhece||"não informado")+"%0A%0A"+
-    "Quero ver os pontos de melhoria do meu posto.";
-  el("r-cta").onclick = ()=> window.open("https://wa.me/"+CONFIG.CLUBPETRO_WHATSAPP+"?text="+txt, "_blank");
+  // mensagem pronta de WhatsApp que o lead envia ao ClubPetro
+  const linhasWa = [
+    "Olá, ClubPetro! 👋",
+    "",
+    "Acabei de fazer o *Diagnóstico de Saúde do Posto* e quero ver os pontos de melhoria da minha operação.",
+    "",
+    "👤 *Quem sou eu*"
+  ];
+  if(nome) linhasWa.push("Nome: " + nome);
+  if(telefone) linhasWa.push("WhatsApp: " + telefone);
+  linhasWa.push(
+    "Função no posto: " + (papel || "não informado"),
+    "",
+    "📊 *Meu diagnóstico*",
+    "Nota: *" + score + "/100*",
+    "Nível: " + lvl.name,
+    "",
+    "🎯 *O que quero destravar primeiro*",
+    interesse || "não informado",
+    "",
+    "📌 Relação com o ClubPetro: " + (conhece || "não informado"),
+    "",
+    "Pode me mostrar como melhorar o meu posto? 🚀"
+  );
+  const msgWa = linhasWa.join("\n");
+  el("r-cta").onclick = ()=> window.open("https://wa.me/"+CONFIG.CLUBPETRO_WHATSAPP+"?text="+encodeURIComponent(msgWa), "_blank");
 
   // salva no Supabase (validacao de respostas)
   const respostas = {};
