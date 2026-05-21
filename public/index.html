@@ -6,9 +6,11 @@
 <title>Diagnóstico de Saúde do Posto · ClubPetro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<!-- Supabase client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- fontes: carregamento nao-bloqueante (a pagina renderiza na hora, com fallback) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&display=swap"></noscript>
+<!-- Supabase client: hospedado localmente + defer (NAO bloqueia a renderizacao) -->
+<script src="/supabase.js" defer></script>
 <style>
 :root{
   --accent:#f26600; --accent-deep:#d4540a; --accent-soft:#ff8a3d;
@@ -145,11 +147,16 @@ const CONFIG = {
 };
 /* =========================================================================== */
 
-// inicia o cliente Supabase apenas se as credenciais estiverem preenchidas
+// inicia o cliente Supabase sob demanda. A lib carrega com "defer", entao
+// so fica disponivel DEPOIS deste script inline -> a init e' preguicosa.
 let sb = null;
-if (CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.includes("SEU-PROJETO") && window.supabase) {
-  try { sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
-  catch (e) { console.error("Supabase init falhou:", e); }
+function getSupabase(){
+  if (sb) return sb;
+  if (CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.includes("SEU-PROJETO") && window.supabase) {
+    try { sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
+    catch (e) { console.error("Supabase init falhou:", e); }
+  }
+  return sb;
 }
 
 // 6 perguntas de saude (somam 100) + 3 de qualificacao
@@ -273,9 +280,10 @@ function finish(){
 }
 
 async function salvarSupabase(payload){
-  if(!sb){ console.log("Supabase nao configurado, pulei o salvamento.", payload); return; }
+  const client = getSupabase();
+  if(!client){ console.log("Supabase indisponivel, pulei o salvamento.", payload); return; }
   try{
-    const { error } = await sb.from("diagnostico_respostas").insert(payload);
+    const { error } = await client.from("diagnostico_respostas").insert(payload);
     if(error){ console.error("Erro ao salvar:", error); }
     else{ el("savemsg").textContent = "Respostas registradas."; }
   }catch(e){ console.error("Falha no salvamento:", e); }
