@@ -27,17 +27,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="/supabase.js" defer></script>
 <style>
-/* ============================================================
-   Diagnóstico v3.1 · Tipografia editorial, Fraunces opsz
-   Anti-padrões "cara de IA" eliminados: opsz variável, italic
-   intencional, contraste de famílias, escala fechada
-   ============================================================ */
+/* v4 · Editorial brutalista · type-first, sem chrome */
 :root{
   --accent:#F26600; --accent-soft:#FF8A3D; --accent-deep:#D4540A;
-  --accent-bg:#FFF1E3; --accent-tint:#FFE2C2; --highlight:#ffe9d4;
+  --accent-bg:#FFF1E3; --accent-tint:#FFE2C2;
   --ink:#1a1612; --ink-soft:#3d342b; --ink-mute:#7a6f63; --ink-faint:#a89c8a;
   --paper:#f5f1ea; --paper-warm:#ede6d9; --paper-deep:#e2dac9;
-  --rule:#d4c9b8; --rule-soft:#e5dccb;
+  --rule:#1a1612; --rule-soft:#d4c9b8;
   --olive:#6b6d3a; --danger:#a64545;
   --serif:'Fraunces',Georgia,serif;
   --sans:'Inter Tight',system-ui,sans-serif;
@@ -46,771 +42,438 @@
   --ease-out:cubic-bezier(.16,1,.3,1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-html{font-size:16px;scroll-behavior:smooth;text-rendering:optimizeLegibility}
-body{
-  font-family:var(--sans);background:var(--paper);color:var(--ink);
-  line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
-  font-feature-settings:"kern" 1,"liga" 1,"calt" 1;
-}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-::selection{background:var(--highlight);color:var(--ink)}
+html,body{height:100%;min-height:100%}
+html{font-size:16px;text-rendering:optimizeLegibility}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;font-feature-settings:"kern" 1,"liga" 1,"calt" 1;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;text-align:left}
+::selection{background:var(--accent);color:var(--paper)}
+img,svg{display:block;max-width:100%}
 
-/* ============================================================
-   HEADER · sticky, editorial
-   ============================================================ */
-.header{
-  position:sticky;top:0;z-index:50;
-  background:rgba(245,241,234,.94);backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--rule);
-  padding:14px 20px;
-  display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
-}
-.brand{display:flex;align-items:center;gap:10px}
+/* MASTHEAD · régua dupla */
+.masthead{position:sticky;top:0;z-index:80;background:var(--paper);border-bottom:2px solid var(--ink)}
+.masthead-rule{height:1px;background:var(--ink);opacity:.4}
+.masthead-row{display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;padding:14px 24px}
+.brand{display:flex;align-items:center;gap:14px}
 .brand-logo{height:18px;width:auto;color:var(--ink);display:block}
-.brand-ctx{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-mute);border-left:1px solid var(--rule);padding-left:10px;display:none;
+.brand-meta{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);padding-left:14px;border-left:1px solid var(--ink);opacity:.7;display:none}
+.brand-meta b{color:var(--ink);font-weight:500}
+.ticks{display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:nowrap}
+.tick{width:14px;height:2px;background:var(--rule-soft);transition:background 300ms var(--ease)}
+.tick.done{background:var(--accent)}
+.tick.now{background:var(--ink);height:4px}
+.score-pill{display:flex;align-items:baseline;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mute)}
+.score-pill .sp-v{font-family:var(--serif);font-size:22px;font-weight:500;color:var(--accent);font-variation-settings:"opsz" 36;letter-spacing:-.02em;font-feature-settings:"tnum" 1}
+@media (max-width:640px){
+  .masthead-row{padding:12px 20px;gap:14px}
+  .brand-meta{display:none}
+  .ticks{gap:2px}
+  .tick{width:9px}
+  .score-pill{font-size:10px}
+  .score-pill .sp-v{font-size:18px}
 }
+@media (min-width:1024px){
+  .masthead-row{padding:18px 48px}
+  .brand-meta{display:inline-flex}
+  .tick{width:18px}
+}
+.masthead.idle .ticks,.masthead.idle .score-pill{visibility:hidden}
 
-.progress-shell{display:flex;align-items:center;gap:10px;min-width:0;opacity:0;transition:opacity 300ms var(--ease)}
-.progress-shell.show{opacity:1}
-.progress-count{
-  font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink);white-space:nowrap;
-  display:flex;gap:3px;align-items:baseline;
-}
-.progress-count .pn{color:var(--accent);font-weight:500;font-size:13px}
-.progress-count .pt{color:var(--ink-mute)}
-.progress-track{
-  flex:1;height:2px;background:var(--rule-soft);border-radius:99px;overflow:hidden;min-width:60px;
-}
-.progress-fill{
-  height:100%;width:0%;background:var(--accent);border-radius:99px;
-  transition:width 500ms var(--ease);
-}
+/* STAGE */
+.stage{min-height:calc(100vh - 64px);padding:32px 24px 80px;display:flex;flex-direction:column;justify-content:flex-start;position:relative}
+@media (min-width:1024px){.stage{padding:48px 48px 96px;min-height:calc(100vh - 72px)}}
 
-.mini-radar{
-  display:flex;align-items:center;gap:8px;opacity:0;transition:opacity 300ms var(--ease) 100ms;
-}
-.mini-radar.show{opacity:1}
-.mini-radar svg{width:32px;height:32px;display:block}
-.mini-radar-grid{fill:none;stroke:var(--rule);stroke-width:.6}
-.mini-radar-shape{fill:var(--accent);fill-opacity:.28;stroke:var(--accent);stroke-width:1.4;transition:all 500ms var(--ease)}
-.mini-radar-score{
-  font-family:var(--serif);font-size:14px;font-weight:500;color:var(--accent);line-height:1;
-  font-variation-settings:"opsz" 14;
-}
-
-@media (min-width:768px){
-  .header{padding:18px 40px;gap:24px}
-  .brand-logo{height:22px}
-  .brand-ctx{display:inline;font-size:11px}
-  .progress-count{font-size:12px}
-  .progress-count .pn{font-size:14px}
-  .mini-radar svg{width:36px;height:36px}
-  .mini-radar-score{font-size:16px}
-}
-
-/* ============================================================
-   LAYOUT · envelope editorial
-   ============================================================ */
-.layout{
-  max-width:680px;margin:0 auto;
-  padding:32px 20px 80px;min-height:calc(100vh - 60px);
-}
-@media (min-width:768px){.layout{max-width:760px;padding:64px 40px 120px}}
-@media (min-width:1100px){.layout{max-width:880px}}
-
-/* ============================================================
-   WELCOME · capa de revista
-   ============================================================ */
-.welcome{display:flex;flex-direction:column;gap:24px}
-.welcome > * {opacity:0;transform:translateY(12px);animation:rise 600ms var(--ease-out) forwards}
-.welcome > *:nth-child(1){animation-delay:80ms}
-.welcome > *:nth-child(2){animation-delay:160ms}
-.welcome > *:nth-child(3){animation-delay:240ms}
-.welcome > *:nth-child(4){animation-delay:320ms}
-.welcome > *:nth-child(5){animation-delay:400ms}
-.welcome > *:nth-child(6){animation-delay:480ms}
-
-.welcome-eyebrow{
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--accent);display:flex;align-items:center;gap:10px;
-}
-.welcome-eyebrow::after{
-  content:"";flex:1;height:1px;background:var(--rule);max-width:120px;
-}
-
-.welcome-h1{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(40px,8.5vw,72px);line-height:1.02;letter-spacing:-.028em;
-  font-variation-settings:"opsz" 144;
-  color:var(--ink);max-width:14ch;
-}
-.welcome-h1 em{font-style:italic;color:var(--accent);font-variation-settings:"opsz" 144}
-
-.welcome-lede{
-  font-family:var(--serif);font-weight:400;
-  font-size:clamp(16px,2.3vw,19px);line-height:1.6;letter-spacing:-.005em;
-  font-variation-settings:"opsz" 18;
-  color:var(--ink-soft);max-width:38em;
-}
-.welcome-lede strong{color:var(--ink);font-weight:500}
-
-.welcome-strip{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
-  margin:8px 0;
-}
-.welcome-strip .ws{padding:18px 12px 18px 0;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:6px}
-.welcome-strip .ws:last-child{border-right:0}
-.welcome-strip .ws-l{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-mute);
-}
-.welcome-strip .ws-v{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(24px,4.5vw,36px);line-height:1;letter-spacing:-.02em;
-  font-variation-settings:"opsz" 48;
-  color:var(--ink);
-}
-.welcome-strip .ws-v em{font-style:italic;color:var(--accent)}
-@media (min-width:768px){
-  .welcome-strip .ws{padding:24px 20px 24px 0}
-}
-
-.resume-banner{
-  display:none;align-items:flex-start;gap:14px;
-  background:var(--accent-bg);border-left:3px solid var(--accent);
-  border-radius:0 6px 6px 0;padding:14px 18px;
-}
+/* WELCOME */
+.welcome{display:grid;grid-template-columns:1fr;gap:32px;max-width:1200px;margin:0 auto;width:100%}
+@media (min-width:900px){.welcome{grid-template-columns:1.4fr 1fr;gap:64px;padding-top:48px}}
+.w-eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:10px}
+.w-eyebrow::before{content:"";width:36px;height:1px;background:var(--accent)}
+.w-display{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(56px,12vw,140px);line-height:.92;letter-spacing:-.04em;font-variation-settings:"opsz" 144;color:var(--ink);margin:20px 0 0}
+.w-display em{font-style:italic;color:var(--accent)}
+.w-display .dot{color:var(--accent);font-style:normal}
+.w-lede{font-family:var(--serif);font-weight:400;font-size:clamp(17px,2vw,21px);line-height:1.55;letter-spacing:-.005em;font-variation-settings:"opsz" 18;color:var(--ink-soft);max-width:34em;margin-top:28px}
+.w-lede strong{color:var(--ink);font-weight:500}
+.w-side{display:flex;flex-direction:column;justify-content:space-between;border-top:2px solid var(--ink)}
+.w-side-row{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:20px;padding:18px 0;border-bottom:1px solid var(--rule-soft)}
+.w-side-row:last-child{border-bottom:0}
+.w-side-l{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+.w-side-v{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(34px,5vw,52px);line-height:.95;letter-spacing:-.03em;font-variation-settings:"opsz" 96;color:var(--ink);text-align:right;font-feature-settings:"tnum" 1}
+.w-side-v em{color:var(--accent)}
+.resume-banner{display:none;align-items:flex-start;gap:14px;background:var(--ink);color:var(--paper);padding:18px 22px;margin-top:24px;border-left:6px solid var(--accent)}
 .resume-banner.show{display:flex}
 .resume-banner .rb-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-.resume-banner .rb-l{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
-}
-.resume-banner .rb-t{
-  font-family:var(--serif);font-style:italic;font-size:15px;color:var(--ink-soft);line-height:1.45;
-  font-variation-settings:"opsz" 14;
-}
-.resume-banner .rb-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
-.resume-banner button{
-  font-family:var(--sans);font-size:13px;font-weight:500;padding:7px 14px;border-radius:6px;cursor:pointer;
-  transition:background 200ms var(--ease),color 200ms var(--ease);
-}
-.resume-banner .rb-go{background:var(--ink);color:var(--paper)}
-.resume-banner .rb-go:hover{background:var(--accent)}
-.resume-banner .rb-no{background:transparent;color:var(--ink-mute);text-decoration:underline;text-underline-offset:3px}
-.resume-banner .rb-no:hover{color:var(--ink)}
+.resume-banner .rb-l{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.resume-banner .rb-t{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--paper);line-height:1.4}
+.resume-banner .rb-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.resume-banner .rb-go{font-family:var(--sans);font-size:13px;font-weight:500;color:var(--accent);text-decoration:underline;text-underline-offset:4px;background:transparent;border:0;cursor:pointer;padding:0}
+.resume-banner .rb-no{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);background:transparent;border:0;cursor:pointer;padding:0}
+.resume-banner .rb-no:hover{color:var(--paper)}
+.w-cta{margin-top:40px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;border-top:1px solid var(--ink);padding-top:32px}
+.btn-massive{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(28px,4vw,40px);line-height:1;letter-spacing:-.02em;font-variation-settings:"opsz" 48;color:var(--ink);background:transparent;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:baseline;gap:18px;transition:color 200ms var(--ease);position:relative}
+.btn-massive::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:3px;background:var(--ink);transform-origin:left;transition:transform 300ms var(--ease-out),background 200ms var(--ease)}
+.btn-massive:hover{color:var(--accent)}
+.btn-massive:hover::after{background:var(--accent);transform:scaleX(1.05)}
+.btn-massive .arrow{font-family:var(--mono);font-size:.55em;font-style:normal;letter-spacing:.04em;color:var(--accent);transition:transform 280ms var(--ease-out)}
+.btn-massive:hover .arrow{transform:translateX(8px)}
+.w-hint{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+.welcome > *{opacity:0;transform:translateY(12px);animation:rise 700ms var(--ease-out) forwards}
+.welcome > .w-side > *{opacity:0;transform:translateY(8px);animation:rise 500ms var(--ease-out) forwards}
+.welcome > *:nth-child(1){animation-delay:80ms}
+.welcome > *:nth-child(2){animation-delay:200ms}
+.welcome > .w-side > *:nth-child(1){animation-delay:240ms}
+.welcome > .w-side > *:nth-child(2){animation-delay:300ms}
+.welcome > .w-side > *:nth-child(3){animation-delay:360ms}
+.welcome > .w-side > *:nth-child(4){animation-delay:420ms}
 
-.welcome-cta{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:8px}
-.btn-start{
-  font-family:var(--sans);font-weight:500;font-size:16px;letter-spacing:-.005em;
-  background:var(--ink);color:var(--paper);
-  padding:18px 32px;border:0;border-radius:6px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:14px;min-height:56px;
-  transition:background 200ms var(--ease),transform 120ms var(--ease);
-}
-.btn-start:hover{background:var(--accent)}
-.btn-start:active{transform:translateY(1px)}
-.btn-start .arrow{font-family:var(--mono);font-size:15px}
-.welcome-hint{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);
-}
-
-/* ============================================================
-   QUESTION · pergunta editorial
-   ============================================================ */
-.question-screen{display:flex;flex-direction:column;gap:24px}
-.question-screen > * {opacity:0;transform:translateY(8px);animation:rise 380ms var(--ease-out) forwards}
-.question-screen > *:nth-child(1){animation-delay:0ms}
-.question-screen > *:nth-child(2){animation-delay:80ms}
-.question-screen > *:nth-child(3){animation-delay:140ms}
-.question-screen > *:nth-child(4){animation-delay:200ms}
-.question-screen > *:nth-child(5){animation-delay:260ms}
-
-.q-eyebrow{
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-}
-.q-eyebrow .q-id{
-  color:var(--accent);background:var(--paper-warm);
-  padding:4px 10px;border-radius:3px;border:1px solid var(--rule-soft);
-}
-.q-eyebrow .q-block{color:var(--ink-soft)}
-.q-eyebrow .q-sep{color:var(--rule)}
-.q-eyebrow .q-weight{margin-left:auto;color:var(--ink-mute)}
-.q-eyebrow .q-weight em{font-style:normal;color:var(--accent)}
-
-.q-text{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(26px,5.5vw,40px);line-height:1.15;letter-spacing:-.022em;
-  font-variation-settings:"opsz" 96;
-  color:var(--ink);max-width:22ch;
-}
+/* QUESTION */
+.question{display:grid;grid-template-columns:1fr;gap:32px;max-width:1200px;margin:0 auto;width:100%}
+@media (min-width:900px){.question{grid-template-columns:auto 1fr;gap:48px;align-items:start}}
+.q-decoration{display:flex;flex-direction:column;gap:14px;align-items:flex-start;padding-bottom:24px;border-bottom:1px solid var(--rule-soft)}
+@media (min-width:900px){.q-decoration{border-bottom:0;border-right:1px solid var(--rule-soft);padding:0 48px 0 0;min-width:200px;position:sticky;top:88px}}
+.q-number{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(120px,22vw,260px);line-height:.78;letter-spacing:-.06em;font-variation-settings:"opsz" 144;color:var(--accent);font-feature-settings:"tnum" 1}
+.q-meta{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+.q-meta .q-block{color:var(--ink)}
+.q-meta .q-weight{color:var(--ink-mute)}
+.q-body{display:flex;flex-direction:column;gap:24px;min-width:0}
+.q-text{font-family:var(--serif);font-weight:500;font-size:clamp(26px,4.2vw,46px);line-height:1.1;letter-spacing:-.025em;font-variation-settings:"opsz" 96;color:var(--ink)}
 .q-text em{font-style:italic;color:var(--accent);font-variation-settings:"opsz" 96}
-
-.q-context{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  font-size:clamp(14px,2vw,16px);line-height:1.55;
-  font-variation-settings:"opsz" 14;
-  color:var(--ink-mute);
-  padding:6px 0 6px 16px;border-left:2px solid var(--rule);max-width:36em;
-}
-
-.q-options{display:flex;flex-direction:column;gap:10px}
-
-.opt-card{
-  display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;
-  width:100%;text-align:left;background:transparent;
-  border:1px solid var(--rule);border-radius:8px;padding:16px 18px;
-  cursor:pointer;position:relative;
-  transition:border-color 200ms var(--ease),background 200ms var(--ease),transform 120ms var(--ease);
-}
-.opt-card:hover{border-color:var(--ink);background:var(--paper-warm)}
-.opt-card:active{transform:scale(.998)}
-.opt-card.selected{border-color:var(--accent);background:var(--accent-bg)}
-.opt-card.selected::before{
-  content:"";position:absolute;inset:-1px;border:1px solid var(--accent);border-radius:8px;
-  pointer-events:none;animation:pulse 380ms var(--ease-out) 1;
-}
-@keyframes pulse{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.02)}}
-
-.opt-letter{
-  font-family:var(--mono);font-size:12px;font-weight:500;
-  color:var(--accent);background:var(--paper-warm);
-  width:30px;height:30px;border-radius:4px;border:1px solid var(--rule-soft);
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:background 200ms var(--ease),color 200ms var(--ease),border-color 200ms var(--ease);
-}
-.opt-card.selected .opt-letter{background:var(--accent);color:var(--paper);border-color:var(--accent)}
-
-.opt-body{display:flex;flex-direction:column;gap:4px;min-width:0;padding-top:1px}
-.opt-label{
-  font-family:var(--sans);font-size:15px;font-weight:500;color:var(--ink);line-height:1.4;letter-spacing:-.005em;
-}
-.opt-desc{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  font-size:14px;line-height:1.45;
-  font-variation-settings:"opsz" 14;
-  color:var(--ink-mute);
-}
-@media (min-width:768px){
-  .opt-card{padding:18px 22px;gap:18px}
-  .opt-letter{width:34px;height:34px;font-size:13px}
-  .opt-label{font-size:16px}
-  .opt-desc{font-size:15px}
-}
-
-.q-nav{
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
-  margin-top:8px;padding-top:18px;border-top:1px solid var(--rule);flex-wrap:wrap;
-}
-.btn-back{
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-mute);background:transparent;border:0;padding:10px 14px;cursor:pointer;
-  transition:color 200ms var(--ease);
-}
+.q-context{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(15px,1.6vw,18px);line-height:1.55;font-variation-settings:"opsz" 18;color:var(--ink-mute);padding:0 0 0 18px;border-left:2px solid var(--accent);max-width:38em}
+.q-options{display:flex;flex-direction:column;gap:0;margin-top:16px;border-top:1px solid var(--ink)}
+.opt{display:grid;grid-template-columns:64px 1fr;gap:24px;align-items:start;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--rule-soft);padding:24px 0;cursor:pointer;position:relative;transition:background 200ms var(--ease),padding-left 280ms var(--ease-out)}
+.opt::before{content:"";position:absolute;left:-24px;right:-24px;top:0;bottom:0;background:transparent;transition:background 200ms var(--ease);z-index:-1}
+.opt:hover::before{background:var(--paper-warm)}
+.opt:hover{padding-left:8px}
+.opt.selected::before{background:var(--accent-bg)}
+.opt.selected{padding-left:12px}
+.opt-num{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(40px,5.5vw,64px);line-height:.9;letter-spacing:-.04em;font-variation-settings:"opsz" 96;color:var(--accent);font-feature-settings:"tnum" 1;transition:transform 280ms var(--ease-out)}
+.opt.selected .opt-num{transform:translateX(4px)}
+.opt-body{display:flex;flex-direction:column;gap:6px;min-width:0;padding-top:4px}
+.opt-label{font-family:var(--serif);font-weight:500;font-size:clamp(17px,2vw,22px);line-height:1.3;letter-spacing:-.015em;font-variation-settings:"opsz" 36;color:var(--ink)}
+.opt-desc{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(14px,1.4vw,16px);line-height:1.5;font-variation-settings:"opsz" 14;color:var(--ink-mute)}
+.q-nav{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:24px;flex-wrap:wrap}
+.btn-back{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);background:transparent;border:0;padding:8px 0;cursor:pointer;transition:color 200ms var(--ease)}
 .btn-back:hover{color:var(--ink)}
-.btn-back:disabled{opacity:.25;cursor:not-allowed}
+.btn-back:disabled{opacity:.2;cursor:not-allowed}
+.q-step{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+.q-step b{font-family:var(--serif);font-size:13px;color:var(--accent);font-weight:500;letter-spacing:-.01em;font-style:italic}
+.question > *{opacity:0;animation:fade-up 460ms var(--ease-out) forwards}
+.question > *:nth-child(1){animation-delay:0ms}
+.question > *:nth-child(2){animation-delay:120ms}
+.opt{opacity:0;transform:translateY(8px);animation:fade-up 440ms var(--ease-out) forwards}
+.opt:nth-child(1){animation-delay:200ms}
+.opt:nth-child(2){animation-delay:260ms}
+.opt:nth-child(3){animation-delay:320ms}
+.opt:nth-child(4){animation-delay:380ms}
+@keyframes fade-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
-/* ============================================================
-   PHONE INPUT · captura editorial
-   ============================================================ */
-.phone-card{
-  display:flex;flex-direction:column;gap:14px;max-width:520px;width:100%;
-}
-.phone-label{
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-mute);
-}
-.phone-input{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(22px,4vw,32px);line-height:1.2;letter-spacing:-.015em;
-  font-variation-settings:"opsz" 48;
-  padding:14px 0;border:0;border-bottom:2px solid var(--ink);
-  background:transparent;color:var(--ink);outline:none;width:100%;
-  transition:border-color 200ms var(--ease);
-}
+/* PHONE */
+.phone-stage{display:grid;grid-template-columns:1fr;gap:32px;max-width:1200px;margin:0 auto;width:100%;align-items:start}
+@media (min-width:900px){.phone-stage{grid-template-columns:auto 1fr;gap:48px}}
+.phone-num{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(80px,16vw,180px);line-height:.85;letter-spacing:-.05em;font-variation-settings:"opsz" 144;color:var(--accent);padding-bottom:18px;border-bottom:1px solid var(--rule-soft)}
+@media (min-width:900px){.phone-num{border-bottom:0;border-right:1px solid var(--rule-soft);padding:0 48px 0 0;min-width:200px}}
+.phone-body{display:flex;flex-direction:column;gap:28px;min-width:0;max-width:42em}
+.phone-h{font-family:var(--serif);font-weight:500;font-size:clamp(28px,4vw,44px);line-height:1.1;letter-spacing:-.025em;font-variation-settings:"opsz" 96;color:var(--ink)}
+.phone-h em{font-style:italic;color:var(--accent)}
+.phone-context{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(15px,1.6vw,17px);line-height:1.55;font-variation-settings:"opsz" 18;color:var(--ink-mute)}
+.phone-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);margin-top:8px}
+.phone-input{font-family:var(--serif);font-weight:500;font-size:clamp(30px,5vw,52px);line-height:1.1;letter-spacing:-.02em;font-variation-settings:"opsz" 96;padding:6px 0 14px;border:0;border-bottom:2px solid var(--ink);background:transparent;color:var(--ink);outline:none;width:100%;transition:border-color 200ms var(--ease);font-feature-settings:"tnum" 1}
 .phone-input::placeholder{color:var(--ink-faint);font-style:italic}
 .phone-input:focus{border-color:var(--accent)}
 .phone-input.invalid{border-color:var(--danger)}
-.phone-trust{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mute);
-  margin-top:4px;
-}
+.phone-trust{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+.phone-stage > *{opacity:0;animation:fade-up 540ms var(--ease-out) forwards}
+.phone-stage > *:nth-child(1){animation-delay:80ms}
+.phone-stage > *:nth-child(2){animation-delay:200ms}
 
-/* ============================================================
-   TRANSITION · processando resultado
-   ============================================================ */
-.transition-screen{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;min-height:60vh;gap:24px;
-}
-.transition-phrase{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  font-size:clamp(20px,4.5vw,32px);line-height:1.25;letter-spacing:-.012em;
-  font-variation-settings:"opsz" 48;
-  color:var(--ink-soft);max-width:18ch;
-  opacity:0;animation:phrase-fade 700ms var(--ease) forwards;
-}
-.transition-phrase em{font-style:italic;color:var(--accent)}
-@keyframes phrase-fade{0%{opacity:0;transform:translateY(8px)}25%,75%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-4px)}}
-.transition-bar{
-  width:120px;height:2px;background:var(--rule-soft);border-radius:99px;overflow:hidden;
-}
-.transition-bar-fill{
-  height:100%;background:var(--accent);border-radius:99px;width:0%;
-}
+/* TRANSITION */
+.transition-stage{min-height:calc(100vh - 64px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:32px;padding:24px}
+.transition-canvas{position:relative;height:120px;display:flex;align-items:center;justify-content:center}
+.transition-phrase{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(26px,5vw,48px);line-height:1.12;letter-spacing:-.025em;font-variation-settings:"opsz" 96;color:var(--ink-soft);max-width:18ch;opacity:0;position:absolute}
+.transition-phrase em{color:var(--accent)}
+.transition-phrase.active{animation:phrase-fade 800ms var(--ease) forwards}
+@keyframes phrase-fade{0%{opacity:0;transform:translateY(12px)}30%,70%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-8px)}}
+.transition-bar{width:160px;height:1px;background:var(--rule-soft);overflow:hidden}
+.transition-bar-fill{height:100%;background:var(--accent);width:0%}
 
-/* ============================================================
-   RESULT · momento alto, cascata teatral
-   ============================================================ */
-.result{display:flex;flex-direction:column;gap:32px}
-
-.result-hero{text-align:center;padding:16px 0 8px}
-.result-hero > * {opacity:0}
-.result-hero .r-eyebrow{animation:rise 600ms var(--ease-out) 100ms forwards}
-.result-hero .r-h1{animation:rise 600ms var(--ease-out) 220ms forwards}
-.result-hero .r-score{animation:score-in 1000ms var(--ease-out) 360ms forwards}
-.result-hero .r-msg{animation:rise 700ms var(--ease-out) 1400ms forwards}
-@keyframes score-in{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
-
-.r-eyebrow{
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--accent);display:inline-flex;align-items:center;gap:10px;
-}
-.r-eyebrow::before,.r-eyebrow::after{content:"";width:24px;height:1px;background:var(--accent);opacity:.6}
-
-.r-h1{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(22px,4.2vw,32px);line-height:1.2;letter-spacing:-.018em;
-  font-variation-settings:"opsz" 48;
-  color:var(--ink-soft);margin:14px auto 0;max-width:22ch;
-}
-.r-h1 em{font-style:italic;color:var(--accent)}
-
-.r-score{
-  font-family:var(--serif);font-weight:500;color:var(--accent);
-  font-size:clamp(80px,18vw,144px);line-height:.92;letter-spacing:-.04em;
-  font-variation-settings:"opsz" 144;
-  margin:20px 0 8px;
-  display:block;
-}
-.r-score .r-of{
-  font-size:.22em;color:var(--ink-mute);font-weight:400;letter-spacing:-.01em;
-  font-style:italic;font-variation-settings:"opsz" 24;
-}
-
-.r-msg{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  font-size:clamp(16px,2.4vw,19px);line-height:1.55;
-  font-variation-settings:"opsz" 18;
-  color:var(--ink-soft);max-width:32em;margin:0 auto;
-}
-
-.r-radar-wrap{
-  display:flex;justify-content:center;padding:20px 0;
-  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
-  opacity:0;animation:rise 800ms var(--ease-out) 1700ms forwards;
-}
-.r-radar-wrap svg{width:300px;height:300px;display:block}
-.rr-grid{fill:none;stroke:var(--rule);stroke-width:.6}
-.rr-axis{stroke:var(--rule-soft);stroke-width:.6}
-.rr-shape{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);stroke-width:1.5;stroke-linejoin:round}
-.rr-dot{fill:var(--accent)}
-.rr-label{
-  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9px;font-weight:500;
-  letter-spacing:.08em;fill:var(--ink-soft);text-transform:uppercase;
-}
-
-.r-section-h{
-  display:flex;align-items:baseline;gap:14px;
-  padding-bottom:10px;border-bottom:2px solid var(--ink);
-  opacity:0;animation:rise 600ms var(--ease-out) forwards;
-}
-.r-section-h .num{
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.1em;
-  color:var(--accent);
-}
-.r-section-h h2{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(20px,3.5vw,28px);line-height:1.15;letter-spacing:-.018em;
-  font-variation-settings:"opsz" 48;
-}
-.r-section-h h2 em{font-style:italic;color:var(--accent)}
-
-.pillars-section{display:flex;flex-direction:column;gap:14px}
-.pillars-section .r-section-h{animation-delay:2200ms}
-.pillars-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (min-width:768px){.pillars-grid{gap:14px}}
-
-.pillar-card{
-  background:var(--paper-warm);border:1px solid var(--rule);border-radius:8px;padding:16px;
-  display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;
-  opacity:0;animation:rise 500ms var(--ease-out) forwards;
-}
-.pillar-card.locked .pc-title,
-.pillar-card.locked .pc-insight{filter:blur(4px);user-select:none;pointer-events:none}
-.pillar-card.locked::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(237,230,217,0) 35%,rgba(237,230,217,.88) 100%);pointer-events:none;
-}
-
-.pc-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.pc-tag{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--accent);
-}
-.pc-score{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(26px,4.5vw,34px);line-height:1;letter-spacing:-.02em;
-  font-variation-settings:"opsz" 48;
-  color:var(--ink);
-}
-.pc-score small{font-style:italic;font-size:.45em;color:var(--ink-mute);font-weight:400;margin-left:2px}
-.pc-title{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(15px,2.4vw,18px);line-height:1.2;letter-spacing:-.012em;
-  font-variation-settings:"opsz" 24;
-  color:var(--ink);
-}
-.pc-insight{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  font-size:13px;line-height:1.5;
-  font-variation-settings:"opsz" 14;
-  color:var(--ink-soft);margin-top:2px;
-}
-.pc-bar{height:3px;background:var(--rule-soft);border-radius:99px;overflow:hidden;margin-top:6px}
-.pc-bar-fill{height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width 1100ms var(--ease-out)}
-.pc-lock{
-  position:absolute;bottom:14px;left:0;right:0;text-align:center;
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);
-  z-index:2;display:flex;align-items:center;justify-content:center;gap:6px;
-}
-.pc-lock svg{width:11px;height:11px}
-@media (min-width:768px){.pillar-card{padding:18px}}
-
-/* CTAs */
-.ctas-section{display:flex;flex-direction:column;gap:14px}
-.ctas-section .r-section-h{opacity:0;animation:rise 600ms var(--ease-out) 3000ms forwards}
-.cta-grid{
-  display:grid;grid-template-columns:1fr;gap:14px;
-  opacity:0;animation:rise 700ms var(--ease-out) 3200ms forwards;
-}
-@media (min-width:768px){.cta-grid{grid-template-columns:1.4fr 1fr;gap:18px}}
-
-.cta-card{
-  border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:14px;
-}
-.cta-card .cta-tag{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
-}
-.cta-card .cta-h{
-  font-family:var(--serif);font-weight:500;
-  font-size:clamp(18px,2.8vw,22px);line-height:1.2;letter-spacing:-.015em;
-  font-variation-settings:"opsz" 24;
-}
-.cta-card .cta-h em{font-style:italic}
-.cta-card .cta-d{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  font-size:clamp(14px,2vw,16px);line-height:1.55;
-  font-variation-settings:"opsz" 14;
-}
-.cta-card .cta-btn{
-  font-family:var(--sans);font-size:14px;font-weight:500;padding:13px 22px;border-radius:6px;
-  align-self:flex-start;display:inline-flex;align-items:center;gap:10px;
-  margin-top:auto;cursor:pointer;transition:background 200ms var(--ease),color 200ms var(--ease),transform 120ms var(--ease);
-}
-.cta-card .cta-btn:active{transform:translateY(1px)}
-.cta-card .cta-btn svg{width:14px;height:14px;flex-shrink:0}
-.cta-card.primary{background:var(--ink);color:var(--paper)}
-.cta-card.primary .cta-tag{color:var(--accent)}
-.cta-card.primary .cta-d{color:#cfc9bf}
-.cta-card.primary .cta-btn{background:var(--accent);color:var(--paper)}
-.cta-card.primary .cta-btn:hover{background:var(--accent-soft)}
-.cta-card.secondary{background:transparent;border:1px solid var(--ink);color:var(--ink)}
-.cta-card.secondary .cta-tag{color:var(--accent)}
-.cta-card.secondary .cta-d{color:var(--ink-soft)}
-.cta-card.secondary .cta-btn{background:var(--ink);color:var(--paper)}
-.cta-card.secondary .cta-btn:hover{background:var(--accent)}
-@media (min-width:768px){
-  .cta-card{padding:28px;gap:16px}
-}
-
-.save-msg{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--olive);text-align:center;min-height:14px;
-  opacity:0;animation:rise 500ms var(--ease) 3600ms forwards;
-}
-.foot-note{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-mute);text-align:center;margin-top:12px;
-}
-
-@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-
+/* RESULT */
+.result{display:flex;flex-direction:column;gap:0;max-width:1200px;margin:0 auto;width:100%}
+.r-hero{display:grid;grid-template-columns:1fr;gap:24px;padding:24px 0 56px;border-bottom:2px solid var(--ink)}
+@media (min-width:900px){.r-hero{grid-template-columns:1.4fr 1fr;gap:64px;padding:32px 0 80px;align-items:end}}
+.r-eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:12px}
+.r-eyebrow::before{content:"";width:36px;height:1px;background:var(--accent)}
+.r-pre{font-family:var(--serif);font-weight:400;font-style:italic;font-size:clamp(18px,2.4vw,26px);line-height:1.3;letter-spacing:-.01em;font-variation-settings:"opsz" 36;color:var(--ink-soft);margin-top:16px}
+.r-pre em{color:var(--accent)}
+.r-score{font-family:var(--serif);font-weight:500;color:var(--accent);font-size:clamp(140px,28vw,280px);line-height:.78;letter-spacing:-.06em;font-variation-settings:"opsz" 144;font-feature-settings:"tnum" 1;margin:24px 0 0;display:block}
+.r-score .r-of{font-size:.18em;color:var(--ink-mute);font-weight:400;letter-spacing:-.01em;font-style:italic;font-variation-settings:"opsz" 24;margin-left:.05em}
+.r-rightcol{display:flex;flex-direction:column;gap:20px;padding-top:8px}
+.r-level-tag{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute)}
+.r-level-name{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(28px,3.6vw,40px);line-height:1.05;letter-spacing:-.03em;font-variation-settings:"opsz" 96;color:var(--ink)}
+.r-msg{font-family:var(--serif);font-weight:400;font-size:clamp(15px,1.6vw,18px);line-height:1.55;font-variation-settings:"opsz" 18;color:var(--ink-soft);max-width:30em}
+.r-msg strong{color:var(--ink);font-weight:500}
+.r-pillars{padding:56px 0 32px;border-bottom:2px solid var(--ink)}
+.r-section-tag{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:32px;display:flex;align-items:center;gap:12px}
+.r-section-tag::before{content:"01";color:var(--ink);font-weight:500}
+.r-section-tag.tag-02::before{content:"02"}
+.r-section-tag::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+.pillar-line{display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;gap:18px;padding:18px 0;border-bottom:1px solid var(--rule-soft);position:relative}
+.pillar-line.locked{opacity:.5}
+.pl-name{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(22px,3.5vw,36px);line-height:1.05;letter-spacing:-.025em;font-variation-settings:"opsz" 48;color:var(--ink);min-width:8ch}
+.pl-track{position:relative;height:1px;background:var(--rule-soft);align-self:center;margin-top:6px;flex:1;min-width:60px}
+.pl-fill{position:absolute;left:0;top:-2px;height:5px;width:0%;background:var(--accent);transition:width 1200ms var(--ease-out)}
+.pl-score{font-family:var(--serif);font-weight:500;font-size:clamp(32px,4.5vw,52px);line-height:.95;letter-spacing:-.03em;font-variation-settings:"opsz" 96;color:var(--accent);text-align:right;min-width:3.6ch;font-feature-settings:"tnum" 1}
+.pl-score small{font-size:.45em;color:var(--ink-mute);font-weight:400;font-style:italic;margin-left:2px}
+.pl-insight{grid-column:1 / -1;font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(14px,1.5vw,17px);line-height:1.55;font-variation-settings:"opsz" 18;color:var(--ink-soft);max-width:48em;margin-top:6px}
+.pillar-line.locked .pl-name,.pillar-line.locked .pl-score{filter:blur(3px)}
+.pillar-line.locked .pl-insight{font-style:italic;color:var(--ink-mute);font-size:13px;filter:none}
+.r-pillars .pillar-line{opacity:0;animation:fade-up 600ms var(--ease-out) forwards}
+.r-ctas{padding:56px 0 24px}
+.cta-grid{display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px}
+@media (min-width:900px){.cta-grid{grid-template-columns:1.4fr 1fr;gap:40px}}
+.cta{display:flex;flex-direction:column;gap:18px;padding:28px;border:1px solid var(--rule-soft);background:var(--paper);position:relative}
+.cta.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.cta-tag{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.cta-h{font-family:var(--serif);font-weight:500;font-size:clamp(22px,3vw,30px);line-height:1.1;letter-spacing:-.022em;font-variation-settings:"opsz" 48}
+.cta-h em{font-style:italic;color:var(--accent)}
+.cta.primary .cta-h{color:var(--paper)}
+.cta-d{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(15px,1.5vw,17px);line-height:1.5;font-variation-settings:"opsz" 18;color:var(--ink-mute)}
+.cta.primary .cta-d{color:#cfc9bf}
+.cta-btn{font-family:var(--serif);font-style:italic;font-weight:500;font-size:clamp(18px,2vw,22px);line-height:1;letter-spacing:-.015em;font-variation-settings:"opsz" 36;background:transparent;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:baseline;gap:14px;align-self:flex-start;margin-top:auto;position:relative;color:var(--accent);transition:color 200ms var(--ease)}
+.cta-btn::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;background:var(--accent);transform-origin:left;transition:transform 280ms var(--ease-out)}
+.cta-btn:hover::after{transform:scaleX(1.04)}
+.cta-btn .arrow{font-family:var(--mono);font-size:.6em;font-style:normal;letter-spacing:.04em;transition:transform 280ms var(--ease-out)}
+.cta-btn:hover .arrow{transform:translateX(6px)}
+.r-footnote{margin-top:48px;padding-top:24px;border-top:1px solid var(--rule-soft);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.r-save{color:var(--olive);min-height:14px}
+.r-hero > *{opacity:0;animation:fade-up 700ms var(--ease-out) forwards}
+.r-hero > .r-leftcol .r-eyebrow{animation-delay:100ms}
+.r-hero > .r-leftcol .r-pre{animation-delay:220ms}
+.r-hero > .r-leftcol .r-score{animation:score-in 1100ms var(--ease-out) 380ms forwards}
+.r-hero > .r-rightcol{animation-delay:1500ms}
+@keyframes score-in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.r-pillars .r-section-tag,.r-ctas .r-section-tag{opacity:0;animation:fade-up 600ms var(--ease-out) forwards}
+.r-pillars .r-section-tag{animation-delay:2000ms}
+.r-pillars .pillar-line:nth-of-type(1){animation-delay:2150ms}
+.r-pillars .pillar-line:nth-of-type(2){animation-delay:2230ms}
+.r-pillars .pillar-line:nth-of-type(3){animation-delay:2310ms}
+.r-pillars .pillar-line:nth-of-type(4){animation-delay:2390ms}
+.r-pillars .pillar-line:nth-of-type(5){animation-delay:2470ms}
+.r-pillars .pillar-line:nth-of-type(6){animation-delay:2550ms}
+.r-pillars .pillar-line:nth-of-type(7){animation-delay:2630ms}
+.r-pillars .pillar-line:nth-of-type(8){animation-delay:2710ms}
+.r-ctas .r-section-tag{animation-delay:3000ms}
+.r-ctas .cta-grid{opacity:0;animation:fade-up 700ms var(--ease-out) 3200ms forwards}
+.r-footnote{opacity:0;animation:fade-up 500ms var(--ease) 3600ms forwards}
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{
-    animation-duration:.01ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.01ms !important;
-  }
-  .result-hero > *, .pillar-card, .r-radar-wrap, .cta-grid, .ctas-section .r-section-h, .pillars-section .r-section-h, .save-msg{
-    opacity:1 !important;
-  }
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  .r-hero > *,.r-pillars > *,.r-ctas > *,.r-footnote,.pillar-line,.opt,.welcome > *,.welcome > .w-side > *{opacity:1 !important;transform:none !important}
 }
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="brand">
-    <svg class="brand-logo" viewBox="0 0 645 133" aria-label="ClubPetro">
-      <path d="M10.6344 93.9997C3.54479 86.7447 0 77.2877 0 65.9333C0 54.579 3.54479 45.1219 10.7664 37.8669C17.9879 30.612 27.1798 26.778 38.4741 26.778C53.0493 26.778 65.9085 34.3083 71.8196 47.5894L56.9806 56.0732C52.6533 48.5528 46.5159 44.7484 38.7381 44.7484C36.0305 44.6567 33.3345 45.1578 30.8241 46.2195C28.3136 47.2811 26.0445 48.8797 24.163 50.9122C22.2695 52.8818 20.7805 55.2329 19.7869 57.8222C18.7934 60.4115 18.316 63.1847 18.3839 65.9727C18.2934 68.7937 18.7475 71.6048 19.7192 74.2393C20.6909 76.8737 22.1604 79.2777 24.0405 81.3084C25.9106 83.2705 28.1433 84.8163 30.6032 85.8522C33.0632 86.888 35.6992 87.3924 38.3516 87.3346C45.8371 87.3346 53.4358 82.6749 56.6035 76.108L71.5651 85.28C65.3994 97.3225 52.7099 104.99 37.9556 104.99C26.7839 104.951 17.7239 101.255 10.6344 93.9997Z" fill="currentColor"/>
-      <path d="M117.222 71.8223V28.6954H135.738V71.8223C135.738 81.2695 141.121 87.4234 150.049 87.4234C158.977 87.4234 164.361 81.2695 164.361 71.8223V28.6954H182.867V71.8223C182.867 92.7713 170.526 105.089 150.049 105.089C129.573 105.089 117.222 92.7713 117.222 71.8223Z" fill="currentColor"/>
-      <path d="M446.022 72.7759H392.284C394.915 83.3242 401.872 88.6622 413.157 88.6622C421.394 88.4371 429.407 85.8264 436.302 81.1221L443.655 94.6687C434.583 101.531 423.619 105.137 412.412 104.942C399.808 104.942 390.22 101.108 383.526 93.5775C376.833 86.0473 373.552 76.7377 373.552 65.924C373.552 54.5598 376.965 45.2797 383.922 37.8576C390.88 30.4355 399.808 26.7687 410.838 26.7687C421.208 26.7687 429.872 30.1897 436.566 36.904C443.26 43.6183 446.682 52.633 446.682 64.2823C446.643 67.1257 446.423 69.9632 446.022 72.7759V72.7759ZM392.284 58.4036H428.656C426.987 48.6811 420.284 42.7827 410.838 42.7827C401.391 42.7827 394.556 48.6811 392.322 58.4036H392.284Z" fill="currentColor"/>
-      <path d="M518.896 103.31V28.6956H536.619V38.6933C540.956 30.6126 547.518 26.641 556.314 26.641C559.272 26.6558 562.204 27.2114 564.978 28.2827L563.403 46.7643C560.659 45.8397 557.801 45.3331 554.919 45.2602C544.416 45.2602 537.459 52.3775 537.459 67.8706V103.33L518.896 103.31Z" fill="currentColor"/>
-      <path d="M578.639 38.1428C585.86 30.4749 595.049 26.641 606.205 26.641C617.361 26.641 626.553 30.4749 633.781 38.1428C641.002 45.6731 644.547 54.9826 644.547 65.9339C644.547 76.8852 641.002 86.3325 633.781 93.902C626.559 101.472 617.367 105.266 606.205 105.266C595.043 105.266 585.86 101.432 578.639 93.902C571.417 86.3718 567.863 77.0229 567.863 65.9339C567.863 54.845 571.417 45.6731 578.639 38.1428ZM606.205 87.2959C608.831 87.3591 611.44 86.8426 613.861 85.7804C616.282 84.7181 618.46 83.134 620.252 81.1321C624.019 77.0549 626.095 71.5951 626.031 65.9339C626.074 63.1493 625.586 60.3836 624.593 57.798C623.601 55.2123 622.126 52.8584 620.252 50.8734C618.456 48.8786 616.277 47.3019 613.856 46.2464C611.435 45.191 608.828 44.6807 606.205 44.749C603.566 44.691 600.944 45.2094 598.509 46.2709C596.073 47.3325 593.878 48.9136 592.064 50.9128C590.207 52.9044 588.751 55.2623 587.779 57.8484C586.808 60.4345 586.341 63.1967 586.407 65.9733C586.297 71.6189 588.33 77.0814 592.064 81.1714C593.881 83.1634 596.078 84.7373 598.514 85.792C600.949 86.8467 603.569 87.3589 606.205 87.2959Z" fill="#E1652F"/>
-      <path d="M82.9813 7.02889V103.31H101.497V0L82.9813 7.02889Z" fill="currentColor"/>
-      <path d="M264.568 38.1433C261.337 34.4799 257.397 31.5728 253.009 29.6139C248.622 27.655 243.885 26.6888 239.113 26.7791C230.449 26.7791 223.228 30.3377 217.316 37.3273V0.0299683L198.81 7.05886V103.31H216.779V94.0008C222.681 101.393 230.034 105.09 239.094 105.09C249.201 105.09 257.742 101.393 264.549 94.0008C271.356 86.6082 274.787 77.161 274.787 66.072C274.787 54.9831 271.393 45.6735 264.568 38.1433ZM250.426 81.2701C248.569 83.22 246.36 84.7674 243.926 85.8234C241.493 86.8793 238.883 87.423 236.247 87.423C233.611 87.423 231.002 86.8793 228.568 85.8234C226.135 84.7674 223.926 83.22 222.068 81.2701C218.405 77.0889 216.43 71.5959 216.553 65.9344C216.431 60.3553 218.411 54.9486 222.068 50.8739C223.841 48.8109 226.026 47.1783 228.469 46.0913C230.912 45.0042 233.554 44.4891 236.209 44.5823C238.851 44.4955 241.48 44.9999 243.92 46.0614C246.359 47.1229 248.552 48.7169 250.351 50.7363C254.031 54.8509 256.012 60.3098 255.866 65.9344C255.999 71.5906 254.037 77.0828 250.389 81.2701H250.426Z" fill="currentColor"/>
-      <path d="M504.583 83.7272C500.247 86.3324 496.174 87.5612 492.629 87.5612C485.936 87.5612 482.523 83.1866 482.523 74.4177V44.8472H506.158V28.6955H482.523V0.186707L464.158 7.15661V28.6955H452.326V44.8472H464.007V75.6563C464.007 94.9538 472.548 105.089 488.952 105.089C497.23 105.089 504.187 103.035 510.098 98.9254L504.583 83.7272Z" fill="currentColor"/>
-      <path d="M354.111 38.1424C350.938 34.4715 347.044 31.5564 342.694 29.5954C338.344 27.6344 333.64 26.6736 328.902 26.7782C319.842 26.7782 312.356 30.4745 306.191 37.8672V28.6952H287.807V133.332L306.322 126.343V94.6782C309.119 98.0038 312.574 100.657 316.45 102.454C320.325 104.252 324.529 105.151 328.77 105.089C333.508 105.194 338.212 104.233 342.562 102.272C346.912 100.311 350.806 97.3956 353.979 93.7247C360.673 86.1944 364.086 76.8848 364.086 65.9335C364.086 54.9822 360.805 45.6727 354.111 38.1424ZM339.97 81.2693C336.293 85.3785 331.57 87.4233 325.659 87.4233C323.017 87.51 320.388 87.0057 317.948 85.9442C315.509 84.8827 313.316 83.2886 311.517 81.2693C307.837 77.1546 305.856 71.6957 306.002 66.0712C305.833 60.459 307.783 55.0017 311.432 50.8731C313.231 48.8525 315.423 47.2569 317.863 46.1937C320.302 45.1305 322.931 44.6244 325.574 44.7093C331.485 44.7093 336.208 46.7639 339.885 50.8731C343.565 54.9877 345.546 60.4466 345.4 66.0712C345.559 71.6889 343.595 77.1469 339.932 81.2693H339.97Z" fill="currentColor"/>
-    </svg>
-    <span class="brand-ctx" id="brandCtx">Diagnóstico</span>
+<header class="masthead idle" id="masthead">
+  <div class="masthead-row">
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 645 133" aria-label="ClubPetro">
+        <path d="M10.6344 93.9997C3.54479 86.7447 0 77.2877 0 65.9333C0 54.579 3.54479 45.1219 10.7664 37.8669C17.9879 30.612 27.1798 26.778 38.4741 26.778C53.0493 26.778 65.9085 34.3083 71.8196 47.5894L56.9806 56.0732C52.6533 48.5528 46.5159 44.7484 38.7381 44.7484C36.0305 44.6567 33.3345 45.1578 30.8241 46.2195C28.3136 47.2811 26.0445 48.8797 24.163 50.9122C22.2695 52.8818 20.7805 55.2329 19.7869 57.8222C18.7934 60.4115 18.316 63.1847 18.3839 65.9727C18.2934 68.7937 18.7475 71.6048 19.7192 74.2393C20.6909 76.8737 22.1604 79.2777 24.0405 81.3084C25.9106 83.2705 28.1433 84.8163 30.6032 85.8522C33.0632 86.888 35.6992 87.3924 38.3516 87.3346C45.8371 87.3346 53.4358 82.6749 56.6035 76.108L71.5651 85.28C65.3994 97.3225 52.7099 104.99 37.9556 104.99C26.7839 104.951 17.7239 101.255 10.6344 93.9997Z" fill="currentColor"/>
+        <path d="M117.222 71.8223V28.6954H135.738V71.8223C135.738 81.2695 141.121 87.4234 150.049 87.4234C158.977 87.4234 164.361 81.2695 164.361 71.8223V28.6954H182.867V71.8223C182.867 92.7713 170.526 105.089 150.049 105.089C129.573 105.089 117.222 92.7713 117.222 71.8223Z" fill="currentColor"/>
+        <path d="M446.022 72.7759H392.284C394.915 83.3242 401.872 88.6622 413.157 88.6622C421.394 88.4371 429.407 85.8264 436.302 81.1221L443.655 94.6687C434.583 101.531 423.619 105.137 412.412 104.942C399.808 104.942 390.22 101.108 383.526 93.5775C376.833 86.0473 373.552 76.7377 373.552 65.924C373.552 54.5598 376.965 45.2797 383.922 37.8576C390.88 30.4355 399.808 26.7687 410.838 26.7687C421.208 26.7687 429.872 30.1897 436.566 36.904C443.26 43.6183 446.682 52.633 446.682 64.2823C446.643 67.1257 446.423 69.9632 446.022 72.7759V72.7759ZM392.284 58.4036H428.656C426.987 48.6811 420.284 42.7827 410.838 42.7827C401.391 42.7827 394.556 48.6811 392.322 58.4036H392.284Z" fill="currentColor"/>
+        <path d="M518.896 103.31V28.6956H536.619V38.6933C540.956 30.6126 547.518 26.641 556.314 26.641C559.272 26.6558 562.204 27.2114 564.978 28.2827L563.403 46.7643C560.659 45.8397 557.801 45.3331 554.919 45.2602C544.416 45.2602 537.459 52.3775 537.459 67.8706V103.33L518.896 103.31Z" fill="currentColor"/>
+        <path d="M578.639 38.1428C585.86 30.4749 595.049 26.641 606.205 26.641C617.361 26.641 626.553 30.4749 633.781 38.1428C641.002 45.6731 644.547 54.9826 644.547 65.9339C644.547 76.8852 641.002 86.3325 633.781 93.902C626.559 101.472 617.367 105.266 606.205 105.266C595.043 105.266 585.86 101.432 578.639 93.902C571.417 86.3718 567.863 77.0229 567.863 65.9339C567.863 54.845 571.417 45.6731 578.639 38.1428ZM606.205 87.2959C608.831 87.3591 611.44 86.8426 613.861 85.7804C616.282 84.7181 618.46 83.134 620.252 81.1321C624.019 77.0549 626.095 71.5951 626.031 65.9339C626.074 63.1493 625.586 60.3836 624.593 57.798C623.601 55.2123 622.126 52.8584 620.252 50.8734C618.456 48.8786 616.277 47.3019 613.856 46.2464C611.435 45.191 608.828 44.6807 606.205 44.749C603.566 44.691 600.944 45.2094 598.509 46.2709C596.073 47.3325 593.878 48.9136 592.064 50.9128C590.207 52.9044 588.751 55.2623 587.779 57.8484C586.808 60.4345 586.341 63.1967 586.407 65.9733C586.297 71.6189 588.33 77.0814 592.064 81.1714C593.881 83.1634 596.078 84.7373 598.514 85.792C600.949 86.8467 603.569 87.3589 606.205 87.2959Z" fill="#E1652F"/>
+        <path d="M82.9813 7.02889V103.31H101.497V0L82.9813 7.02889Z" fill="currentColor"/>
+        <path d="M264.568 38.1433C261.337 34.4799 257.397 31.5728 253.009 29.6139C248.622 27.655 243.885 26.6888 239.113 26.7791C230.449 26.7791 223.228 30.3377 217.316 37.3273V0.0299683L198.81 7.05886V103.31H216.779V94.0008C222.681 101.393 230.034 105.09 239.094 105.09C249.201 105.09 257.742 101.393 264.549 94.0008C271.356 86.6082 274.787 77.161 274.787 66.072C274.787 54.9831 271.393 45.6735 264.568 38.1433ZM250.426 81.2701C248.569 83.22 246.36 84.7674 243.926 85.8234C241.493 86.8793 238.883 87.423 236.247 87.423C233.611 87.423 231.002 86.8793 228.568 85.8234C226.135 84.7674 223.926 83.22 222.068 81.2701C218.405 77.0889 216.43 71.5959 216.553 65.9344C216.431 60.3553 218.411 54.9486 222.068 50.8739C223.841 48.8109 226.026 47.1783 228.469 46.0913C230.912 45.0042 233.554 44.4891 236.209 44.5823C238.851 44.4955 241.48 44.9999 243.92 46.0614C246.359 47.1229 248.552 48.7169 250.351 50.7363C254.031 54.8509 256.012 60.3098 255.866 65.9344C255.999 71.5906 254.037 77.0828 250.389 81.2701H250.426Z" fill="currentColor"/>
+        <path d="M504.583 83.7272C500.247 86.3324 496.174 87.5612 492.629 87.5612C485.936 87.5612 482.523 83.1866 482.523 74.4177V44.8472H506.158V28.6955H482.523V0.186707L464.158 7.15661V28.6955H452.326V44.8472H464.007V75.6563C464.007 94.9538 472.548 105.089 488.952 105.089C497.23 105.089 504.187 103.035 510.098 98.9254L504.583 83.7272Z" fill="currentColor"/>
+        <path d="M354.111 38.1424C350.938 34.4715 347.044 31.5564 342.694 29.5954C338.344 27.6344 333.64 26.6736 328.902 26.7782C319.842 26.7782 312.356 30.4745 306.191 37.8672V28.6952H287.807V133.332L306.322 126.343V94.6782C309.119 98.0038 312.574 100.657 316.45 102.454C320.325 104.252 324.529 105.151 328.77 105.089C333.508 105.194 338.212 104.233 342.562 102.272C346.912 100.311 350.806 97.3956 353.979 93.7247C360.673 86.1944 364.086 76.8848 364.086 65.9335C364.086 54.9822 360.805 45.6727 354.111 38.1424ZM339.97 81.2693C336.293 85.3785 331.57 87.4233 325.659 87.4233C323.017 87.51 320.388 87.0057 317.948 85.9442C315.509 84.8827 313.316 83.2886 311.517 81.2693C307.837 77.1546 305.856 71.6957 306.002 66.0712C305.833 60.459 307.783 55.0017 311.432 50.8731C313.231 48.8525 315.423 47.2569 317.863 46.1937C320.302 45.1305 322.931 44.6244 325.574 44.7093C331.485 44.7093 336.208 46.7639 339.885 50.8731C343.565 54.9877 345.546 60.4466 345.4 66.0712C345.559 71.6889 343.595 77.1469 339.932 81.2693H339.97Z" fill="currentColor"/>
+      </svg>
+      <span class="brand-meta">Diagnóstico · <b id="brandCtx">v4</b></span>
+    </div>
+    <div class="ticks" id="ticks"></div>
+    <div class="score-pill">Nota<span class="sp-v" id="scorePill">0</span></div>
   </div>
-  <div class="progress-shell" id="progressShell">
-    <div class="progress-count"><span class="pn" id="progNow">0</span><span class="pt">/</span><span id="progTotal">18</span></div>
-    <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
-  </div>
-  <div class="mini-radar" id="miniRadar">
-    <svg id="miniRadarSvg" viewBox="0 0 64 64"></svg>
-    <span class="mini-radar-score" id="miniRadarScore">0</span>
-  </div>
+  <div class="masthead-rule"></div>
 </header>
 
-<div class="layout">
-  <main id="mainArea"></main>
-</div>
+<main class="stage" id="stage"></main>
 
 <script>
-/* ============================================================
-   CONFIG · backend, contatos, integrações
-   Projeto Supabase "Inteligencia Comercial CP" (azmtxhjtqodtaeoshrye)
-   Tabela: public.diagnostico_respostas · RLS ligado · policy: INSERT anônimo
-   ============================================================ */
 const CONFIG = {
   CLUBPETRO_WHATSAPP: "5531992697762",
   SUPABASE_URL: "https://azmtxhjtqodtaeoshrye.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0",
   RD_CONVERSION_FN: "/functions/v1/rd-diagnostico-conversion",
   RAIOX_MEET_LINK: "https://meet.google.com/xxx-xxxx-xxx",
-  STATE_KEY: "clubpetro_diag_v3_state",
+  STATE_KEY: "clubpetro_diag_v4_state",
   STATE_TTL_DAYS: 7,
   TRANSITION_MS: 2200
 };
 
 const BLOCKS = {
-  pessoas:     { name:"Pessoas e equipe", short:"Pessoas",  max:60 },
-  posto:       { name:"Posto físico",     short:"Posto",    max:25 },
-  bandeira:    { name:"Bandeira",         short:"Bandeira", max:10 },
-  cliente:     { name:"Cliente",          short:"Cliente",  max:15 },
-  fidelizacao: { name:"Fidelização",      short:"Fideliz.", max:25 },
-  mix:         { name:"Mix",              short:"Mix",      max:10 },
-  equipe:      { name:"Equipe vendendo",  short:"Equipe",   max:25 },
-  tecnologia:  { name:"Tecnologia",       short:"Tech",     max:10 }
+  pessoas:{name:"Pessoas e equipe",short:"Pessoas",max:60},
+  posto:{name:"Posto físico",short:"Posto",max:25},
+  bandeira:{name:"Bandeira",short:"Bandeira",max:10},
+  cliente:{name:"Cliente",short:"Cliente",max:15},
+  fidelizacao:{name:"Fidelização",short:"Fidel.",max:25},
+  mix:{name:"Mix",short:"Mix",max:10},
+  equipe:{name:"Equipe vendendo",short:"Equipe",max:25},
+  tecnologia:{name:"Tecnologia",short:"Tech",max:10}
 };
 const BLOCK_ORDER = ["pessoas","posto","bandeira","cliente","fidelizacao","mix","equipe","tecnologia"];
 const SCORE_MAX = BLOCK_ORDER.reduce((s,k)=>s+BLOCKS[k].max,0);
 
 const QUESTIONS = [
-  {
-    id:"P1", block:"pessoas", type:"score", max:15,
+  {id:"P1",block:"pessoas",type:"score",max:15,
     text:"Pensando na sua equipe atual de frentistas, <em>quanto tempo</em> em média eles costumam ficar no seu posto?",
     context:"Considera o tempo médio geral, não os casos isolados. Se você tem um frentista que está há 8 anos e três que rodaram em 6 meses, a média é o que conta.",
     options:[
-      { label:"Mais de 2 anos.", desc:"A maioria do meu time tem casa, conhece o posto e o cliente fixo.", pts:15 },
-      { label:"Entre 1 e 2 anos.", desc:"Roda um pouco, mas tenho um núcleo estável.", pts:10 },
-      { label:"De 6 meses a 1 ano.", desc:"É comum frentista entrar, pegar o jeito e sair.", pts:5 },
-      { label:"Menos de 6 meses.", desc:"Mal aprende o nome dos clientes e já saiu.", pts:0 }
-    ]
-  },
-  {
-    id:"P2", block:"pessoas", type:"score", max:15,
+      {label:"Mais de 2 anos.",desc:"A maioria do meu time tem casa, conhece o posto e o cliente fixo.",pts:15},
+      {label:"Entre 1 e 2 anos.",desc:"Roda um pouco, mas tenho um núcleo estável.",pts:10},
+      {label:"De 6 meses a 1 ano.",desc:"É comum frentista entrar, pegar o jeito e sair.",pts:5},
+      {label:"Menos de 6 meses.",desc:"Mal aprende o nome dos clientes e já saiu.",pts:0}
+    ]},
+  {id:"P2",block:"pessoas",type:"score",max:15,
     text:"Você tem ideia do <em>seu turnover</em> anual? De cada 10 frentistas que passam pelo posto em um ano, quantos saem?",
     context:"A média do setor de postos em 2024 ficou em torno de 52%. Acima disso, é sinal de que tem algo escapando. Abaixo, você está conseguindo segurar gente que a maioria não consegue.",
     options:[
-      { label:"Abaixo de 20%.", desc:"Quase ninguém sai por ano. Tenho uma equipe das antigas.", pts:15 },
-      { label:"Entre 20 e 40%.", desc:"Acompanho de perto e está sob controle.", pts:10 },
-      { label:"Entre 40 e 60%.", desc:"Dentro da média do setor, sai gente e entra gente.", pts:5 },
-      { label:"Acima de 60%, ou pra ser sincero, não sei.", desc:"Tem semana que parece porta giratória.", pts:0 }
-    ]
-  },
-  {
-    id:"P4", block:"pessoas", type:"score", max:10,
+      {label:"Abaixo de 20%.",desc:"Quase ninguém sai por ano. Tenho uma equipe das antigas.",pts:15},
+      {label:"Entre 20 e 40%.",desc:"Acompanho de perto e está sob controle.",pts:10},
+      {label:"Entre 40 e 60%.",desc:"Dentro da média do setor, sai gente e entra gente.",pts:5},
+      {label:"Acima de 60%, ou pra ser sincero, não sei.",desc:"Tem semana que parece porta giratória.",pts:0}
+    ]},
+  {id:"P4",block:"pessoas",type:"score",max:10,
     text:"Quando você precisa <em>contratar</em> um frentista novo, como você faz?",
     context:"Aqui não tem resposta certa, tem resposta diferente. Cada caminho funciona em situações diferentes.",
     options:[
-      { label:"Tenho um processo.", desc:"Faço anúncio, recebo currículos, faço entrevista, testo o cara um dia.", pts:10 },
-      { label:"Por indicação da equipe ou de cliente.", desc:"Geralmente é primo, vizinho, conhecido.", pts:6 },
-      { label:"Quem aparece na porta procurando emprego.", desc:"Se parece honesto e quer trabalhar, eu testo.", pts:2 },
-      { label:"Trabalho com parceiro de RH terceirizado.", desc:"Eles fazem a triagem, eu só aprovo.", pts:10 }
-    ]
-  },
-  {
-    id:"P7", block:"pessoas", type:"score", max:10,
+      {label:"Tenho um processo.",desc:"Faço anúncio, recebo currículos, faço entrevista, testo o cara um dia.",pts:10},
+      {label:"Por indicação da equipe ou de cliente.",desc:"Geralmente é primo, vizinho, conhecido.",pts:6},
+      {label:"Quem aparece na porta procurando emprego.",desc:"Se parece honesto e quer trabalhar, eu testo.",pts:2},
+      {label:"Trabalho com parceiro de RH terceirizado.",desc:"Eles fazem a triagem, eu só aprovo.",pts:10}
+    ]},
+  {id:"P7",block:"pessoas",type:"score",max:10,
     text:"Como você descreveria a <em>cultura</em> do seu posto? E aqui é com honestidade, é entre nós.",
     context:"Cultura não é o que está pendurado na parede. É o que acontece quando o dono não está olhando.",
     options:[
-      { label:"Forte.", desc:"Meus frentistas vestem a camisa, ajudam um ao outro, gostam de estar lá.", pts:10 },
-      { label:"Razoável.", desc:"Depende do turno. Tem turno que flui, tem turno que é só fazer o básico.", pts:6 },
-      { label:"Fraca.", desc:"Cada um por si. Vem trabalhar, faz o expediente, vai embora.", pts:2 },
-      { label:"Pra falar a verdade, nunca parei pra pensar nisso.", desc:"Sempre foi assim, nunca avaliei.", pts:0 }
-    ]
-  },
-  {
-    id:"P10", block:"pessoas", type:"score", max:10,
+      {label:"Forte.",desc:"Meus frentistas vestem a camisa, ajudam um ao outro, gostam de estar lá.",pts:10},
+      {label:"Razoável.",desc:"Depende do turno. Tem turno que flui, tem turno que é só fazer o básico.",pts:6},
+      {label:"Fraca.",desc:"Cada um por si. Vem trabalhar, faz o expediente, vai embora.",pts:2},
+      {label:"Pra falar a verdade, nunca parei pra pensar nisso.",desc:"Sempre foi assim, nunca avaliei.",pts:0}
+    ]},
+  {id:"P10",block:"pessoas",type:"score",max:10,
     text:"Sobre a <em>PEC do fim da escala 6x1</em>, você já está se preparando ou ainda está no escuro?",
     context:"A PEC foi aprovada na Câmara em maio de 2026 e está em análise no Senado. Se passar, frentista passa a trabalhar 4 dias e folgar 3, sem redução de salário. Pra posto isso muda o custo de pessoal pesado.",
     options:[
-      { label:"Já planejei a mudança.", desc:"Calculei o custo, vi quantos frentistas vou precisar contratar, mexi na escala.", pts:10 },
-      { label:"Estou estudando.", desc:"Sei que vem, ainda não bati o número, mas já comecei a pensar.", pts:5 },
-      { label:"Penso nisso quando sair a lei.", desc:"Por enquanto, foco no dia a dia.", pts:2 },
-      { label:"Pra ser sincero, nem sei direito do que se trata.", desc:"", pts:0 }
-    ]
-  },
-  {
-    id:"P11", block:"posto", type:"score", max:10,
+      {label:"Já planejei a mudança.",desc:"Calculei o custo, vi quantos frentistas vou precisar contratar, mexi na escala.",pts:10},
+      {label:"Estou estudando.",desc:"Sei que vem, ainda não bati o número, mas já comecei a pensar.",pts:5},
+      {label:"Penso nisso quando sair a lei.",desc:"Por enquanto, foco no dia a dia.",pts:2},
+      {label:"Pra ser sincero, nem sei direito do que se trata.",desc:"",pts:0}
+    ]},
+  {id:"P11",block:"posto",type:"score",max:10,
     text:"Seu posto fica num <em>bom ponto</em> comercial?",
     context:"Aqui é sobre fluxo. Avenida principal, esquina de duas vias movimentadas, entrada de bairro forte. Não é sobre estética, é sobre quantos carros passam na frente todo dia.",
     options:[
-      { label:"Excelente.", desc:"Estou em avenida de fluxo alto, o movimento natural sustenta o posto.", pts:10 },
-      { label:"Razoável.", desc:"Fluxo médio. Tenho movimento, mas dependo de cliente fiel para encher.", pts:6 },
-      { label:"Fraco.", desc:"O ponto não atrai por si só. Quem vem, vem porque conhece e prefere.", pts:3 },
-      { label:"Ruim.", desc:"É um ponto difícil, vivo lutando para atrair gente nova.", pts:0 }
-    ]
-  },
-  {
-    id:"P12", block:"posto", type:"score", max:15,
+      {label:"Excelente.",desc:"Estou em avenida de fluxo alto, o movimento natural sustenta o posto.",pts:10},
+      {label:"Razoável.",desc:"Fluxo médio. Tenho movimento, mas dependo de cliente fiel para encher.",pts:6},
+      {label:"Fraco.",desc:"O ponto não atrai por si só. Quem vem, vem porque conhece e prefere.",pts:3},
+      {label:"Ruim.",desc:"É um ponto difícil, vivo lutando para atrair gente nova.",pts:0}
+    ]},
+  {id:"P12",block:"posto",type:"score",max:15,
     text:"Imagine alguém parando o carro <em>a 200 metros</em> do seu posto agora e tirando uma foto. Sem maquiagem. Como ele estaria nessa foto?",
     context:"Essa é a foto que cliente novo vê. Bandeira, fachada, pintura, identidade visual, limpeza da pista. Geralmente é o dono que sabe melhor o que está pendente.",
     options:[
-      { label:"Bonito e cuidado.", desc:"Identidade visual em dia, pintura nova, totem aceso, pista limpa.", pts:15 },
-      { label:"Apresentável, com ajustes pendentes.", desc:"Tenho coisa pra arrumar mas no geral parece bem.", pts:10 },
-      { label:"Tem manutenção pendente faz tempo.", desc:"Sei o que precisa, ainda não fiz.", pts:5 },
-      { label:"Bem capenga, pra ser sincero.", desc:"Tem coisa caindo, pintura descascada, totem queimado.", pts:0 }
-    ]
-  },
-  {
-    id:"P15", block:"bandeira", type:"qualify",
+      {label:"Bonito e cuidado.",desc:"Identidade visual em dia, pintura nova, totem aceso, pista limpa.",pts:15},
+      {label:"Apresentável, com ajustes pendentes.",desc:"Tenho coisa pra arrumar mas no geral parece bem.",pts:10},
+      {label:"Tem manutenção pendente faz tempo.",desc:"Sei o que precisa, ainda não fiz.",pts:5},
+      {label:"Bem capenga, pra ser sincero.",desc:"Tem coisa caindo, pintura descascada, totem queimado.",pts:0}
+    ]},
+  {id:"P15",block:"bandeira",type:"qualify",
     text:"Hoje, qual é a <em>bandeira</em> do seu posto?",
     context:"Não conta na nota, é só pra entender com quem estamos falando. Cada bandeira tem regras de contrato, comissão e exclusividade diferentes.",
     options:[
-      { label:"Bandeira premium.", desc:"Petrobras, Shell, Ipiranga ou Raízen.", val:"premium" },
-      { label:"Bandeira regional reconhecida.", desc:"Ale, Vibra, Ciclo, Sim, ou outra regional forte.", val:"regional" },
-      { label:"Bandeira branca, sou independente.", desc:"", val:"branca" },
-      { label:"Outra.", desc:"Tenho uma situação particular, posso explicar depois.", val:"outras" }
-    ]
-  },
-  {
-    id:"P17", block:"bandeira", type:"score", max:10,
+      {label:"Bandeira premium.",desc:"Petrobras, Shell, Ipiranga ou Raízen.",val:"premium"},
+      {label:"Bandeira regional reconhecida.",desc:"Ale, Vibra, Ciclo, Sim, ou outra regional forte.",val:"regional"},
+      {label:"Bandeira branca, sou independente.",desc:"",val:"branca"},
+      {label:"Outra.",desc:"Tenho uma situação particular, posso explicar depois.",val:"outras"}
+    ]},
+  {id:"P17",block:"bandeira",type:"score",max:10,
     text:"Pensa no seu cliente fiel, aquele que sempre volta. <em>Por que ele vai</em> no seu posto e não no concorrente da esquina?",
     context:"Essa pergunta é desconfortável, mas reveladora. A resposta honesta orienta a estratégia de retenção.",
     options:[
-      { label:"Vai pela minha pessoa, pelo atendimento, pelo programa que tenho.", desc:"Ele me conhece, conhece a equipe, tem uma relação.", pts:10 },
-      { label:"Vai pela conveniência, o posto está no caminho dele.", desc:"Ele abasteceria em qualquer um que estivesse aqui.", pts:7 },
-      { label:"Vai pelo preço, principalmente.", desc:"Se o concorrente baixar 5 centavos, vai pro outro.", pts:3 },
-      { label:"Pra ser sincero, não sei dizer.", desc:"", pts:0 }
-    ]
-  },
-  {
-    id:"P20", block:"cliente", type:"score", max:15,
+      {label:"Vai pela minha pessoa, pelo atendimento, pelo programa que tenho.",desc:"Ele me conhece, conhece a equipe, tem uma relação.",pts:10},
+      {label:"Vai pela conveniência, o posto está no caminho dele.",desc:"Ele abasteceria em qualquer um que estivesse aqui.",pts:7},
+      {label:"Vai pelo preço, principalmente.",desc:"Se o concorrente baixar 5 centavos, vai pro outro.",pts:3},
+      {label:"Pra ser sincero, não sei dizer.",desc:"",pts:0}
+    ]},
+  {id:"P20",block:"cliente",type:"score",max:15,
     text:"Da venda total do seu posto, mais ou menos quantos % vem do <em>cliente final</em>, varejo? O resto seria frota, transportadora, contrato faturado.",
     context:"Não precisa ser exato. Pode dar uma noção. Essa pergunta ajuda a entender quanto da sua receita está exposta à concorrência direta versus quanto está protegida por contrato.",
     options:[
-      { label:"Mais de 80%.", desc:"Sou posto de varejo. Cliente final é o que move o negócio.", pts:15 },
-      { label:"Entre 60 e 80%.", desc:"Equilibrado, com mais peso no varejo.", pts:10 },
-      { label:"Entre 40 e 60%.", desc:"Dependo dos dois pra fechar mês.", pts:5 },
-      { label:"Menos de 40%.", desc:"Vivo dos faturados, varejo é só complemento.", pts:0 }
-    ]
-  },
-  {
-    id:"P23", block:"fidelizacao", type:"score", max:15,
+      {label:"Mais de 80%.",desc:"Sou posto de varejo. Cliente final é o que move o negócio.",pts:15},
+      {label:"Entre 60 e 80%.",desc:"Equilibrado, com mais peso no varejo.",pts:10},
+      {label:"Entre 40 e 60%.",desc:"Dependo dos dois pra fechar mês.",pts:5},
+      {label:"Menos de 40%.",desc:"Vivo dos faturados, varejo é só complemento.",pts:0}
+    ]},
+  {id:"P23",block:"fidelizacao",type:"score",max:15,
     text:"Você tem hoje algum <em>programa de fidelidade</em> rodando no seu posto?",
     context:"Conta como programa qualquer coisa estruturada que faça o cliente voltar. Cartão fidelidade no caderninho não conta, isso é desconto na amizade.",
     options:[
-      { label:"Sim, programa próprio estruturado.", desc:"Sistema que registra cliente, acumula, dá benefício.", pts:15 },
-      { label:"Sim, uso de terceiros.", desc:"ClubPetro, Premmia, Shell Box, Sem Parar, etc.", pts:12 },
-      { label:"Tenho desconto no boca a boca pra cliente fiel.", desc:"Sem sistema, é na confiança.", pts:5 },
-      { label:"Não tenho nada.", desc:"Cliente volta porque quer ou porque está no caminho.", pts:0 }
-    ]
-  },
-  {
-    id:"P24", block:"fidelizacao", type:"score", max:10,
+      {label:"Sim, programa próprio estruturado.",desc:"Sistema que registra cliente, acumula, dá benefício.",pts:15},
+      {label:"Sim, uso de terceiros.",desc:"ClubPetro, Premmia, Shell Box, Sem Parar, etc.",pts:12},
+      {label:"Tenho desconto no boca a boca pra cliente fiel.",desc:"Sem sistema, é na confiança.",pts:5},
+      {label:"Não tenho nada.",desc:"Cliente volta porque quer ou porque está no caminho.",pts:0}
+    ]},
+  {id:"P24",block:"fidelizacao",type:"score",max:10,
     text:"Você sabe dizer, dos clientes que abastecem no seu posto, <em>quantos voltam</em> em um mês?",
     context:"Esse número se chama recorrência. Posto bom de varejo costuma ter entre 50 e 70% dos clientes voltando no mês. Quem não mede, geralmente está pior do que imagina.",
     options:[
-      { label:"Sei, acompanho com dado mês a mês.", desc:"", pts:10 },
-      { label:"Tenho uma noção, sem número fechado.", desc:"Sei mais ou menos pelos rostos.", pts:6 },
-      { label:"Não tenho como medir.", desc:"Falta sistema pra registrar quem é cliente.", pts:2 },
-      { label:"Nunca me preocupei com isso.", desc:"", pts:0 }
-    ]
-  },
-  {
-    id:"P27", block:"mix", type:"score", max:10,
+      {label:"Sei, acompanho com dado mês a mês.",desc:"",pts:10},
+      {label:"Tenho uma noção, sem número fechado.",desc:"Sei mais ou menos pelos rostos.",pts:6},
+      {label:"Não tenho como medir.",desc:"Falta sistema pra registrar quem é cliente.",pts:2},
+      {label:"Nunca me preocupei com isso.",desc:"",pts:0}
+    ]},
+  {id:"P27",block:"mix",type:"score",max:10,
     text:"Do total de gasolina que você vende, quantos % é <em>aditivada</em> versus comum?",
     context:"Aditivada tem margem maior. Posto que vende muito aditivada tem frentista treinado pra oferecer e cliente educado pra aceitar.",
     options:[
-      { label:"Mais de 40%.", desc:"Meu time empurra forte, cliente compra.", pts:10 },
-      { label:"Entre 20 e 40%.", desc:"Vendo bem, tem espaço pra crescer.", pts:7 },
-      { label:"Entre 10 e 20%.", desc:"Só quem pede de iniciativa própria leva.", pts:3 },
-      { label:"Menos de 10%, ou pra falar a verdade, não sei dizer.", desc:"", pts:0 }
-    ]
-  },
-  {
-    id:"P35", block:"equipe", type:"score", max:15,
+      {label:"Mais de 40%.",desc:"Meu time empurra forte, cliente compra.",pts:10},
+      {label:"Entre 20 e 40%.",desc:"Vendo bem, tem espaço pra crescer.",pts:7},
+      {label:"Entre 10 e 20%.",desc:"Só quem pede de iniciativa própria leva.",pts:3},
+      {label:"Menos de 10%, ou pra falar a verdade, não sei dizer.",desc:"",pts:0}
+    ]},
+  {id:"P35",block:"equipe",type:"score",max:15,
     text:"Seus frentistas <em>ganham comissão</em>? Como é o pacote de remuneração?",
     context:"Equipe vende o que tem incentivo pra vender. Sem comissão, é difícil cobrar resultado.",
     options:[
-      { label:"Sim, em quase tudo.", desc:"Combustível premium, aditivada, lubrificante, conveniência. O time vê resultado no contracheque.", pts:15 },
-      { label:"Sim, em alguns produtos.", desc:"Principalmente em aditivada e troca de óleo. Outros não.", pts:10 },
-      { label:"Tem bônus avulso, sem regra fixa.", desc:"Quando bate meta dou alguma coisa, mas não é estruturado.", pts:5 },
-      { label:"Não. Só salário fixo.", desc:"", pts:0 }
-    ]
-  },
-  {
-    id:"P37", block:"equipe", type:"score", max:10,
+      {label:"Sim, em quase tudo.",desc:"Combustível premium, aditivada, lubrificante, conveniência. O time vê resultado no contracheque.",pts:15},
+      {label:"Sim, em alguns produtos.",desc:"Principalmente em aditivada e troca de óleo. Outros não.",pts:10},
+      {label:"Tem bônus avulso, sem regra fixa.",desc:"Quando bate meta dou alguma coisa, mas não é estruturado.",pts:5},
+      {label:"Não. Só salário fixo.",desc:"",pts:0}
+    ]},
+  {id:"P37",block:"equipe",type:"score",max:10,
     text:"Você consegue <em>medir</em> se um frentista está vendendo mais que o outro?",
     context:"A capacidade de medir individualmente é o que permite a comissão da pergunta anterior funcionar. Sem medição, comissão vira loteria.",
     options:[
-      { label:"Sim, com detalhe.", desc:"Sei por frentista, por turno, por produto, por dia.", pts:10 },
-      { label:"Sim, no geral.", desc:"Tenho o número da equipe, sem detalhar por pessoa.", pts:6 },
-      { label:"Tenho noção pela observação.", desc:"Sei quem se esforça mais, quem é mais quieto, mas sem número.", pts:3 },
-      { label:"Não tenho como medir.", desc:"Trabalho no achismo.", pts:0 }
-    ]
-  },
-  {
-    id:"P39", block:"tecnologia", type:"score", max:10,
+      {label:"Sim, com detalhe.",desc:"Sei por frentista, por turno, por produto, por dia.",pts:10},
+      {label:"Sim, no geral.",desc:"Tenho o número da equipe, sem detalhar por pessoa.",pts:6},
+      {label:"Tenho noção pela observação.",desc:"Sei quem se esforça mais, quem é mais quieto, mas sem número.",pts:3},
+      {label:"Não tenho como medir.",desc:"Trabalho no achismo.",pts:0}
+    ]},
+  {id:"P39",block:"tecnologia",type:"score",max:10,
     text:"Pra gerir o posto, hoje você usa <em>qual ferramenta</em>?",
     context:"Não tem certo e errado, tem matched expectations. Se o posto é pequeno, planilha pode bastar. Se é grande, exige sistema.",
     options:[
-      { label:"ERP integrado com módulo de posto.", desc:"Linx, Cisar, ou outro sistema robusto.", pts:10 },
-      { label:"PDV ou sistema básico de caixa.", desc:"Sistema simples, só pra fechar caixa e nota.", pts:6 },
-      { label:"Planilha de Excel ou Google.", desc:"Controle manual, anoto e somo.", pts:2 },
-      { label:"Caderno ou na cabeça.", desc:"Sou eu que faço tudo, sei tudo de cor.", pts:0 }
-    ]
-  },
-  {
-    id:"P42", block:"_qual", type:"mql_role",
+      {label:"ERP integrado com módulo de posto.",desc:"Linx, Cisar, ou outro sistema robusto.",pts:10},
+      {label:"PDV ou sistema básico de caixa.",desc:"Sistema simples, só pra fechar caixa e nota.",pts:6},
+      {label:"Planilha de Excel ou Google.",desc:"Controle manual, anoto e somo.",pts:2},
+      {label:"Caderno ou na cabeça.",desc:"Sou eu que faço tudo, sei tudo de cor.",pts:0}
+    ]},
+  {id:"P42",block:"_qual",type:"mql_role",
     text:"Pra fechar, qual é o <em>seu papel</em> no posto?",
     context:"Não conta na nota. Serve pra direcionar a conversa com a área comercial.",
     options:[
-      { label:"Dono ou sócio.", desc:"A decisão final é minha.", val:"Dono/sócio", tag:"decisor" },
-      { label:"Gerente ou responsável pela operação.", desc:"Conheço tudo do posto e tenho voz na decisão.", val:"Gerente", tag:"decisor" },
-      { label:"Cargo administrativo.", desc:"Financeiro, RH, ou similar.", val:"Administrativo", tag:"parcial" },
-      { label:"Trabalho na pista ou no caixa.", desc:"", val:"Pista", tag:"fora" }
-    ]
-  }
+      {label:"Dono ou sócio.",desc:"A decisão final é minha.",val:"Dono/sócio",tag:"decisor"},
+      {label:"Gerente ou responsável pela operação.",desc:"Conheço tudo do posto e tenho voz na decisão.",val:"Gerente",tag:"decisor"},
+      {label:"Cargo administrativo.",desc:"Financeiro, RH, ou similar.",val:"Administrativo",tag:"parcial"},
+      {label:"Trabalho na pista ou no caixa.",desc:"",val:"Pista",tag:"fora"}
+    ]}
 ];
 
 const TOTAL_Q = QUESTIONS.length;
@@ -818,89 +481,40 @@ const SCORE_QUESTIONS = QUESTIONS.filter(q => q.type === "score");
 const TOTAL_POINTS = SCORE_QUESTIONS.reduce((s,q) => s + q.max, 0);
 
 const LEVELS = [
-  { min:0,  max:30,  name:"Operação no aperto",  msg:"Sua operação roda muito no improviso e na sua mão. Há espaço claro para organizar." },
-  { min:31, max:60,  name:"Operação em ajuste",  msg:"Você tem uma base, mas escapa venda no atendimento e no mix. Ajustes simples mudam o jogo." },
-  { min:61, max:80,  name:"Operação organizada", msg:"Sua operação está organizada, isso é raro. O próximo passo é fazer o cliente voltar mais." },
-  { min:81, max:100, name:"Operação madura",     msg:"Seu posto está acima da média. Há teto para crescer com fidelização e dado de cliente." }
+  {min:0,max:30,name:"Operação no aperto",msg:"Sua operação roda muito no improviso e na sua mão. <strong>Há espaço claro para organizar.</strong>"},
+  {min:31,max:60,name:"Operação em ajuste",msg:"Você tem uma base, mas escapa venda no atendimento e no mix. <strong>Ajustes simples mudam o jogo.</strong>"},
+  {min:61,max:80,name:"Operação organizada",msg:"Sua operação está organizada. Isso é raro. <strong>O próximo passo é fazer o cliente voltar mais.</strong>"},
+  {min:81,max:100,name:"Operação madura",msg:"Seu posto está acima da média. <strong>Há teto para crescer com fidelização e dado de cliente.</strong>"}
 ];
 
 const INSIGHTS = {
-  pessoas:{
-    high:"Equipe estável e cultura conhecida. Base sólida para qualquer programa de retenção crescer rápido.",
-    mid:"Sua equipe oscila e o turnover incomoda. O custo dessa rotatividade aparece em cada saída.",
-    low:"Rotatividade alta e processo no improviso. Fidelidade não funciona se a equipe não estabiliza primeiro."
-  },
-  posto:{
-    high:"Posto bem posicionado e cuidado. Quem passa na frente vê isso, e isso conta antes de qualquer programa.",
-    mid:"Você tem ponto, mas a foto a 200 metros pede ajustes. Detalhes simples escapam venda diariamente.",
-    low:"Ponto fraco somado a imagem capenga é a pior combinação para atrair cliente novo."
-  },
-  bandeira:{
-    high:"Cliente vem por você, não pela bandeira. Esse é o tipo de relacionamento mais difícil de copiar.",
-    mid:"Cliente vem pelo caminho ou pela conveniência. Se aparecer concorrente do lado, você perde.",
-    low:"Você está numa guerra de preço, que ninguém ganha. Construir motivo para o cliente voltar é a saída."
-  },
-  cliente:{
-    high:"Base de varejo bem diluída. Margem real do seu posto vem daí.",
-    mid:"Equilíbrio entre varejo e faturado, com risco médio de concentração.",
-    low:"Você depende muito dos faturados. Se um cliente grande sai, o caixa do mês não fecha."
-  },
-  fidelizacao:{
-    high:"Programa estruturado e recorrência medida. Próximo passo é ativar inativos com campanha.",
-    mid:"Programa parcial, sem dado claro de quem voltou. Quase lá, falta estruturar a medição.",
-    low:"Sem programa e sem medição. Cliente abastece e some sem você perceber."
-  },
-  mix:{
-    high:"Aditivada puxa margem. Próximo nível é cruzar com lubrificante e conveniência.",
-    mid:"Mix oscilante. De 5 a 8 pontos de margem ficam na mesa todo mês.",
-    low:"Só combustível. Margem espremida nos 10 a 11% da revenda."
-  },
-  equipe:{
-    high:"Comissionamento estruturado e medição individual. Frentista gera receita ativa.",
-    mid:"Comissão sem regra clara ou medição parcial. Bom não é reconhecido, ruim não é cobrado.",
-    low:"Sem comissão e sem meta. Você paga salário para ninguém vender ativamente."
-  },
-  tecnologia:{
-    high:"ERP integrado. Próximo passo é cruzar dado do PDV com campanha de WhatsApp.",
-    mid:"Sistema básico. Mede venda mas não mede cliente.",
-    low:"Sem sistema, sem dado. Decisão fica no achismo, fidelização não roda."
-  }
+  pessoas:{high:"Equipe estável e cultura conhecida. Base sólida para qualquer programa de retenção crescer rápido.",mid:"Sua equipe oscila e o turnover incomoda. O custo dessa rotatividade aparece em cada saída.",low:"Rotatividade alta e processo no improviso. Fidelidade não funciona se a equipe não estabiliza primeiro."},
+  posto:{high:"Posto bem posicionado e cuidado. Quem passa na frente vê isso, e isso conta antes de qualquer programa.",mid:"Você tem ponto, mas a foto a 200 metros pede ajustes. Detalhes simples escapam venda diariamente.",low:"Ponto fraco somado a imagem capenga é a pior combinação para atrair cliente novo."},
+  bandeira:{high:"Cliente vem por você, não pela bandeira. Esse é o tipo de relacionamento mais difícil de copiar.",mid:"Cliente vem pelo caminho ou pela conveniência. Se aparecer concorrente do lado, você perde.",low:"Você está numa guerra de preço, que ninguém ganha. Construir motivo para o cliente voltar é a saída."},
+  cliente:{high:"Base de varejo bem diluída. Margem real do seu posto vem daí.",mid:"Equilíbrio entre varejo e faturado, com risco médio de concentração.",low:"Você depende muito dos faturados. Se um cliente grande sai, o caixa do mês não fecha."},
+  fidelizacao:{high:"Programa estruturado e recorrência medida. Próximo passo é ativar inativos com campanha.",mid:"Programa parcial, sem dado claro de quem voltou. Quase lá, falta estruturar a medição.",low:"Sem programa e sem medição. Cliente abastece e some sem você perceber."},
+  mix:{high:"Aditivada puxa margem. Próximo nível é cruzar com lubrificante e conveniência.",mid:"Mix oscilante. De 5 a 8 pontos de margem ficam na mesa todo mês.",low:"Só combustível. Margem espremida nos 10 a 11% da revenda."},
+  equipe:{high:"Comissionamento estruturado e medição individual. Frentista gera receita ativa.",mid:"Comissão sem regra clara ou medição parcial. Bom não é reconhecido, ruim não é cobrado.",low:"Sem comissão e sem meta. Você paga salário para ninguém vender ativamente."},
+  tecnologia:{high:"ERP integrado. Próximo passo é cruzar dado do PDV com campanha de WhatsApp.",mid:"Sistema básico. Mede venda mas não mede cliente.",low:"Sem sistema, sem dado. Decisão fica no achismo, fidelização não roda."}
 };
 
 const TRANSITION_PHRASES = [
-  "Cruzando suas respostas...",
+  "Cruzando suas <em>respostas</em>...",
   "Calculando os <em>8 pilares</em>...",
   "Quase pronto..."
 ];
 
-/* ============================================================
-   STATE
-   ============================================================ */
 function freshState(){
-  return {
-    screen:"welcome",
-    qIndex:0,
-    answers:{},
-    phone:"",
-    blockScores:Object.fromEntries(BLOCK_ORDER.map(b=>[b,0])),
-    startedAt:null,
-    finishedAt:null,
-    diagId:null
-  };
+  return {screen:"welcome",qIndex:0,answers:{},phone:"",blockScores:Object.fromEntries(BLOCK_ORDER.map(b=>[b,0])),startedAt:null,finishedAt:null,diagId:null};
 }
 let state = freshState();
 let hasResumable = false;
 let questionStartTime = 0;
 
 function uuid(){
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-  );
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 }
-
-function saveState(){
-  try{ localStorage.setItem(CONFIG.STATE_KEY, JSON.stringify({ ...state, savedAt:Date.now() })); }catch(e){}
-}
+function saveState(){ try{ localStorage.setItem(CONFIG.STATE_KEY, JSON.stringify({ ...state, savedAt:Date.now() })); }catch(e){} }
 function loadState(){
   try{
     const raw = localStorage.getItem(CONFIG.STATE_KEY); if(!raw) return null;
@@ -912,9 +526,6 @@ function loadState(){
 }
 function clearState(){ try{ localStorage.removeItem(CONFIG.STATE_KEY); }catch(e){} }
 
-/* ============================================================
-   TRACKING
-   ============================================================ */
 function track(event, data){
   const payload = { ts: new Date().toISOString(), ...(data||{}) };
   try{ if(window.gtag) window.gtag("event", event, payload); }catch(e){}
@@ -922,18 +533,11 @@ function track(event, data){
   try{
     const client = getSupabase();
     if(client){
-      client.from("diagnostico_eventos").insert({
-        event_name: event,
-        event_data: payload,
-        diag_id: state.diagId || null
-      }).then(()=>{}).catch(()=>{});
+      client.from("diagnostico_eventos").insert({event_name: event, event_data: payload, diag_id: state.diagId || null}).then(()=>{}).catch(()=>{});
     }
   }catch(e){}
 }
 
-/* ============================================================
-   SUPABASE
-   ============================================================ */
 let sb = null;
 function getSupabase(){
   if(sb) return sb;
@@ -944,23 +548,10 @@ function getSupabase(){
   return sb;
 }
 
-/* ============================================================
-   SCORE
-   ============================================================ */
-function blockPct(b){
-  const max = BLOCKS[b].max; if(!max) return 0;
-  return Math.round((state.blockScores[b]/max) * 100);
-}
-function totalScore(){
-  let earned = 0;
-  BLOCK_ORDER.forEach(b => earned += (state.blockScores[b]||0));
-  return Math.round((earned/SCORE_MAX) * 100);
-}
+function blockPct(b){ const max = BLOCKS[b].max; if(!max) return 0; return Math.round((state.blockScores[b]/max) * 100); }
+function totalScore(){ let earned = 0; BLOCK_ORDER.forEach(b => earned += (state.blockScores[b]||0)); return Math.round((earned/SCORE_MAX) * 100); }
 function levelFor(score){ return LEVELS.find(l => score>=l.min && score<=l.max) || LEVELS[0]; }
-function insightFor(b, pct){
-  const lvl = pct >= 70 ? "high" : (pct >= 35 ? "mid" : "low");
-  return INSIGHTS[b][lvl];
-}
+function insightFor(b, pct){ const lvl = pct >= 70 ? "high" : (pct >= 35 ? "mid" : "low"); return INSIGHTS[b][lvl]; }
 function evaluateMql(){
   const p42 = state.answers.P42?.tag || "";
   const telOk = (state.phone || "").replace(/\D/g,"").length >= 10;
@@ -970,77 +561,6 @@ function evaluateMql(){
   const tag = isMql ? "MQL" : (decisor ? "MQL_sem_telefone" : "lead_nutricao");
   return { isMql, decisor, telOk, cruzaMql, tag };
 }
-
-/* ============================================================
-   MINI RADAR (header)
-   ============================================================ */
-function buildMiniRadar(){
-  const cx=32, cy=32, r=22;
-  const n = BLOCK_ORDER.length;
-  const startA = -Math.PI/2;
-  const step = (Math.PI*2)/n;
-  let html = "";
-  [.5, 1].forEach(g => {
-    const pts = BLOCK_ORDER.map((_,i) => {
-      const a = startA + i*step;
-      return `${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;
-    }).join(" ");
-    html += `<polygon class="mini-radar-grid" points="${pts}"/>`;
-  });
-  const dataPts = BLOCK_ORDER.map((b,i) => {
-    const a = startA + i*step;
-    const v = (blockPct(b)/100) * r;
-    return `${cx+Math.cos(a)*v},${cy+Math.sin(a)*v}`;
-  }).join(" ");
-  html += `<polygon class="mini-radar-shape" points="${dataPts}"/>`;
-  return html;
-}
-
-/* ============================================================
-   BIG RADAR (resultado)
-   ============================================================ */
-function buildBigRadar(){
-  const size = 300, cx = size/2, cy = size/2, r = 102;
-  const n = BLOCK_ORDER.length;
-  const startA = -Math.PI/2;
-  const step = (Math.PI*2)/n;
-  let html = "";
-  [.25,.5,.75,1].forEach(g => {
-    const pts = BLOCK_ORDER.map((_,i) => {
-      const a = startA + i*step;
-      return `${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;
-    }).join(" ");
-    html += `<polygon class="rr-grid" points="${pts}"/>`;
-  });
-  BLOCK_ORDER.forEach((b,i) => {
-    const a = startA + i*step;
-    html += `<line class="rr-axis" x1="${cx}" y1="${cy}" x2="${cx+Math.cos(a)*r}" y2="${cy+Math.sin(a)*r}"/>`;
-  });
-  const dataPts = BLOCK_ORDER.map((b,i) => {
-    const a = startA + i*step;
-    const v = (blockPct(b)/100) * r;
-    return `${cx+Math.cos(a)*v},${cy+Math.sin(a)*v}`;
-  }).join(" ");
-  html += `<polygon class="rr-shape" points="${dataPts}"/>`;
-  BLOCK_ORDER.forEach((b,i) => {
-    const a = startA + i*step;
-    const v = (blockPct(b)/100) * r;
-    html += `<circle class="rr-dot" cx="${cx+Math.cos(a)*v}" cy="${cy+Math.sin(a)*v}" r="3"/>`;
-  });
-  BLOCK_ORDER.forEach((b,i) => {
-    const a = startA + i*step;
-    const lr = r + 20;
-    const x = cx + Math.cos(a)*lr;
-    const y = cy + Math.sin(a)*lr;
-    const anchor = Math.abs(Math.cos(a))<.3 ? "middle" : (Math.cos(a)>0 ? "start" : "end");
-    html += `<text class="rr-label" x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="${anchor}">${BLOCKS[b].short.toUpperCase()}</text>`;
-  });
-  return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${html}</svg>`;
-}
-
-/* ============================================================
-   PHONE MASK
-   ============================================================ */
 function maskPhone(v){
   const d = v.replace(/\D/g,"").slice(0,11);
   if(d.length<=2) return d;
@@ -1050,21 +570,41 @@ function maskPhone(v){
 }
 function phoneValid(){ return (state.phone||"").replace(/\D/g,"").length >= 10; }
 
-/* ============================================================
-   RENDER
-   ============================================================ */
-const mainEl = document.getElementById("mainArea");
-const progressShell = document.getElementById("progressShell");
-const progFill = document.getElementById("progFill");
-const progNow = document.getElementById("progNow");
-const progTotal = document.getElementById("progTotal");
+const masthead = document.getElementById("masthead");
+const ticksEl = document.getElementById("ticks");
+const scorePill = document.getElementById("scorePill");
 const brandCtx = document.getElementById("brandCtx");
-const miniRadar = document.getElementById("miniRadar");
-const miniRadarSvg = document.getElementById("miniRadarSvg");
-const miniRadarScore = document.getElementById("miniRadarScore");
-
+const stage = document.getElementById("stage");
 const STEP_TOTAL = TOTAL_Q + 1;
-progTotal.textContent = STEP_TOTAL;
+
+function renderTicks(currentIdx){
+  let html = "";
+  for(let i=0;i<STEP_TOTAL;i++){
+    const cls = i < currentIdx ? "done" : (i === currentIdx ? "now" : "");
+    html += `<span class="tick ${cls}"></span>`;
+  }
+  ticksEl.innerHTML = html;
+}
+function updateMasthead(){
+  if(state.screen === "welcome" || state.screen === "transition"){
+    masthead.classList.add("idle");
+    brandCtx.textContent = state.screen === "transition" ? "Calculando" : "v4";
+    return;
+  }
+  masthead.classList.remove("idle");
+  if(state.screen === "result"){
+    renderTicks(STEP_TOTAL); brandCtx.textContent = "Resultado"; scorePill.textContent = totalScore(); return;
+  }
+  const idx = state.screen === "phone" ? STEP_TOTAL - 1 : state.qIndex;
+  renderTicks(idx);
+  scorePill.textContent = totalScore();
+  if(state.screen === "phone"){ brandCtx.textContent = "Final"; }
+  else {
+    const b = QUESTIONS[state.qIndex]?.block;
+    brandCtx.textContent = b && BLOCKS[b] ? BLOCKS[b].name : "Qualif.";
+  }
+}
+function escHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]); }
 
 function render(){
   if(state.screen === "welcome") renderWelcome();
@@ -1072,64 +612,29 @@ function render(){
   else if(state.screen === "phone") renderPhone();
   else if(state.screen === "transition") renderTransition();
   else if(state.screen === "result") renderResult();
-  updateHeader();
+  updateMasthead();
 }
-
-function updateHeader(){
-  const isQuiz = (state.screen === "question" || state.screen === "phone");
-  progressShell.classList.toggle("show", isQuiz);
-  miniRadar.classList.toggle("show", isQuiz);
-
-  if(state.screen === "welcome"){ brandCtx.textContent = "Diagnóstico"; }
-  else if(state.screen === "transition"){ brandCtx.textContent = "Calculando"; }
-  else if(state.screen === "result"){ brandCtx.textContent = "Resultado"; }
-  else {
-    const blockId = state.screen === "phone" ? null : QUESTIONS[state.qIndex].block;
-    brandCtx.textContent = blockId && BLOCKS[blockId] ? BLOCKS[blockId].name : "Qualificação";
-  }
-
-  if(isQuiz){
-    const now = state.screen === "phone" ? STEP_TOTAL : state.qIndex + 1;
-    progNow.textContent = now;
-    progFill.style.width = Math.round((now/STEP_TOTAL)*100) + "%";
-    miniRadarSvg.innerHTML = buildMiniRadar();
-    miniRadarScore.textContent = totalScore();
-  }
-}
-
-function escHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]); }
 
 function renderWelcome(){
-  const resumeHtml = hasResumable ? `
-    <div class="resume-banner show">
-      <div class="rb-body">
-        <span class="rb-l">Diagnóstico em andamento</span>
-        <p class="rb-t">Você parou na pergunta ${Math.min((state.qIndex||0)+1, TOTAL_Q)} de ${TOTAL_Q}.</p>
-        <div class="rb-actions">
-          <button class="rb-go" onclick="resumeDiagnostic()">Continuar de onde parei</button>
-          <button class="rb-no" onclick="discardResume()">Começar de novo</button>
+  const resumeHtml = hasResumable ? `<div class="resume-banner show"><div class="rb-body"><span class="rb-l">Diagnóstico em andamento</span><p class="rb-t">Você parou na pergunta ${Math.min((state.qIndex||0)+1, TOTAL_Q)} de ${TOTAL_Q}.</p><div class="rb-actions"><button class="rb-go" onclick="resumeDiagnostic()">Continuar de onde parei</button><button class="rb-no" onclick="discardResume()">Começar de novo</button></div></div></div>` : "";
+  stage.innerHTML = `
+    <div class="welcome">
+      <div>
+        <span class="w-eyebrow">Diagnóstico · 4 minutos</span>
+        <h1 class="w-display">Qual a <em>saúde</em> do seu posto<span class="dot">?</span></h1>
+        <p class="w-lede">Em quatro minutos você descobre a saúde da operação do seu posto numa escala de 0 a 100, nos oito pilares que mais movem rentabilidade no setor. Perguntas feitas com base na experiência de quem trabalha com posto há <strong>mais de quinze anos</strong>.</p>
+        ${resumeHtml}
+        <div class="w-cta">
+          <button class="btn-massive" onclick="startDiagnostic()"><span>Começar</span><span class="arrow">→</span></button>
+          <span class="w-hint">Sigilo entre você e a ClubPetro</span>
         </div>
       </div>
-    </div>` : "";
-
-  mainEl.innerHTML = `
-    <div class="welcome">
-      <span class="welcome-eyebrow">Diagnóstico ClubPetro · 4 minutos</span>
-      <h1 class="welcome-h1">Qual a <em>saúde</em> do seu posto?</h1>
-      <p class="welcome-lede">Em quatro minutos você descobre a saúde da operação do seu posto numa escala de 0 a 100, nos oito pilares que mais movem rentabilidade no setor. As perguntas foram feitas com base na experiência de quem trabalha com posto há mais de quinze anos.</p>
-      <div class="welcome-strip">
-        <div class="ws"><span class="ws-l">Perguntas</span><span class="ws-v"><em>17</em></span></div>
-        <div class="ws"><span class="ws-l">Pilares</span><span class="ws-v"><em>8</em></span></div>
-        <div class="ws"><span class="ws-l">Tempo</span><span class="ws-v"><em>4 min</em></span></div>
-      </div>
-      ${resumeHtml}
-      <div class="welcome-cta">
-        <button class="btn-start" onclick="startDiagnostic()">
-          <span>Começar diagnóstico</span>
-          <span class="arrow">→</span>
-        </button>
-        <span class="welcome-hint">Sigilo entre você e a ClubPetro</span>
-      </div>
+      <aside class="w-side">
+        <div class="w-side-row"><span class="w-side-l">Perguntas</span><span class="w-side-v"><em>17</em></span></div>
+        <div class="w-side-row"><span class="w-side-l">Pilares</span><span class="w-side-v"><em>08</em></span></div>
+        <div class="w-side-row"><span class="w-side-l">Tempo</span><span class="w-side-v"><em>4'</em></span></div>
+        <div class="w-side-row"><span class="w-side-l">Saída</span><span class="w-side-v"><em>0-100</em></span></div>
+      </aside>
     </div>`;
 }
 
@@ -1138,215 +643,139 @@ function renderQuestion(){
   const block = BLOCKS[q.block];
   const blockName = block ? block.name : "Qualificação";
   const selectedIdx = state.answers[q.id]?.idx;
-  const weightLabel = q.type === "score" ? `vale <em>${q.max}</em> pts` : "qualifica";
+  const numStr = String(state.qIndex + 1).padStart(2, "0");
+  const totalStr = String(STEP_TOTAL).padStart(2, "0");
+  const weightLabel = q.type === "score" ? `Vale ${q.max} pts` : "Qualifica";
   const contextHtml = q.context ? `<p class="q-context">${escHtml(q.context)}</p>` : "";
-
   const optsHtml = q.options.map((opt,i) => {
-    const letter = String.fromCharCode(65 + i);
+    const onum = String(i + 1).padStart(2, "0");
     const desc = opt.desc ? `<span class="opt-desc">${escHtml(opt.desc)}</span>` : "";
-    return `
-      <button class="opt-card ${selectedIdx===i?"selected":""}" type="button" onclick="selectOption(${i})">
-        <span class="opt-letter">${letter}</span>
-        <span class="opt-body">
-          <span class="opt-label">${escHtml(opt.label)}</span>
-          ${desc}
-        </span>
-      </button>`;
+    return `<button class="opt ${selectedIdx===i?"selected":""}" type="button" onclick="selectOption(${i})"><span class="opt-num">${onum}</span><span class="opt-body"><span class="opt-label">${escHtml(opt.label)}</span>${desc}</span></button>`;
   }).join("");
-
-  mainEl.innerHTML = `
-    <div class="question-screen" id="qscreen">
-      <div class="q-eyebrow">
-        <span class="q-id">${q.id}</span>
-        <span class="q-sep">·</span>
-        <span class="q-block">${escHtml(blockName)}</span>
-        <span class="q-weight">${weightLabel}</span>
+  stage.innerHTML = `
+    <div class="question">
+      <div class="q-decoration">
+        <div class="q-number">${numStr}</div>
+        <div class="q-meta"><span class="q-block">${escHtml(blockName)}</span><span class="q-weight">${weightLabel}</span></div>
       </div>
-      <h2 class="q-text">${q.text}</h2>
-      ${contextHtml}
-      <div class="q-options">${optsHtml}</div>
-      <div class="q-nav">
-        <button class="btn-back" onclick="prevQuestion()" ${state.qIndex===0?"disabled":""}>← Voltar</button>
-        <span class="welcome-hint">${state.qIndex+1} de ${TOTAL_Q}</span>
+      <div class="q-body">
+        <h2 class="q-text">${q.text}</h2>
+        ${contextHtml}
+        <div class="q-options">${optsHtml}</div>
+        <div class="q-nav">
+          <button class="btn-back" onclick="prevQuestion()" ${state.qIndex===0?"disabled":""}>← Voltar</button>
+          <span class="q-step"><b>${numStr}</b> / ${totalStr}</span>
+        </div>
       </div>
     </div>`;
   questionStartTime = Date.now();
 }
 
 function renderPhone(){
-  mainEl.innerHTML = `
-    <div class="question-screen">
-      <div class="q-eyebrow">
-        <span class="q-id">Final</span>
-        <span class="q-sep">·</span>
-        <span class="q-block">Última pergunta</span>
-        <span class="q-weight">${STEP_TOTAL} de ${STEP_TOTAL}</span>
-      </div>
-      <h2 class="q-text">Pra onde te mandamos o <em>resultado</em>?</h2>
-      <p class="q-context">Seu WhatsApp pra receber a leitura completa do diagnóstico e o convite do RaioX da terça. Sem spam, sem ligação automática.</p>
-      <div class="phone-card">
-        <label class="phone-label" for="phoneInput">WhatsApp com DDD</label>
+  const numStr = String(STEP_TOTAL).padStart(2, "0");
+  stage.innerHTML = `
+    <div class="phone-stage">
+      <div class="phone-num">${numStr}</div>
+      <div class="phone-body">
+        <h2 class="phone-h">Pra onde te mandamos o <em>resultado</em>?</h2>
+        <p class="phone-context">Seu WhatsApp pra receber a leitura completa do diagnóstico e o convite do RaioX da terça. Sem spam, sem ligação automática.</p>
+        <span class="phone-label">WhatsApp com DDD</span>
         <input type="tel" id="phoneInput" inputmode="tel" placeholder="(11) 99999-9999" value="${escHtml(state.phone)}" autocomplete="tel" class="phone-input">
         <span class="phone-trust">Não compartilhamos seu número com terceiros</span>
-      </div>
-      <div class="q-nav">
-        <button class="btn-back" onclick="prevQuestion()">← Voltar</button>
-        <button class="btn-start" id="btnGoResult" onclick="goToResult()" ${phoneValid()?"":"disabled style=\"opacity:.35;cursor:not-allowed\""}>
-          <span>Ver meu resultado</span>
-          <span class="arrow">→</span>
-        </button>
+        <div class="q-nav" style="margin-top:8px">
+          <button class="btn-back" onclick="prevQuestion()">← Voltar</button>
+          <button class="btn-massive" id="btnGoResult" onclick="goToResult()" ${phoneValid()?"":"disabled style=\"opacity:.3;cursor:not-allowed\""}>
+            <span>Ver resultado</span><span class="arrow">→</span>
+          </button>
+        </div>
       </div>
     </div>`;
-
   const phoneEl = document.getElementById("phoneInput");
   const btn = document.getElementById("btnGoResult");
   phoneEl.addEventListener("input", (e) => {
     e.target.value = maskPhone(e.target.value);
-    state.phone = e.target.value;
-    saveState();
+    state.phone = e.target.value; saveState();
     if(phoneValid()){
-      btn.removeAttribute("disabled");
-      btn.style.opacity = "";
-      btn.style.cursor = "";
+      btn.removeAttribute("disabled"); btn.style.opacity = ""; btn.style.cursor = "";
       phoneEl.classList.remove("invalid");
     } else {
-      btn.setAttribute("disabled","");
-      btn.style.opacity = ".35";
-      btn.style.cursor = "not-allowed";
+      btn.setAttribute("disabled",""); btn.style.opacity = ".3"; btn.style.cursor = "not-allowed";
     }
   });
-  phoneEl.addEventListener("blur", () => {
-    if(phoneEl.value.length>0 && !phoneValid()) phoneEl.classList.add("invalid");
-  });
-  setTimeout(() => phoneEl.focus(), 120);
+  phoneEl.addEventListener("blur", () => { if(phoneEl.value.length>0 && !phoneValid()) phoneEl.classList.add("invalid"); });
+  setTimeout(() => phoneEl.focus(), 160);
 }
 
 function renderTransition(){
   const phraseEach = Math.floor(CONFIG.TRANSITION_MS / TRANSITION_PHRASES.length);
-  const phrasesHtml = TRANSITION_PHRASES.map((p,i) =>
-    `<div class="transition-phrase" style="animation-delay:${i*phraseEach}ms;animation-duration:${phraseEach}ms">${p}</div>`
-  ).join("");
-
-  mainEl.innerHTML = `
-    <div class="transition-screen">
-      <div style="position:relative;min-height:120px;display:flex;align-items:center;justify-content:center">
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-          ${phrasesHtml}
-        </div>
-      </div>
-      <div class="transition-bar"><div class="transition-bar-fill" id="transitionBarFill"></div></div>
-    </div>`;
-
-  // anima a barra inteira durante a transição
+  const phrasesHtml = TRANSITION_PHRASES.map((p,i) => `<div class="transition-phrase active" style="animation-delay:${i*phraseEach}ms;animation-duration:${phraseEach}ms">${p}</div>`).join("");
+  stage.innerHTML = `<div class="transition-stage"><div class="transition-canvas">${phrasesHtml}</div><div class="transition-bar"><div class="transition-bar-fill" id="transitionBarFill"></div></div></div>`;
   requestAnimationFrame(() => {
     const bar = document.getElementById("transitionBarFill");
-    if(bar){
-      bar.style.transition = `width ${CONFIG.TRANSITION_MS}ms cubic-bezier(.4,0,.2,1)`;
-      bar.style.width = "100%";
-    }
+    if(bar){ bar.style.transition = `width ${CONFIG.TRANSITION_MS}ms cubic-bezier(.4,0,.2,1)`; bar.style.width = "100%"; }
   });
-
-  setTimeout(() => {
-    state.screen = "result";
-    saveState();
-    render();
-    window.scrollTo({ top:0, behavior:"smooth" });
-  }, CONFIG.TRANSITION_MS);
+  setTimeout(() => { state.screen = "result"; saveState(); render(); window.scrollTo({ top:0, behavior:"smooth" }); }, CONFIG.TRANSITION_MS);
 }
 
 function renderResult(){
   const score = totalScore();
   const lvl = levelFor(score);
-
-  const ranked = BLOCK_ORDER.map(b => ({
-    id:b, name:BLOCKS[b].name, pct:blockPct(b), max:BLOCKS[b].max
-  })).filter(x => x.max>0).sort((a,b) => a.pct - b.pct);
+  const ranked = BLOCK_ORDER.map(b => ({id:b, name:BLOCKS[b].name, pct:blockPct(b), max:BLOCKS[b].max})).filter(x => x.max>0).sort((a,b) => a.pct - b.pct);
   const openIds = ranked.slice(0,2).map(x => x.id);
-
   const pillarsHtml = BLOCK_ORDER.map((b,idx) => {
     const pct = blockPct(b);
     const isOpen = openIds.includes(b);
     const insight = isOpen ? insightFor(b, pct) : "Leitura completa desse pilar liberada após contato com um Especialista ClubPetro.";
-    const delay = 2400 + idx*90;
-    return `
-      <div class="pillar-card ${isOpen?"":"locked"}" style="animation-delay:${delay}ms">
-        <div class="pc-head">
-          <span class="pc-tag">Pilar ${String(idx+1).padStart(2,"0")}</span>
-          <span class="pc-score">${pct}<small>/100</small></span>
-        </div>
-        <span class="pc-title">${escHtml(BLOCKS[b].name)}</span>
-        <p class="pc-insight">${insight}</p>
-        <div class="pc-bar"><div class="pc-bar-fill" data-target="${pct}"></div></div>
-        ${isOpen ? "" : `<div class="pc-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 018 0v4"/></svg> Bloqueado</div>`}
-      </div>`;
+    return `<div class="pillar-line ${isOpen?"":"locked"}"><span class="pl-name">${escHtml(BLOCKS[b].name)}</span><span class="pl-track"><span class="pl-fill" data-target="${pct}"></span></span><span class="pl-score">${pct}<small>/100</small></span><p class="pl-insight">${insight}</p></div>`;
   }).join("");
-
-  mainEl.innerHTML = `
+  stage.innerHTML = `
     <div class="result">
-      <div class="result-hero">
-        <div class="r-eyebrow">${escHtml(lvl.name)}</div>
-        <h2 class="r-h1">A saúde do seu posto é</h2>
-        <div class="r-score" id="rScore">0<span class="r-of">/100</span></div>
-        <p class="r-msg">${escHtml(lvl.msg)}</p>
-      </div>
-      <div class="r-radar-wrap">${buildBigRadar()}</div>
-
-      <div class="pillars-section">
-        <div class="r-section-h">
-          <span class="num">01</span>
-          <h2>Leitura por <em>pilar</em></h2>
+      <div class="r-hero">
+        <div class="r-leftcol">
+          <span class="r-eyebrow">Resultado do diagnóstico</span>
+          <p class="r-pre">A saúde do seu posto é</p>
+          <div class="r-score" id="rScore">0<span class="r-of">/100</span></div>
         </div>
-        <div class="pillars-grid">${pillarsHtml}</div>
-      </div>
-
-      <div class="ctas-section">
-        <div class="r-section-h">
-          <span class="num">02</span>
-          <h2>Próximos <em>passos</em></h2>
+        <div class="r-rightcol">
+          <span class="r-level-tag">Nível</span>
+          <h2 class="r-level-name">${escHtml(lvl.name)}</h2>
+          <p class="r-msg">${lvl.msg}</p>
         </div>
+      </div>
+      <section class="r-pillars">
+        <div class="r-section-tag">Leitura por pilar</div>
+        ${pillarsHtml}
+      </section>
+      <section class="r-ctas">
+        <div class="r-section-tag tag-02">Próximos passos</div>
         <div class="cta-grid">
-          <div class="cta-card primary">
+          <div class="cta primary">
             <span class="cta-tag">Recomendado pra você</span>
-            <h3 class="cta-h">Quero a <em>análise completa</em> do meu posto agora</h3>
+            <h3 class="cta-h">Quero a <em>análise completa</em> do meu posto agora.</h3>
             <p class="cta-d">Um Especialista ClubPetro olha seus números com você em 30 minutos, sem compromisso. Caminho direto pra resolver o que apareceu aqui.</p>
-            <button class="cta-btn" onclick="ctaWhatsApp()">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3 1.3 4.8 1.3 5.5 0 10-4.5 10-10S17.5 2 12 2zm5.5 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.7-4.4-3.9-.1-.2-1-1.3-1-2.6 0-1.2.6-1.8.9-2.1.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.6.7 2 .8 2.1.1.1.1.3 0 .5-.1.2-.1.3-.3.5-.1.2-.3.4-.4.5-.1.1-.3.3-.1.6.1.3.7 1.1 1.5 1.8 1 .9 1.9 1.2 2.2 1.3.3.1.4.1.6-.1.2-.2.7-.8.9-1.1.2-.3.4-.2.6-.1.3.1 1.6.8 1.9 1 .3.1.5.2.6.3.1.2.1.7-.1 1.3z"/></svg>
-              Falar com um Especialista ClubPetro
-            </button>
+            <button class="cta-btn" onclick="ctaWhatsApp()"><span>Falar com Especialista</span><span class="arrow">→</span></button>
           </div>
-          <div class="cta-card secondary">
+          <div class="cta">
             <span class="cta-tag">Toda terça às 19h</span>
-            <h3 class="cta-h">RaioX da semana, <em>sem compromisso</em></h3>
+            <h3 class="cta-h">RaioX da semana,<br><em>sem compromisso</em>.</h3>
             <p class="cta-d">Conversa aberta sobre as dores que aparecem no diagnóstico. Sem venda empurrada, só troca.</p>
-            <button class="cta-btn" onclick="ctaRaiox()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-              Reservar minha vaga
-            </button>
+            <button class="cta-btn" onclick="ctaRaiox()"><span>Reservar vaga</span><span class="arrow">→</span></button>
           </div>
         </div>
+      </section>
+      <div class="r-footnote">
+        <span class="r-save" id="saveMsg"></span>
+        <span>6 pilares completos liberados após contato com um Especialista ClubPetro</span>
       </div>
-
-      <p class="save-msg" id="saveMsg"></p>
-      <p class="foot-note">6 pilares completos liberados após contato com um Especialista ClubPetro</p>
     </div>`;
-
-  // Contagem animada da nota
   animateScoreCount(score);
-  // Anima as barras dos pilares após cascata
-  setTimeout(() => {
-    document.querySelectorAll(".pc-bar-fill").forEach(el => {
-      el.style.width = (el.dataset.target||"0") + "%";
-    });
-  }, 2700);
-
+  setTimeout(() => { document.querySelectorAll(".pl-fill").forEach(el => { el.style.width = (el.dataset.target||"0") + "%"; }); }, 2300);
   saveResultToBackend(score, lvl);
 }
 
 function animateScoreCount(target){
-  const el = document.getElementById("rScore");
-  if(!el) return;
-  const dur = 1000;
-  const startDelay = 460;
+  const el = document.getElementById("rScore"); if(!el) return;
+  const dur = 1100; const startDelay = 480;
   setTimeout(() => {
     const t0 = performance.now();
     function tick(t){
@@ -1360,34 +789,18 @@ function animateScoreCount(target){
   }, startDelay);
 }
 
-/* ============================================================
-   NAV
-   ============================================================ */
 function startDiagnostic(){
   hasResumable = false;
-  state = freshState();
-  state.diagId = uuid();
-  state.startedAt = new Date().toISOString();
-  state.screen = "question";
-  state.qIndex = 0;
-  saveState();
-  track("diag_start", { diag_id: state.diagId });
-  render();
+  state = freshState(); state.diagId = uuid(); state.startedAt = new Date().toISOString();
+  state.screen = "question"; state.qIndex = 0;
+  saveState(); track("diag_start", { diag_id: state.diagId }); render();
 }
 function resumeDiagnostic(){
   hasResumable = false;
-  if(state.qIndex >= TOTAL_Q){ state.screen = "phone"; }
-  else { state.screen = "question"; }
-  track("diag_resume", { step: state.qIndex, diag_id: state.diagId });
-  render();
+  if(state.qIndex >= TOTAL_Q){ state.screen = "phone"; } else { state.screen = "question"; }
+  track("diag_resume", { step: state.qIndex, diag_id: state.diagId }); render();
 }
-function discardResume(){
-  clearState();
-  hasResumable = false;
-  state = freshState();
-  render();
-}
-
+function discardResume(){ clearState(); hasResumable = false; state = freshState(); render(); }
 function selectOption(i){
   const q = QUESTIONS[state.qIndex];
   const opt = q.options[i];
@@ -1397,147 +810,80 @@ function selectOption(i){
   state.answers[q.id] = {
     idx:i, label:opt.label, val:opt.val ?? null,
     pts: typeof opt.pts === "number" ? opt.pts : null,
-    tag: opt.tag ?? null,
-    block: q.block, type: q.type
+    tag: opt.tag ?? null, block: q.block, type: q.type
   };
-  if(typeof opt.pts === "number"){
-    state.blockScores[q.block] = (state.blockScores[q.block]||0) + opt.pts;
-  }
+  if(typeof opt.pts === "number"){ state.blockScores[q.block] = (state.blockScores[q.block]||0) + opt.pts; }
   saveState();
   const dt = Math.round((Date.now() - questionStartTime)/1000);
-  track("diag_answer", {
-    question_id: q.id,
-    option: String.fromCharCode(65+i),
-    pts: opt.pts ?? null,
-    time_on_question: dt,
-    diag_id: state.diagId
-  });
-  // Feedback visual instantâneo
-  document.querySelectorAll(".opt-card").forEach((el,idx) => el.classList.toggle("selected", idx===i));
-  // Atualiza mini radar
-  miniRadarSvg.innerHTML = buildMiniRadar();
-  miniRadarScore.textContent = totalScore();
-  // Avança após pulse curto
+  track("diag_answer", { question_id: q.id, option: String(i+1).padStart(2,"0"), pts: opt.pts ?? null, time_on_question: dt, diag_id: state.diagId });
+  document.querySelectorAll(".opt").forEach((el,idx) => el.classList.toggle("selected", idx===i));
+  scorePill.textContent = totalScore();
   setTimeout(() => nextQuestion(), 360);
 }
-
 function nextQuestion(){
   if(!state.answers[QUESTIONS[state.qIndex].id]) return;
-  if(state.qIndex < TOTAL_Q - 1){
-    state.qIndex++;
-    saveState();
-    render();
-  } else {
-    state.screen = "phone";
-    saveState();
-    render();
-  }
+  if(state.qIndex < TOTAL_Q - 1){ state.qIndex++; saveState(); render(); }
+  else { state.screen = "phone"; saveState(); render(); }
 }
-
 function prevQuestion(){
   const curId = state.screen === "phone" ? "phone" : QUESTIONS[state.qIndex]?.id;
-  if(state.screen === "phone"){
-    state.screen = "question";
-    state.qIndex = TOTAL_Q - 1;
-  } else if(state.qIndex > 0){
-    state.qIndex--;
-  } else {
-    return;
-  }
+  if(state.screen === "phone"){ state.screen = "question"; state.qIndex = TOTAL_Q - 1; }
+  else if(state.qIndex > 0){ state.qIndex--; }
+  else { return; }
   saveState();
   track("diag_back", { from: curId, to: QUESTIONS[state.qIndex]?.id || "intro", diag_id: state.diagId });
   render();
 }
-
 function goToResult(){
   if(!phoneValid()) return;
   state.finishedAt = new Date().toISOString();
-  state.screen = "transition";
-  saveState();
+  state.screen = "transition"; saveState();
   track("diag_phone_submit", { phone_length: state.phone.replace(/\D/g,"").length, diag_id: state.diagId });
-  render();
-  window.scrollTo({ top:0, behavior:"smooth" });
+  render(); window.scrollTo({ top:0, behavior:"smooth" });
 }
 
-/* ============================================================
-   PERSIST RESULT
-   ============================================================ */
 async function saveResultToBackend(score, lvl){
   const mql = evaluateMql();
-  const ranked = BLOCK_ORDER.map(b => ({ id:b, pct:blockPct(b), max:BLOCKS[b].max }))
-    .filter(x => x.max>0).sort((a,b) => a.pct - b.pct);
+  const ranked = BLOCK_ORDER.map(b => ({ id:b, pct:blockPct(b), max:BLOCKS[b].max })).filter(x => x.max>0).sort((a,b) => a.pct - b.pct);
   const weakBlock = ranked[0]?.id || null;
-
   const respostasLabels = {};
   QUESTIONS.forEach(q => { respostasLabels[q.id] = state.answers[q.id] ? state.answers[q.id].label : null; });
   const blockPcts = {};
   BLOCK_ORDER.forEach(b => { blockPcts[b] = blockPct(b); });
-
   const respostasJsonb = {
-    answers: respostasLabels,
-    block_scores: blockPcts,
+    answers: respostasLabels, block_scores: blockPcts,
     bandeira: state.answers.P15?.val || null,
     papel_tag: state.answers.P42?.tag || null,
-    mql_tag: mql.tag,
-    cruza_mql: mql.cruzaMql,
-    dimensao_fraca: weakBlock,
-    diag_id: state.diagId,
-    started_at: state.startedAt,
-    finished_at: state.finishedAt,
-    version: "v3.1"
+    mql_tag: mql.tag, cruza_mql: mql.cruzaMql, dimensao_fraca: weakBlock,
+    diag_id: state.diagId, started_at: state.startedAt, finished_at: state.finishedAt,
+    version: "v4"
   };
-
   const payload = {
-    nome: null,
-    telefone: state.phone || null,
-    score: score,
-    nivel: lvl.name,
-    papel: state.answers.P42?.val || null,
-    conhece: null,
-    interesse: null,
-    respostas: respostasJsonb
+    nome: null, telefone: state.phone || null, score: score, nivel: lvl.name,
+    papel: state.answers.P42?.val || null, conhece: null, interesse: null, respostas: respostasJsonb
   };
-
-  track("diag_view_result", {
-    score_total: score, nivel: lvl.name, mql: mql.tag, diag_id: state.diagId
-  });
-
+  track("diag_view_result", { score_total: score, nivel: lvl.name, mql: mql.tag, diag_id: state.diagId });
   const client = getSupabase();
   if(!client){ console.warn("Supabase indisponível, resultado não salvo."); return; }
-
   try{
     const { error: e1 } = await client.from("diagnostico_respostas").insert(payload);
-    if(e1){ console.error("Erro ao salvar respostas:", e1); }
+    if(e1){ console.error("Erro ao salvar:", e1); }
     else { const m = document.getElementById("saveMsg"); if(m) m.textContent = "Respostas registradas"; }
   }catch(e){ console.error("Falha no salvamento:", e); }
-
   try{
     await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + CONFIG.SUPABASE_ANON_KEY,
-        "apikey": CONFIG.SUPABASE_ANON_KEY
-      },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + CONFIG.SUPABASE_ANON_KEY, "apikey": CONFIG.SUPABASE_ANON_KEY },
       body: JSON.stringify({
-        telefone: state.phone,
-        score_total: score,
-        nivel: lvl.name,
-        dimensao_fraca: weakBlock,
-        papel_declarado: state.answers.P42?.val || null,
-        bandeira: state.answers.P15?.val || null,
-        cruza_mql: mql.cruzaMql,
-        block_scores: blockPcts,
-        diag_id: state.diagId
-      }),
-      keepalive: true
+        telefone: state.phone, score_total: score, nivel: lvl.name,
+        dimensao_fraca: weakBlock, papel_declarado: state.answers.P42?.val || null,
+        bandeira: state.answers.P15?.val || null, cruza_mql: mql.cruzaMql,
+        block_scores: blockPcts, diag_id: state.diagId
+      }), keepalive: true
     });
   }catch(e){ console.warn("RD conversion best-effort falhou:", e); }
 }
 
-/* ============================================================
-   CTAs
-   ============================================================ */
 function ctaWhatsApp(){
   const score = totalScore();
   track("diag_cta_comercial", { score_total: score, diag_id: state.diagId });
@@ -1545,12 +891,10 @@ function ctaWhatsApp(){
   const url = "https://wa.me/" + CONFIG.CLUBPETRO_WHATSAPP + "?text=" + encodeURIComponent(msg);
   window.open(url, "_blank");
 }
-
 function nextTuesday19h(){
   const d = new Date();
   const offset = (2 - d.getDay() + 7) % 7 || 7;
-  d.setDate(d.getDate() + offset);
-  d.setHours(19, 0, 0, 0);
+  d.setDate(d.getDate() + offset); d.setHours(19, 0, 0, 0);
   return d;
 }
 function gcalDate(d){
@@ -1572,15 +916,10 @@ function ctaRaiox(){
   window.open("https://calendar.google.com/calendar/render?" + params.toString(), "_blank");
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 (function init(){
   const saved = loadState();
   if(saved && (Object.keys(saved.answers||{}).length>0 || saved.qIndex>0)){
-    state = { ...freshState(), ...saved };
-    state.screen = "welcome";
-    hasResumable = true;
+    state = { ...freshState(), ...saved }; state.screen = "welcome"; hasResumable = true;
   }
   window.addEventListener("pagehide", () => {
     if(state.screen === "result" || state.screen === "welcome") return;
