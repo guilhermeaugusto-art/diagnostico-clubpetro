@@ -2,17 +2,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Diagnóstico de Saúde do Posto · ClubPetro</title>
-<meta name="description" content="Descubra a saúde da operação do seu posto numa nota de 0 a 100. Diagnóstico gratuito, leva 2 minutos.">
+<meta name="description" content="Em 4 minutos, descubra a saúde da operação do seu posto numa nota de 0 a 100 em 8 pilares. Diagnóstico gratuito.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<!-- Open Graph / Twitter: previa exibida ao compartilhar o link (WhatsApp, Facebook, LinkedIn, Telegram...) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ClubPetro">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://diagnostico-clubpetro.web.app/">
 <meta property="og:title" content="Qual a nota do seu posto? · Diagnóstico ClubPetro">
-<meta property="og:description" content="Descubra a saúde da sua pista em 2 minutos e receba ideias práticas de melhoria. Diagnóstico gratuito.">
+<meta property="og:description" content="Em 4 minutos, descubra a saúde da sua operação em 8 pilares.">
 <meta property="og:image" content="https://diagnostico-clubpetro.web.app/og-banner.jpg">
 <meta property="og:image:secure_url" content="https://diagnostico-clubpetro.web.app/og-banner.jpg">
 <meta property="og:image:type" content="image/jpeg">
@@ -21,377 +20,1354 @@
 <meta property="og:image:alt" content="Diagnóstico de Saúde do Posto · ClubPetro">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Qual a nota do seu posto? · Diagnóstico ClubPetro">
-<meta name="twitter:description" content="Descubra a saúde da sua pista em 2 minutos e receba ideias práticas de melhoria.">
+<meta name="twitter:description" content="Em 4 minutos, descubra a saúde da sua operação em 8 pilares.">
 <meta name="twitter:image" content="https://diagnostico-clubpetro.web.app/og-banner.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- fontes: carregamento nao-bloqueante (a pagina renderiza na hora, com fallback) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&display=swap"></noscript>
-<!-- Supabase client: hospedado localmente + defer (NAO bloqueia a renderizacao) -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="/supabase.js" defer></script>
 <style>
+/* ============================================================
+   Diagnóstico v3 · Design original, layout em lista vertical
+   Tokens fechados no grid 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64
+   ============================================================ */
 :root{
-  --accent:#f26600; --accent-deep:#d4540a; --accent-soft:#ff8a3d;
-  --ink:#1a1612; --ink-soft:#4a4038; --ink-mute:#8a7d6f;
-  --paper:#fbf7f0; --card:#ffffff; --warm:#fff1e3;
-  --rule:#ece3d6; --good:#5f7a3a;
-  --serif:'Fraunces',Georgia,serif; --sans:'Inter Tight',system-ui,sans-serif;
-  --shadow:0 4px 24px rgba(60,40,20,.08); --shadow-lg:0 14px 40px rgba(60,40,20,.16);
+  --accent:#F26600; --accent-soft:#FF8A3D; --accent-deep:#D4540A;
+  --accent-bg:#FFF1E3; --accent-tint:#FFE2C2;
+  --ink:#1a1612; --ink-soft:#3d342b; --ink-mute:#7a6f63; --ink-faint:#a89c8a;
+  --paper:#f5f1ea; --paper-warm:#ede6d9; --paper-deep:#e2dac9;
+  --card:#ffffff;
+  --rule:#d4c9b8; --rule-soft:#e5dccb;
+  --olive:#6b6d3a; --danger:#a64545;
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'Inter Tight',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
   --ease:cubic-bezier(.2,.7,.2,1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{font-family:var(--sans);color:var(--ink);background:var(--paper);
-  background-image:radial-gradient(120% 60% at 50% -10%, #ffe6cf 0%, rgba(255,230,207,0) 55%);
-  background-attachment:fixed;line-height:1.5;-webkit-font-smoothing:antialiased;
-  display:flex;justify-content:center;align-items:flex-start}
-.app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;padding:0 20px;position:relative}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  font-family:var(--sans);background:var(--paper);color:var(--ink);
+  line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+::selection{background:var(--accent-bg);color:var(--ink)}
 
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 6px}
-.brand{display:inline-flex;align-items:center;background:var(--ink);padding:9px 13px;border-radius:12px;box-shadow:var(--shadow)}
-.brand-logo{height:20px;width:auto;display:block}
-.pill{font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--warm);padding:.3rem .6rem;border-radius:20px;transition:background .25s}
+/* ============================================================
+   TOPBAR · sticky com progresso linear
+   ============================================================ */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(245,241,234,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--rule);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.brand-logo{height:16px;width:auto;color:var(--ink);display:block}
+.brand-ctx{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-mute);border-left:1px solid var(--rule);padding-left:8px;display:none;
+}
+.progress-area{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.progress-area.hidden{display:none}
+.progress-count{
+  font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink);white-space:nowrap;
+  display:flex;gap:2px;align-items:baseline;
+}
+.progress-count strong{color:var(--accent);font-weight:500;font-size:13px}
+.progress-count span{color:var(--ink-mute)}
+.progress-track{
+  flex:1;height:3px;background:var(--rule-soft);border-radius:99px;overflow:hidden;
+  position:relative;
+}
+.progress-fill{
+  height:100%;width:0%;background:var(--accent);border-radius:99px;
+  transition:width 400ms var(--ease);
+}
 
-.progress{height:6px;background:var(--rule);border-radius:10px;margin:11px 0 0;overflow:hidden;opacity:0;transform:scaleX(.4);transform-origin:left;transition:opacity .35s,transform .5s var(--ease)}
-.progress.show{opacity:1;transform:scaleX(1)}
-.progress .bar{position:relative;height:100%;width:0;background:linear-gradient(90deg,var(--accent-deep),var(--accent-soft));border-radius:10px;overflow:hidden;transition:width .55s var(--ease)}
-.progress .bar::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);transform:translateX(-100%);animation:shine 2.6s ease-in-out infinite}
+@media (min-width:768px){
+  .topbar{padding:16px 32px;gap:24px}
+  .brand-logo{height:20px}
+  .brand-ctx{display:inline}
+  .progress-count{font-size:12px}
+  .progress-count strong{font-size:14px}
+}
 
-.screens{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 0 28px}
-.screen{display:none}
-.screen.active{display:block}
+/* ============================================================
+   ENVELOPE de conteúdo
+   ============================================================ */
+.layout{
+  max-width:680px;margin:0 auto;
+  padding:24px 16px 64px;min-height:calc(100vh - 56px);
+}
+@media (min-width:768px){.layout{padding:48px 32px 96px}}
 
-.intro-mark{font-family:var(--serif);font-size:2.4rem;line-height:1.05;font-weight:500;letter-spacing:-.02em;margin:8px 0 14px}
-.intro-mark em{font-style:italic;color:var(--accent)}
-.intro p{font-size:1.02rem;color:var(--ink-soft);margin-bottom:14px}
-.intro p strong{color:var(--ink);font-weight:600}
-.intro>*{animation:fadeUp .55s var(--ease) both}
-.intro>*:nth-child(1){animation-delay:.04s}
-.intro>*:nth-child(2){animation-delay:.12s}
-.intro>*:nth-child(3){animation-delay:.20s}
-.intro>*:nth-child(4){animation-delay:.28s}
-.intro>*:nth-child(5){animation-delay:.36s}
-.intro>*:nth-child(6){animation-delay:.44s}
-.intro>*:nth-child(7){animation-delay:.52s}
+/* ============================================================
+   WELCOME · tela de boas-vindas
+   ============================================================ */
+.welcome{display:flex;flex-direction:column;gap:24px;animation:rise 360ms var(--ease) both}
+.welcome-eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:500;
+}
+.welcome-h1{
+  font-family:var(--serif);font-size:clamp(32px,7vw,52px);font-weight:500;
+  line-height:1.05;letter-spacing:-.02em;color:var(--ink);max-width:14ch;
+}
+.welcome-h1 em{font-style:italic;color:var(--accent)}
+.welcome-lede{
+  font-family:var(--serif);font-size:16px;line-height:1.55;color:var(--ink-soft);max-width:42em;
+}
+.welcome-lede strong{color:var(--ink);font-weight:500}
+@media (min-width:768px){.welcome-lede{font-size:18px}}
 
-.field{margin:18px 0 8px}
-.field label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
-.field input{width:100%;font-family:var(--sans);font-size:1.05rem;padding:14px 16px;border:1.5px solid var(--rule);border-radius:14px;background:var(--card);color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s}
-.field input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(242,102,0,.12)}
+.welcome-strip{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+  border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
+  margin:8px 0;
+}
+.welcome-strip .ws{padding:16px 12px 16px 0;border-right:1px solid var(--rule)}
+.welcome-strip .ws:last-child{border-right:0}
+.welcome-strip .ws-l{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mute);
+  display:block;margin-bottom:4px;
+}
+.welcome-strip .ws-v{font-family:var(--serif);font-size:24px;font-weight:500;color:var(--ink);letter-spacing:-.01em}
+.welcome-strip .ws-v em{font-style:italic;color:var(--accent)}
+@media (min-width:768px){
+  .welcome-strip .ws{padding:20px 16px 20px 0}
+  .welcome-strip .ws-v{font-size:32px}
+}
 
-.qcount{font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;animation:fadeUp .42s var(--ease) both}
-.qtext{font-family:var(--serif);font-size:1.5rem;line-height:1.22;font-weight:500;letter-spacing:-.01em;margin-bottom:22px;animation:fadeUp .48s var(--ease) both;animation-delay:.06s}
-.options{display:flex;flex-direction:column;gap:11px}
-.opt{display:flex;align-items:center;gap:13px;width:100%;text-align:left;font-family:var(--sans);font-size:1rem;font-weight:500;color:var(--ink-soft);background:var(--card);border:1.5px solid var(--rule);border-radius:15px;padding:16px 16px;cursor:pointer;transition:transform .16s var(--ease),border-color .18s,background .18s,box-shadow .22s;box-shadow:var(--shadow);min-height:44px;animation:fadeUp .44s var(--ease) both}
-.opt:nth-child(1){animation-delay:.05s}
-.opt:nth-child(2){animation-delay:.12s}
-.opt:nth-child(3){animation-delay:.19s}
-.opt:nth-child(4){animation-delay:.26s}
-.opt:hover{border-color:var(--accent-soft);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
-.opt:active{transform:scale(.985)}
-.opt .dot{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid var(--rule);transition:border-color .18s,background .18s;position:relative}
-.opt.sel{border-color:var(--accent);background:var(--warm);color:var(--ink)}
-.opt.sel .dot{border-color:var(--accent);background:var(--accent);animation:dotPop .36s var(--ease)}
-.opt.sel .dot::after{content:"";position:absolute;inset:5px;background:var(--card);border-radius:50%}
+.resume-banner{
+  display:none;align-items:flex-start;gap:12px;
+  background:var(--accent-bg);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:12px 16px;
+}
+.resume-banner.show{display:flex}
+.resume-banner .rb-body{flex:1;min-width:0}
+.resume-banner .rb-l{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);font-weight:500;display:block;margin-bottom:4px;
+}
+.resume-banner .rb-t{font-family:var(--sans);font-size:14px;color:var(--ink-soft);line-height:1.4;margin-bottom:8px}
+.resume-banner .rb-actions{display:flex;gap:8px;flex-wrap:wrap}
+.resume-banner button{
+  font-family:var(--sans);font-size:13px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;
+}
+.resume-banner .rb-go{background:var(--ink);color:var(--paper)}
+.resume-banner .rb-go:hover{background:var(--accent)}
+.resume-banner .rb-no{background:transparent;color:var(--ink-mute);text-decoration:underline;text-underline-offset:3px}
+.resume-banner .rb-no:hover{color:var(--ink)}
 
-.nav{display:flex;align-items:center;gap:12px;margin-top:22px}
-.btn{font-family:var(--sans);font-weight:600;font-size:1.02rem;border:none;border-radius:14px;padding:15px 22px;cursor:pointer;transition:transform .16s var(--ease),box-shadow .22s,filter .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:linear-gradient(135deg,var(--accent-soft),var(--accent));color:#fff;box-shadow:0 6px 18px rgba(242,102,0,.32);flex:1}
-.btn-primary:hover{filter:brightness(1.05);transform:translateY(-2px);box-shadow:0 10px 26px rgba(242,102,0,.42)}
-.btn-primary:disabled{background:var(--rule);color:var(--ink-mute);box-shadow:none;cursor:not-allowed;filter:none;transform:none}
-.btn-ghost{background:transparent;color:var(--ink-mute);padding:15px 8px;font-size:.95rem}
-.btn-ghost:hover{color:var(--ink)}
-.hint{font-size:.82rem;color:var(--ink-mute);margin-top:14px;text-align:center}
+.start-row{display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap}
+.btn-start{
+  font-family:var(--sans);font-weight:600;font-size:15px;
+  background:var(--ink);color:var(--paper);
+  padding:16px 28px;border:0;border-radius:8px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:12px;min-height:52px;
+  transition:background 200ms var(--ease),transform 120ms var(--ease);
+}
+.btn-start:hover{background:var(--accent)}
+.btn-start:active{transform:translateY(1px)}
+.btn-start .arrow{font-family:var(--mono);font-size:14px;letter-spacing:.04em}
+.start-hint{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mute);
+}
 
-.result{text-align:center}
-.result .lead-in{font-size:.92rem;color:var(--ink-mute);margin-bottom:6px;animation:fadeUp .5s var(--ease) both;animation-delay:.05s}
-.result .lead-in b{color:var(--ink);font-weight:600}
-.gauge{position:relative;width:200px;height:200px;margin:8px auto 6px;animation:pop .65s var(--ease) both;animation-delay:.12s}
-.gauge svg{transform:rotate(-90deg);overflow:visible}
-.gauge #arc{filter:drop-shadow(0 3px 9px rgba(242,102,0,.4))}
-.gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.gauge .num .v{font-family:var(--serif);font-size:3.4rem;font-weight:600;line-height:1;color:var(--ink);letter-spacing:-.02em}
-.gauge .num .of{font-size:.8rem;color:var(--ink-mute);font-weight:600;letter-spacing:.04em;margin-top:2px}
-.lvl-badge{display:inline-block;font-family:var(--sans);font-weight:600;font-size:.92rem;color:#fff;padding:.4rem .9rem;border-radius:20px;margin:6px 0 14px;animation:badgePop .6s var(--ease) both;animation-delay:.85s}
-.result .msg{font-family:var(--serif);font-size:1.12rem;line-height:1.5;color:var(--ink-soft);margin:0 auto 22px;max-width:30em;animation:fadeUp .55s var(--ease) both;animation-delay:1s}
-.cta-wrap{display:flex;flex-direction:column;gap:10px;animation:fadeUp .55s var(--ease) both;animation-delay:1.15s}
-.btn-wa{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--accent-soft),var(--accent));color:#fff;width:100%;box-shadow:0 6px 18px rgba(242,102,0,.32);font-size:1.05rem;padding:17px}
-.btn-wa::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.38),transparent);transform:translateX(-130%)}
-.btn-wa:hover{filter:brightness(1.05);transform:translateY(-2px);box-shadow:0 10px 28px rgba(242,102,0,.44)}
-.btn-wa:hover::after{animation:sweep .75s ease}
-.savemsg{font-size:.74rem;color:var(--good);font-weight:600;margin-top:4px;min-height:1em;transition:opacity .3s}
+/* ============================================================
+   QUESTION · layout em lista vertical (frases completas)
+   ============================================================ */
+.question-screen{
+  display:flex;flex-direction:column;gap:20px;
+  animation:rise 320ms var(--ease) both;
+}
+.q-eyebrow{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-mute);
+}
+.q-eyebrow .q-id{
+  color:var(--accent);font-weight:500;background:var(--paper-warm);
+  padding:3px 8px;border-radius:4px;border:1px solid var(--rule-soft);
+}
+.q-eyebrow .q-block{color:var(--ink-soft);font-weight:500}
+.q-eyebrow .q-sep{color:var(--rule)}
+.q-eyebrow .q-weight{margin-left:auto;color:var(--accent);font-weight:500}
 
-.foot{font-size:.74rem;color:var(--ink-mute);padding:14px 0 26px;text-align:center;border-top:1px solid var(--rule);margin-top:auto}
-.foot b{color:var(--accent)}
+.q-text{
+  font-family:var(--serif);font-size:clamp(22px,5vw,32px);font-weight:500;
+  line-height:1.2;letter-spacing:-.015em;color:var(--ink);
+}
+.q-text em{font-style:italic;color:var(--accent)}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes pop{0%{opacity:0;transform:scale(.82)}60%{opacity:1;transform:scale(1.05)}100%{transform:scale(1)}}
-@keyframes badgePop{0%{opacity:0;transform:scale(.5)}55%{opacity:1;transform:scale(1.14)}100%{transform:scale(1)}}
-@keyframes dotPop{0%{transform:scale(1)}40%{transform:scale(1.34)}100%{transform:scale(1)}}
-@keyframes shine{0%{transform:translateX(-100%)}55%,100%{transform:translateX(240%)}}
-@keyframes sweep{from{transform:translateX(-130%)}to{transform:translateX(130%)}}
+.q-context{
+  font-family:var(--sans);font-size:14px;font-style:italic;color:var(--ink-mute);
+  line-height:1.55;padding:8px 0 8px 16px;border-left:2px solid var(--rule);
+}
+@media (min-width:768px){.q-context{font-size:15px}}
 
-@media(max-width:380px){.qtext{font-size:1.32rem}.intro-mark{font-size:2.1rem}.gauge{width:172px;height:172px}.gauge .num .v{font-size:3rem}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.q-options{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.opt-card{
+  display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start;
+  width:100%;text-align:left;background:var(--card);
+  border:1.5px solid var(--rule);border-radius:10px;padding:14px 16px;
+  cursor:pointer;transition:border-color 180ms var(--ease),background 180ms var(--ease),transform 120ms var(--ease);
+}
+.opt-card:hover{border-color:var(--accent)}
+.opt-card:active{transform:scale(.995)}
+.opt-card.selected{border-color:var(--accent);background:var(--accent-bg)}
+.opt-letter{
+  font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);
+  background:var(--paper-warm);border:1px solid var(--rule-soft);
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background 180ms var(--ease),color 180ms var(--ease),border-color 180ms var(--ease);
+  flex-shrink:0;margin-top:1px;
+}
+.opt-card.selected .opt-letter{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.opt-body{display:flex;flex-direction:column;gap:4px;min-width:0}
+.opt-label{
+  font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);line-height:1.35;
+}
+.opt-desc{
+  font-family:var(--serif);font-size:14px;font-style:italic;color:var(--ink-soft);line-height:1.4;
+}
+@media (min-width:768px){
+  .opt-card{padding:16px 20px;gap:16px}
+  .opt-letter{width:32px;height:32px;font-size:13px}
+  .opt-label{font-size:16px}
+  .opt-desc{font-size:15px}
+}
+
+.q-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:12px;padding-top:16px;border-top:1px solid var(--rule);flex-wrap:wrap;
+}
+.btn-back{
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-mute);background:transparent;border:0;padding:8px 12px;cursor:pointer;
+  transition:color 160ms var(--ease);
+}
+.btn-back:hover{color:var(--ink)}
+.btn-back:disabled{opacity:.3;cursor:not-allowed}
+.btn-next{
+  font-family:var(--sans);font-weight:600;font-size:14px;
+  background:var(--ink);color:var(--paper);
+  padding:12px 24px;border:0;border-radius:8px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;min-height:44px;
+  transition:background 200ms var(--ease);
+}
+.btn-next:hover{background:var(--accent)}
+.btn-next:disabled{background:var(--rule);color:var(--ink-mute);cursor:not-allowed}
+
+/* ============================================================
+   PHONE INPUT
+   ============================================================ */
+.phone-card{
+  background:var(--card);border:1.5px solid var(--rule);border-radius:12px;
+  padding:20px;display:flex;flex-direction:column;gap:16px;max-width:520px;margin:0 auto;width:100%;
+}
+.phone-card .pf{display:flex;flex-direction:column;gap:6px}
+.phone-card label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);
+}
+.phone-card input{
+  font-family:var(--sans);font-size:16px;padding:12px 14px;
+  border:1.5px solid var(--rule);border-radius:8px;background:#fff;color:var(--ink);
+  outline:none;transition:border-color 160ms var(--ease);
+}
+.phone-card input:focus{border-color:var(--accent)}
+.phone-card input.invalid{border-color:var(--danger)}
+
+/* ============================================================
+   RESULT
+   ============================================================ */
+.result{display:flex;flex-direction:column;gap:24px;animation:rise 480ms var(--ease) both}
+.result-hero{text-align:center;padding:8px 0}
+.result-eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:500;margin-bottom:8px;
+}
+.result-h1{
+  font-family:var(--serif);font-size:clamp(24px,5vw,36px);font-weight:500;
+  line-height:1.15;letter-spacing:-.02em;color:var(--ink);margin-bottom:8px;
+}
+.result-h1 em{font-style:italic;color:var(--accent)}
+.score-display{
+  font-family:var(--serif);font-weight:500;color:var(--accent);
+  font-size:clamp(72px,18vw,128px);line-height:.95;letter-spacing:-.03em;
+  margin:16px 0 8px;
+}
+.score-display .of{font-size:.28em;color:var(--ink-mute);font-weight:400;letter-spacing:0}
+.level-msg{
+  font-family:var(--serif);font-size:16px;font-style:italic;color:var(--ink-soft);
+  line-height:1.5;max-width:36em;margin:8px auto 0;
+}
+@media (min-width:768px){.level-msg{font-size:18px}}
+
+.result-radar-wrap{
+  display:flex;justify-content:center;padding:8px 0;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.result-radar-wrap svg{width:280px;height:280px;display:block}
+.rr-grid{fill:none;stroke:var(--rule);stroke-width:.6}
+.rr-axis{stroke:var(--rule-soft);stroke-width:.6}
+.rr-shape{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round}
+.rr-dot{fill:var(--accent)}
+.rr-label{font-family:var(--mono);font-size:9px;letter-spacing:.06em;fill:var(--ink-soft);font-weight:500;text-transform:uppercase}
+
+.pillars-h{
+  display:flex;align-items:baseline;gap:12px;margin-top:8px;
+  padding-bottom:8px;border-bottom:2px solid var(--ink);
+}
+.pillars-h .num{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--accent);font-weight:500}
+.pillars-h h2{font-family:var(--serif);font-size:20px;font-weight:500;letter-spacing:-.015em;line-height:1.2}
+.pillars-h h2 em{font-style:italic;color:var(--accent)}
+
+.pillars-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+@media (min-width:768px){.pillars-grid{gap:12px}}
+
+.pillar-card{
+  background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:14px;
+  display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+}
+.pillar-card.locked{background:var(--paper-warm)}
+.pillar-card.locked .pc-title,
+.pillar-card.locked .pc-insight{filter:blur(4px);user-select:none;pointer-events:none}
+.pillar-card.locked::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(245,241,234,0) 30%,rgba(245,241,234,.82) 100%);pointer-events:none;
+}
+.pc-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.pc-tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.pc-score{
+  font-family:var(--serif);font-size:24px;font-weight:500;color:var(--ink);letter-spacing:-.01em;line-height:1;
+}
+.pc-score small{font-size:.45em;color:var(--ink-mute);font-weight:400;margin-left:2px}
+.pc-title{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);line-height:1.2}
+.pc-insight{font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--ink-soft);margin-top:4px}
+.pc-bar{height:4px;background:var(--rule-soft);border-radius:99px;overflow:hidden}
+.pc-bar-fill{height:100%;background:var(--accent);border-radius:99px;transition:width 800ms var(--ease)}
+.pc-lock{
+  position:absolute;bottom:10px;left:0;right:0;text-align:center;
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mute);
+  z-index:2;display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.pc-lock svg{width:11px;height:11px}
+@media (min-width:768px){
+  .pillar-card{padding:16px}
+  .pc-title{font-size:17px}
+  .pc-score{font-size:28px}
+  .pc-insight{font-size:13px}
+}
+
+.ctas-h{
+  display:flex;align-items:baseline;gap:12px;margin-top:8px;
+  padding-bottom:8px;border-bottom:2px solid var(--ink);
+}
+.ctas-h .num{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--accent);font-weight:500}
+.ctas-h h2{font-family:var(--serif);font-size:20px;font-weight:500;letter-spacing:-.015em;line-height:1.2}
+.ctas-h h2 em{font-style:italic;color:var(--accent)}
+
+.cta-grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:768px){.cta-grid{grid-template-columns:1.4fr 1fr;gap:16px}}
+
+.cta-card{
+  border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;
+}
+.cta-card .cta-tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;
+}
+.cta-card .cta-h{
+  font-family:var(--serif);font-size:18px;font-weight:500;line-height:1.25;letter-spacing:-.01em;
+}
+.cta-card .cta-d{font-family:var(--sans);font-size:14px;line-height:1.5}
+.cta-card .cta-btn{
+  font-family:var(--sans);font-size:14px;font-weight:600;padding:12px 18px;border-radius:8px;
+  align-self:flex-start;display:inline-flex;align-items:center;gap:8px;
+  margin-top:auto;cursor:pointer;transition:background 180ms var(--ease),color 180ms var(--ease);
+}
+.cta-card.primary{background:var(--ink);color:var(--paper)}
+.cta-card.primary .cta-tag{color:var(--accent)}
+.cta-card.primary .cta-d{color:#cfc9bf}
+.cta-card.primary .cta-btn{background:var(--accent);color:var(--paper)}
+.cta-card.primary .cta-btn:hover{background:var(--accent-soft)}
+.cta-card.secondary{background:var(--card);border:1px solid var(--rule);color:var(--ink)}
+.cta-card.secondary .cta-tag{color:var(--accent)}
+.cta-card.secondary .cta-d{color:var(--ink-soft)}
+.cta-card.secondary .cta-btn{background:var(--ink);color:var(--paper)}
+.cta-card.secondary .cta-btn:hover{background:var(--accent)}
+.cta-card .cta-btn svg{width:14px;height:14px;flex-shrink:0}
+@media (min-width:768px){
+  .cta-card{padding:24px;gap:16px}
+  .cta-card .cta-h{font-size:20px}
+  .cta-card .cta-d{font-size:15px}
+}
+
+.save-msg{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--olive);font-weight:500;text-align:center;min-height:14px;
+}
+
+.foot-note{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-mute);text-align:center;margin-top:16px;
+}
+
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="brand"><img class="brand-logo" src="/clubpetro-logo.png" alt="ClubPetro"></div>
-    <div class="pill" id="pill">Diagnóstico</div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-logo" viewBox="0 0 645 133" aria-label="ClubPetro">
+      <path d="M10.6344 93.9997C3.54479 86.7447 0 77.2877 0 65.9333C0 54.579 3.54479 45.1219 10.7664 37.8669C17.9879 30.612 27.1798 26.778 38.4741 26.778C53.0493 26.778 65.9085 34.3083 71.8196 47.5894L56.9806 56.0732C52.6533 48.5528 46.5159 44.7484 38.7381 44.7484C36.0305 44.6567 33.3345 45.1578 30.8241 46.2195C28.3136 47.2811 26.0445 48.8797 24.163 50.9122C22.2695 52.8818 20.7805 55.2329 19.7869 57.8222C18.7934 60.4115 18.316 63.1847 18.3839 65.9727C18.2934 68.7937 18.7475 71.6048 19.7192 74.2393C20.6909 76.8737 22.1604 79.2777 24.0405 81.3084C25.9106 83.2705 28.1433 84.8163 30.6032 85.8522C33.0632 86.888 35.6992 87.3924 38.3516 87.3346C45.8371 87.3346 53.4358 82.6749 56.6035 76.108L71.5651 85.28C65.3994 97.3225 52.7099 104.99 37.9556 104.99C26.7839 104.951 17.7239 101.255 10.6344 93.9997Z" fill="currentColor"/>
+      <path d="M117.222 71.8223V28.6954H135.738V71.8223C135.738 81.2695 141.121 87.4234 150.049 87.4234C158.977 87.4234 164.361 81.2695 164.361 71.8223V28.6954H182.867V71.8223C182.867 92.7713 170.526 105.089 150.049 105.089C129.573 105.089 117.222 92.7713 117.222 71.8223Z" fill="currentColor"/>
+      <path d="M446.022 72.7759H392.284C394.915 83.3242 401.872 88.6622 413.157 88.6622C421.394 88.4371 429.407 85.8264 436.302 81.1221L443.655 94.6687C434.583 101.531 423.619 105.137 412.412 104.942C399.808 104.942 390.22 101.108 383.526 93.5775C376.833 86.0473 373.552 76.7377 373.552 65.924C373.552 54.5598 376.965 45.2797 383.922 37.8576C390.88 30.4355 399.808 26.7687 410.838 26.7687C421.208 26.7687 429.872 30.1897 436.566 36.904C443.26 43.6183 446.682 52.633 446.682 64.2823C446.643 67.1257 446.423 69.9632 446.022 72.7759V72.7759ZM392.284 58.4036H428.656C426.987 48.6811 420.284 42.7827 410.838 42.7827C401.391 42.7827 394.556 48.6811 392.322 58.4036H392.284Z" fill="currentColor"/>
+      <path d="M518.896 103.31V28.6956H536.619V38.6933C540.956 30.6126 547.518 26.641 556.314 26.641C559.272 26.6558 562.204 27.2114 564.978 28.2827L563.403 46.7643C560.659 45.8397 557.801 45.3331 554.919 45.2602C544.416 45.2602 537.459 52.3775 537.459 67.8706V103.33L518.896 103.31Z" fill="currentColor"/>
+      <path d="M578.639 38.1428C585.86 30.4749 595.049 26.641 606.205 26.641C617.361 26.641 626.553 30.4749 633.781 38.1428C641.002 45.6731 644.547 54.9826 644.547 65.9339C644.547 76.8852 641.002 86.3325 633.781 93.902C626.559 101.472 617.367 105.266 606.205 105.266C595.043 105.266 585.86 101.432 578.639 93.902C571.417 86.3718 567.863 77.0229 567.863 65.9339C567.863 54.845 571.417 45.6731 578.639 38.1428ZM606.205 87.2959C608.831 87.3591 611.44 86.8426 613.861 85.7804C616.282 84.7181 618.46 83.134 620.252 81.1321C624.019 77.0549 626.095 71.5951 626.031 65.9339C626.074 63.1493 625.586 60.3836 624.593 57.798C623.601 55.2123 622.126 52.8584 620.252 50.8734C618.456 48.8786 616.277 47.3019 613.856 46.2464C611.435 45.191 608.828 44.6807 606.205 44.749C603.566 44.691 600.944 45.2094 598.509 46.2709C596.073 47.3325 593.878 48.9136 592.064 50.9128C590.207 52.9044 588.751 55.2623 587.779 57.8484C586.808 60.4345 586.341 63.1967 586.407 65.9733C586.297 71.6189 588.33 77.0814 592.064 81.1714C593.881 83.1634 596.078 84.7373 598.514 85.792C600.949 86.8467 603.569 87.3589 606.205 87.2959Z" fill="#E1652F"/>
+      <path d="M82.9813 7.02889V103.31H101.497V0L82.9813 7.02889Z" fill="currentColor"/>
+      <path d="M264.568 38.1433C261.337 34.4799 257.397 31.5728 253.009 29.6139C248.622 27.655 243.885 26.6888 239.113 26.7791C230.449 26.7791 223.228 30.3377 217.316 37.3273V0.0299683L198.81 7.05886V103.31H216.779V94.0008C222.681 101.393 230.034 105.09 239.094 105.09C249.201 105.09 257.742 101.393 264.549 94.0008C271.356 86.6082 274.787 77.161 274.787 66.072C274.787 54.9831 271.393 45.6735 264.568 38.1433ZM250.426 81.2701C248.569 83.22 246.36 84.7674 243.926 85.8234C241.493 86.8793 238.883 87.423 236.247 87.423C233.611 87.423 231.002 86.8793 228.568 85.8234C226.135 84.7674 223.926 83.22 222.068 81.2701C218.405 77.0889 216.43 71.5959 216.553 65.9344C216.431 60.3553 218.411 54.9486 222.068 50.8739C223.841 48.8109 226.026 47.1783 228.469 46.0913C230.912 45.0042 233.554 44.4891 236.209 44.5823C238.851 44.4955 241.48 44.9999 243.92 46.0614C246.359 47.1229 248.552 48.7169 250.351 50.7363C254.031 54.8509 256.012 60.3098 255.866 65.9344C255.999 71.5906 254.037 77.0828 250.389 81.2701H250.426Z" fill="currentColor"/>
+      <path d="M504.583 83.7272C500.247 86.3324 496.174 87.5612 492.629 87.5612C485.936 87.5612 482.523 83.1866 482.523 74.4177V44.8472H506.158V28.6955H482.523V0.186707L464.158 7.15661V28.6955H452.326V44.8472H464.007V75.6563C464.007 94.9538 472.548 105.089 488.952 105.089C497.23 105.089 504.187 103.035 510.098 98.9254L504.583 83.7272Z" fill="currentColor"/>
+      <path d="M354.111 38.1424C350.938 34.4715 347.044 31.5564 342.694 29.5954C338.344 27.6344 333.64 26.6736 328.902 26.7782C319.842 26.7782 312.356 30.4745 306.191 37.8672V28.6952H287.807V133.332L306.322 126.343V94.6782C309.119 98.0038 312.574 100.657 316.45 102.454C320.325 104.252 324.529 105.151 328.77 105.089C333.508 105.194 338.212 104.233 342.562 102.272C346.912 100.311 350.806 97.3956 353.979 93.7247C360.673 86.1944 364.086 76.8848 364.086 65.9335C364.086 54.9822 360.805 45.6727 354.111 38.1424ZM339.97 81.2693C336.293 85.3785 331.57 87.4233 325.659 87.4233C323.017 87.51 320.388 87.0057 317.948 85.9442C315.509 84.8827 313.316 83.2886 311.517 81.2693C307.837 77.1546 305.856 71.6957 306.002 66.0712C305.833 60.459 307.783 55.0017 311.432 50.8731C313.231 48.8525 315.423 47.2569 317.863 46.1937C320.302 45.1305 322.931 44.6244 325.574 44.7093C331.485 44.7093 336.208 46.7639 339.885 50.8731C343.565 54.9877 345.546 60.4466 345.4 66.0712C345.559 71.6889 343.595 77.1469 339.932 81.2693H339.97Z" fill="currentColor"/>
+    </svg>
+    <span class="brand-ctx" id="brandCtx">Diagnóstico</span>
   </div>
-  <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
-  <div class="screens" id="screens">
-    <section class="screen active" id="s-intro">
-      <div class="intro">
-        <h1 class="intro-mark">Como está a <em>saúde</em> do seu posto?</h1>
-        <p>Olá! Aqui é do <strong>ClubPetro</strong>. Vimos que você baixou nosso material de <strong>Escala de Frentistas</strong>, ótima escolha pra organizar a rotina da equipe.</p>
-        <p>Preparamos um diagnóstico rápido que mostra a saúde da operação do seu posto numa nota de <strong>0 a 100</strong>. São 9 perguntas e leva cerca de 2 minutos.</p>
-        <div class="field">
-          <label for="nome">Como podemos te chamar?</label>
-          <input id="nome" type="text" placeholder="Seu nome" autocomplete="given-name">
-        </div>
-        <div class="field">
-          <label for="telefone">Seu WhatsApp</label>
-          <input id="telefone" type="tel" inputmode="tel" placeholder="(DD) 9 9999-9999" autocomplete="tel">
-        </div>
-        <div class="nav"><button class="btn btn-primary" id="start" disabled>Começar diagnóstico</button></div>
-        <p class="hint">Suas respostas ficam só entre você e o ClubPetro.</p>
-      </div>
-    </section>
-    <section class="screen" id="s-question">
-      <div class="qcount" id="qcount"></div>
-      <h2 class="qtext" id="qtext"></h2>
-      <div class="options" id="options"></div>
-      <div class="nav"><button class="btn btn-ghost" id="back">Voltar</button></div>
-    </section>
-    <section class="screen" id="s-result">
-      <div class="result">
-        <p class="lead-in"><b id="r-nome">Seu posto</b>, a saúde da sua operação é</p>
-        <div class="gauge">
-          <svg width="200" height="200" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="86" fill="none" stroke="#ece3d6" stroke-width="16"/>
-            <circle id="arc" cx="100" cy="100" r="86" fill="none" stroke="#f26600" stroke-width="16" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
-          </svg>
-          <div class="num"><span class="v" id="r-score">0</span><span class="of">de 100</span></div>
-        </div>
-        <span class="lvl-badge" id="r-badge"></span>
-        <p class="msg" id="r-msg"></p>
-        <div class="cta-wrap">
-          <button class="btn btn-wa" id="r-cta">Quero ver os pontos de melhoria</button>
-          <p class="savemsg" id="savemsg"></p>
-        </div>
-      </div>
-    </section>
+  <div class="progress-area hidden" id="progressArea">
+    <div class="progress-count"><strong id="progNow">0</strong><span>/</span><span id="progTotal">18</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
   </div>
-  <div class="foot">Diagnóstico de Saúde do Posto · <b>ClubPetro</b></div>
+</header>
+
+<div class="layout">
+  <main id="mainArea"></main>
 </div>
 
 <script>
-/* ===========================================================================
-   CONFIG  ·  PREENCHA ANTES DE PUBLICAR
-   ---------------------------------------------------------------------------
-   Backend Supabase configurado e testado em 21/05/2026
-   Projeto: "Inteligencia Comercial CP" (ref azmtxhjtqodtaeoshrye)
-   Tabela: public.diagnostico_respostas  ·  RLS ligado  ·  policy: INSERT anonimo
-   =========================================================================== */
+/* ============================================================
+   CONFIG · backend, contatos, integrações
+   Projeto Supabase "Inteligencia Comercial CP" (azmtxhjtqodtaeoshrye)
+   Tabela: public.diagnostico_respostas · RLS ligado · policy: INSERT anônimo
+   ============================================================ */
 const CONFIG = {
-  CLUBPETRO_WHATSAPP: "5531992697762",      // WhatsApp (Guilherme): 55 Brasil + 31 DDD + 992697762
-  SUPABASE_URL:       "https://azmtxhjtqodtaeoshrye.supabase.co",   // URL base do projeto (o supabase-js adiciona /rest/v1/ sozinho)
-  SUPABASE_ANON_KEY:  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0"   // chave anon/public (pode ser publica; NUNCA use a service_role aqui)
+  CLUBPETRO_WHATSAPP: "5531992697762",
+  SUPABASE_URL: "https://azmtxhjtqodtaeoshrye.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0",
+  RD_CONVERSION_FN: "/functions/v1/rd-diagnostico-conversion",
+  // TODO antes do go-live: substituir pelo link permanente do Meet do RaioX
+  RAIOX_MEET_LINK: "https://meet.google.com/xxx-xxxx-xxx",
+  STATE_KEY: "clubpetro_diag_v3_state",
+  STATE_TTL_DAYS: 7
 };
-/* =========================================================================== */
 
-// inicia o cliente Supabase sob demanda. A lib carrega com "defer", entao
-// so fica disponivel DEPOIS deste script inline -> a init e' preguicosa.
+/* ============================================================
+   BLOCOS · 8 pilares
+   ============================================================ */
+const BLOCKS = {
+  pessoas:     { name:"Pessoas e equipe", short:"Pessoas",  max:60 },
+  posto:       { name:"Posto físico",     short:"Posto",    max:25 },
+  bandeira:    { name:"Bandeira",         short:"Bandeira", max:10 },
+  cliente:     { name:"Cliente",          short:"Cliente",  max:15 },
+  fidelizacao: { name:"Fidelização",      short:"Fideliz.", max:25 },
+  mix:         { name:"Mix",              short:"Mix",      max:10 },
+  equipe:      { name:"Equipe vendendo",  short:"Equipe",   max:25 },
+  tecnologia:  { name:"Tecnologia",       short:"Tech",     max:10 }
+};
+const BLOCK_ORDER = ["pessoas","posto","bandeira","cliente","fidelizacao","mix","equipe","tecnologia"];
+const SCORE_MAX = BLOCK_ORDER.reduce((s,k)=>s+BLOCKS[k].max,0);
+
+/* ============================================================
+   BANCO DE PERGUNTAS · tom Ricardo (frases completas)
+   Briefing v3 seção 03
+   ============================================================ */
+const QUESTIONS = [
+  {
+    id:"P1", block:"pessoas", type:"score", max:15,
+    text:"Pensando na sua equipe atual de frentistas, <em>quanto tempo</em> em média eles costumam ficar no seu posto?",
+    context:"Considera o tempo médio geral, não os casos isolados. Se você tem um frentista que está há 8 anos e três que rodaram em 6 meses, a média é o que conta.",
+    options:[
+      { label:"Mais de 2 anos.", desc:"A maioria do meu time tem casa, conhece o posto e o cliente fixo.", pts:15 },
+      { label:"Entre 1 e 2 anos.", desc:"Roda um pouco, mas tenho um núcleo estável.", pts:10 },
+      { label:"De 6 meses a 1 ano.", desc:"É comum frentista entrar, pegar o jeito e sair.", pts:5 },
+      { label:"Menos de 6 meses.", desc:"Mal aprende o nome dos clientes e já saiu.", pts:0 }
+    ]
+  },
+  {
+    id:"P2", block:"pessoas", type:"score", max:15,
+    text:"Você tem ideia do <em>seu turnover anual</em>? Tipo, de cada 10 frentistas que passam pelo posto em um ano, quantos saem?",
+    context:"A média do setor de postos em 2024 ficou em torno de 52%. Acima disso, é sinal de que tem algo escapando. Abaixo, você está conseguindo segurar gente que a maioria não consegue.",
+    options:[
+      { label:"Abaixo de 20%.", desc:"Quase ninguém sai por ano. Tenho uma equipe das antigas.", pts:15 },
+      { label:"Entre 20 e 40%.", desc:"Acompanho de perto e está sob controle.", pts:10 },
+      { label:"Entre 40 e 60%.", desc:"Dentro da média do setor, sai gente e entra gente.", pts:5 },
+      { label:"Acima de 60%, ou pra ser sincero, não sei.", desc:"Tem semana que parece porta giratória.", pts:0 }
+    ]
+  },
+  {
+    id:"P4", block:"pessoas", type:"score", max:10,
+    text:"Quando você precisa <em>contratar um frentista novo</em>, como você faz?",
+    context:"Aqui não tem resposta certa, tem resposta diferente. Cada caminho funciona em situações diferentes.",
+    options:[
+      { label:"Tenho um processo.", desc:"Faço anúncio, recebo currículos, faço entrevista, testo o cara um dia.", pts:10 },
+      { label:"Por indicação da própria equipe ou de cliente.", desc:"Geralmente é primo, vizinho, conhecido.", pts:6 },
+      { label:"Quem aparece na porta procurando emprego.", desc:"Se parece honesto e quer trabalhar, eu testo.", pts:2 },
+      { label:"Trabalho com parceiro de RH ou empresa terceirizada.", desc:"Eles fazem a triagem, eu só aprovo.", pts:10 }
+    ]
+  },
+  {
+    id:"P7", block:"pessoas", type:"score", max:10,
+    text:"Como você descreveria <em>a cultura do seu posto</em>? E aqui é com honestidade, é entre nós.",
+    context:"Cultura não é o que está pendurado na parede. É o que acontece quando o dono não está olhando.",
+    options:[
+      { label:"Forte.", desc:"Meus frentistas vestem a camisa, ajudam um ao outro, gostam de estar lá.", pts:10 },
+      { label:"Razoável.", desc:"Depende do turno. Tem turno que flui, tem turno que é só fazer o básico.", pts:6 },
+      { label:"Fraca.", desc:"Cada um por si. Vem trabalhar, faz o expediente, vai embora.", pts:2 },
+      { label:"Pra falar a verdade, nunca parei pra pensar nisso.", desc:"Sempre foi assim, nunca avaliei.", pts:0 }
+    ]
+  },
+  {
+    id:"P10", block:"pessoas", type:"score", max:10,
+    text:"Sobre a <em>PEC do fim da escala 6x1</em>, você já está se preparando ou ainda está no escuro?",
+    context:"A PEC foi aprovada na Câmara em maio de 2026 e está em análise no Senado. Se passar, frentista passa a trabalhar 4 dias e folgar 3, sem redução de salário. Para posto isso muda o custo de pessoal pesado.",
+    options:[
+      { label:"Já planejei a mudança.", desc:"Calculei o custo, vi quantos frentistas vou precisar contratar, mexi na escala.", pts:10 },
+      { label:"Estou estudando.", desc:"Sei que vem, ainda não bati o número, mas já comecei a pensar.", pts:5 },
+      { label:"Penso nisso quando sair a lei.", desc:"Por enquanto, foco no dia a dia.", pts:2 },
+      { label:"Pra ser sincero, nem sei direito do que se trata.", desc:"", pts:0 }
+    ]
+  },
+  {
+    id:"P11", block:"posto", type:"score", max:10,
+    text:"Seu posto fica num <em>bom ponto comercial</em>?",
+    context:"Aqui é sobre fluxo. Avenida principal, esquina de duas vias movimentadas, entrada de bairro forte. Não é sobre estética, é sobre quantos carros passam na frente todo dia.",
+    options:[
+      { label:"Excelente.", desc:"Estou em avenida de fluxo alto, o movimento natural sustenta o posto.", pts:10 },
+      { label:"Razoável.", desc:"Fluxo médio. Tenho movimento, mas dependo de cliente fiel para encher.", pts:6 },
+      { label:"Fraco.", desc:"O ponto não atrai por si só. Quem vem, vem porque conhece e prefere.", pts:3 },
+      { label:"Ruim.", desc:"É um ponto difícil, vivo lutando para atrair gente nova.", pts:0 }
+    ]
+  },
+  {
+    id:"P12", block:"posto", type:"score", max:15,
+    text:"Imagine alguém parando o carro <em>a 200 metros</em> do seu posto agora e tirando uma foto. Sem maquiagem. Como ele estaria nessa foto?",
+    context:"Essa é a foto que cliente novo vê. Bandeira, fachada, pintura, identidade visual, limpeza da pista. Geralmente é o dono que sabe melhor o que está pendente.",
+    options:[
+      { label:"Bonito e cuidado.", desc:"Identidade visual em dia, pintura nova, totem aceso, pista limpa.", pts:15 },
+      { label:"Apresentável, com ajustes pendentes.", desc:"Tenho coisa pra arrumar mas no geral parece bem.", pts:10 },
+      { label:"Tem manutenção pendente faz tempo.", desc:"Sei o que precisa, ainda não fiz.", pts:5 },
+      { label:"Bem capenga, pra ser sincero.", desc:"Tem coisa caindo, pintura descascada, totem queimado.", pts:0 }
+    ]
+  },
+  {
+    id:"P15", block:"bandeira", type:"qualify",
+    text:"Hoje, qual é a <em>bandeira</em> do seu posto?",
+    context:"Não conta na nota, é só pra entender com quem estamos falando. Cada bandeira tem regras de contrato, comissão e exclusividade diferentes.",
+    options:[
+      { label:"Bandeira premium.", desc:"Petrobras, Shell, Ipiranga ou Raízen.", val:"premium" },
+      { label:"Bandeira regional reconhecida.", desc:"Ale, Vibra, Ciclo, Sim, ou outra regional forte.", val:"regional" },
+      { label:"Bandeira branca, sou independente.", desc:"", val:"branca" },
+      { label:"Outra.", desc:"Tenho uma situação particular, posso explicar depois.", val:"outras" }
+    ]
+  },
+  {
+    id:"P17", block:"bandeira", type:"score", max:10,
+    text:"Pensa no seu cliente fiel. Aquele que sempre volta. <em>Por que ele vai</em> no seu posto e não no concorrente da esquina?",
+    context:"Essa pergunta é desconfortável, mas reveladora. A resposta honesta orienta a estratégia de retenção.",
+    options:[
+      { label:"Vai pela minha pessoa, pelo atendimento, pelo programa que tenho.", desc:"Ele me conhece, conhece a equipe, tem uma relação.", pts:10 },
+      { label:"Vai pela conveniência, o posto está no caminho dele.", desc:"Ele abasteceria em qualquer um que estivesse aqui.", pts:7 },
+      { label:"Vai pelo preço, principalmente.", desc:"Se o concorrente baixar 5 centavos, vai pro outro.", pts:3 },
+      { label:"Pra ser sincero, não sei dizer.", desc:"", pts:0 }
+    ]
+  },
+  {
+    id:"P20", block:"cliente", type:"score", max:15,
+    text:"Da venda total do seu posto, mais ou menos quantos % vem do <em>cliente final, varejo</em>? O resto seria frota, transportadora, contrato faturado.",
+    context:"Não precisa ser exato. Pode dar uma noção. Essa pergunta ajuda a entender quanto da sua receita está exposta à concorrência direta versus quanto está protegida por contrato.",
+    options:[
+      { label:"Mais de 80%.", desc:"Sou posto de varejo. Cliente final é o que move o negócio.", pts:15 },
+      { label:"Entre 60 e 80%.", desc:"Equilibrado, com mais peso no varejo.", pts:10 },
+      { label:"Entre 40 e 60%.", desc:"Dependo dos dois pra fechar mês.", pts:5 },
+      { label:"Menos de 40%.", desc:"Vivo dos faturados, varejo é só complemento.", pts:0 }
+    ]
+  },
+  {
+    id:"P23", block:"fidelizacao", type:"score", max:15,
+    text:"Você tem hoje algum <em>programa de fidelidade</em> rodando no seu posto?",
+    context:"Conta como programa qualquer coisa estruturada que faça o cliente voltar. Cartão fidelidade no caderninho não conta, isso é desconto na amizade.",
+    options:[
+      { label:"Sim, programa próprio estruturado.", desc:"Sistema que registra cliente, acumula, dá benefício.", pts:15 },
+      { label:"Sim, uso de terceiros.", desc:"ClubPetro, Premmia, Shell Box, Sem Parar, etc.", pts:12 },
+      { label:"Tenho desconto no boca a boca pra cliente fiel.", desc:"Sem sistema, é na confiança.", pts:5 },
+      { label:"Não tenho nada.", desc:"Cliente volta porque quer ou porque está no caminho.", pts:0 }
+    ]
+  },
+  {
+    id:"P24", block:"fidelizacao", type:"score", max:10,
+    text:"Você sabe dizer, dos clientes que abastecem no seu posto, <em>quantos voltam</em> em um mês?",
+    context:"Esse número se chama recorrência. Posto bom de varejo costuma ter entre 50 e 70% dos clientes voltando no mês. Quem não mede, geralmente está pior do que imagina.",
+    options:[
+      { label:"Sei, acompanho com dado mês a mês.", desc:"", pts:10 },
+      { label:"Tenho uma noção, sem número fechado.", desc:"Sei mais ou menos pelos rostos.", pts:6 },
+      { label:"Não tenho como medir.", desc:"Falta sistema pra registrar quem é cliente.", pts:2 },
+      { label:"Nunca me preocupei com isso.", desc:"", pts:0 }
+    ]
+  },
+  {
+    id:"P27", block:"mix", type:"score", max:10,
+    text:"Do total de gasolina que você vende, quantos % é <em>aditivada</em> versus comum?",
+    context:"Aditivada tem margem maior. Posto que vende muito aditivada tem frentista treinado pra oferecer e cliente educado pra aceitar.",
+    options:[
+      { label:"Mais de 40%.", desc:"Meu time empurra forte, cliente compra.", pts:10 },
+      { label:"Entre 20 e 40%.", desc:"Vendo bem, tem espaço pra crescer.", pts:7 },
+      { label:"Entre 10 e 20%.", desc:"Só quem pede de iniciativa própria leva.", pts:3 },
+      { label:"Menos de 10%, ou pra falar a verdade, não sei dizer.", desc:"", pts:0 }
+    ]
+  },
+  {
+    id:"P35", block:"equipe", type:"score", max:15,
+    text:"Seus frentistas <em>ganham comissão</em> em alguma coisa? Como é o pacote de remuneração?",
+    context:"Equipe vende o que tem incentivo pra vender. Sem comissão, é difícil cobrar resultado.",
+    options:[
+      { label:"Sim, em quase tudo.", desc:"Combustível premium, aditivada, lubrificante, conveniência. O time vê resultado no contracheque.", pts:15 },
+      { label:"Sim, em alguns produtos.", desc:"Principalmente em aditivada e troca de óleo. Outros não.", pts:10 },
+      { label:"Tem bônus avulso, sem regra fixa.", desc:"Quando bate meta dou alguma coisa, mas não é estruturado.", pts:5 },
+      { label:"Não. Só salário fixo.", desc:"", pts:0 }
+    ]
+  },
+  {
+    id:"P37", block:"equipe", type:"score", max:10,
+    text:"Você consegue <em>medir</em> se um frentista está vendendo mais que o outro? E o quanto cada um vende?",
+    context:"A capacidade de medir individualmente é o que permite a comissão da pergunta anterior funcionar. Sem medição, comissão vira loteria.",
+    options:[
+      { label:"Sim, com detalhe.", desc:"Sei por frentista, por turno, por produto, por dia.", pts:10 },
+      { label:"Sim, no geral.", desc:"Tenho o número da equipe, sem detalhar por pessoa.", pts:6 },
+      { label:"Tenho noção pela observação.", desc:"Sei quem se esforça mais, quem é mais quieto, mas sem número.", pts:3 },
+      { label:"Não tenho como medir.", desc:"Trabalho no achismo.", pts:0 }
+    ]
+  },
+  {
+    id:"P39", block:"tecnologia", type:"score", max:10,
+    text:"Pra gerir o posto, hoje você usa <em>qual ferramenta</em>?",
+    context:"Não tem certo e errado, tem matched expectations. Se o posto é pequeno, planilha pode bastar. Se é grande, exige sistema.",
+    options:[
+      { label:"ERP integrado com módulo de posto.", desc:"Linx, Cisar, ou outro sistema robusto.", pts:10 },
+      { label:"PDV ou sistema básico de caixa.", desc:"Sistema simples, só pra fechar caixa e nota.", pts:6 },
+      { label:"Planilha de Excel ou Google.", desc:"Controle manual, anoto e somo.", pts:2 },
+      { label:"Caderno ou na cabeça.", desc:"Sou eu que faço tudo, sei tudo de cor.", pts:0 }
+    ]
+  },
+  {
+    id:"P42", block:"_qual", type:"mql_role",
+    text:"Pra fechar, qual é o <em>seu papel</em> no posto?",
+    context:"Não conta na nota. Serve pra direcionar a conversa com a área comercial.",
+    options:[
+      { label:"Dono ou sócio.", desc:"A decisão final é minha.", val:"Dono/sócio", tag:"decisor" },
+      { label:"Gerente ou responsável pela operação.", desc:"Conheço tudo do posto e tenho voz na decisão.", val:"Gerente", tag:"decisor" },
+      { label:"Cargo administrativo.", desc:"Financeiro, RH, ou similar.", val:"Administrativo", tag:"parcial" },
+      { label:"Trabalho na pista ou no caixa.", desc:"", val:"Pista", tag:"fora" }
+    ]
+  }
+];
+
+const TOTAL_Q = QUESTIONS.length;
+const SCORE_QUESTIONS = QUESTIONS.filter(q => q.type === "score");
+const TOTAL_POINTS = SCORE_QUESTIONS.reduce((s,q) => s + q.max, 0);
+
+/* ============================================================
+   NÍVEIS
+   ============================================================ */
+const LEVELS = [
+  { min:0,  max:30,  name:"Operação no aperto",  msg:"Sua operação roda muito no improviso e na sua mão. Há espaço claro para organizar." },
+  { min:31, max:60,  name:"Operação em ajuste",  msg:"Você tem uma base, mas escapa venda no atendimento e no mix. Ajustes simples mudam o jogo." },
+  { min:61, max:80,  name:"Operação organizada", msg:"Sua operação está organizada, isso é raro. O próximo passo é fazer o cliente voltar mais." },
+  { min:81, max:100, name:"Operação madura",     msg:"Seu posto está acima da média. Há teto para crescer com fidelização e dado de cliente." }
+];
+
+const INSIGHTS = {
+  pessoas:{
+    high:"Equipe estável e cultura conhecida. Base sólida para qualquer programa de retenção crescer rápido.",
+    mid:"Sua equipe oscila e o turnover incomoda. O custo dessa rotatividade aparece em cada saída.",
+    low:"Rotatividade alta e processo no improviso. Fidelidade não funciona se a equipe não estabiliza primeiro."
+  },
+  posto:{
+    high:"Posto bem posicionado e cuidado. Quem passa na frente vê isso, e isso conta antes de qualquer programa.",
+    mid:"Você tem ponto, mas a foto a 200 metros pede ajustes. Detalhes simples escapam venda diariamente.",
+    low:"Ponto fraco somado a imagem capenga é a pior combinação para atrair cliente novo."
+  },
+  bandeira:{
+    high:"Cliente vem por você, não pela bandeira. Esse é o tipo de relacionamento mais difícil de copiar.",
+    mid:"Cliente vem pelo caminho ou pela conveniência. Se aparecer concorrente do lado, você perde.",
+    low:"Você está numa guerra de preço, que ninguém ganha. Construir motivo para o cliente voltar é a saída."
+  },
+  cliente:{
+    high:"Base de varejo bem diluída. Margem real do seu posto vem daí.",
+    mid:"Equilíbrio entre varejo e faturado, com risco médio de concentração.",
+    low:"Você depende muito dos faturados. Se um cliente grande sai, o caixa do mês não fecha."
+  },
+  fidelizacao:{
+    high:"Programa estruturado e recorrência medida. Próximo passo é ativar inativos com campanha.",
+    mid:"Programa parcial, sem dado claro de quem voltou. Quase lá, falta estruturar a medição.",
+    low:"Sem programa e sem medição. Cliente abastece e some sem você perceber."
+  },
+  mix:{
+    high:"Aditivada puxa margem. Próximo nível é cruzar com lubrificante e conveniência.",
+    mid:"Mix oscilante. De 5 a 8 pontos de margem ficam na mesa todo mês.",
+    low:"Só combustível. Margem espremida nos 10 a 11% da revenda."
+  },
+  equipe:{
+    high:"Comissionamento estruturado e medição individual. Frentista gera receita ativa.",
+    mid:"Comissão sem regra clara ou medição parcial. Bom não é reconhecido, ruim não é cobrado.",
+    low:"Sem comissão e sem meta. Você paga salário para ninguém vender ativamente."
+  },
+  tecnologia:{
+    high:"ERP integrado. Próximo passo é cruzar dado do PDV com campanha de WhatsApp.",
+    mid:"Sistema básico. Mede venda mas não mede cliente.",
+    low:"Sem sistema, sem dado. Decisão fica no achismo, fidelização não roda."
+  }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function freshState(){
+  return {
+    screen:"welcome",
+    qIndex:0,
+    answers:{},
+    phone:"",
+    blockScores:Object.fromEntries(BLOCK_ORDER.map(b=>[b,0])),
+    startedAt:null,
+    lastQAt:null,
+    finishedAt:null,
+    diagId:null
+  };
+}
+let state = freshState();
+let hasResumable = false;
+let questionStartTime = 0;
+
+function uuid(){
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
+}
+
+function saveState(){
+  try{ localStorage.setItem(CONFIG.STATE_KEY, JSON.stringify({ ...state, savedAt:Date.now() })); }catch(e){}
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(CONFIG.STATE_KEY); if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    const ageDays = (Date.now() - (parsed.savedAt||0)) / 86400000;
+    if(ageDays > CONFIG.STATE_TTL_DAYS){ localStorage.removeItem(CONFIG.STATE_KEY); return null; }
+    return parsed;
+  }catch(e){ return null; }
+}
+function clearState(){ try{ localStorage.removeItem(CONFIG.STATE_KEY); }catch(e){} }
+
+/* ============================================================
+   TRACKING · GA4 (gtag) + Meta Pixel (fbq) + Supabase log
+   ============================================================ */
+function track(event, data){
+  const payload = { ts: new Date().toISOString(), ...(data||{}) };
+  try{ if(window.gtag) window.gtag("event", event, payload); }catch(e){}
+  try{ if(window.fbq) window.fbq("trackCustom", event, payload); }catch(e){}
+  // Best-effort log no Supabase (sem bloquear)
+  try{
+    const client = getSupabase();
+    if(client){
+      client.from("diagnostico_eventos").insert({
+        event_name: event,
+        event_data: payload,
+        diag_id: state.diagId || null
+      }).then(()=>{}).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+/* ============================================================
+   SUPABASE
+   ============================================================ */
 let sb = null;
 function getSupabase(){
-  if (sb) return sb;
-  if (CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.includes("SEU-PROJETO") && window.supabase) {
-    try { sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
-    catch (e) { console.error("Supabase init falhou:", e); }
+  if(sb) return sb;
+  if(CONFIG.SUPABASE_URL && window.supabase){
+    try{ sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
+    catch(e){ console.error("Supabase init falhou:", e); }
   }
   return sb;
 }
 
-// 6 perguntas de saude (somam 100) + 3 de qualificacao
-const QUESTIONS = [
-  { id:"q1", scored:true, text:"Pense na última vez que um frentista faltou ou pediu troca de turno em cima da hora. Como o seu posto resolveu?",
-    options:[
-      {label:"Tranquilo, tenho um processo ou sistema que cobre isso sem eu precisar entrar",pts:20},
-      {label:"Resolvi, mas tomou meu tempo e tive que remanejar tudo na mão",pts:10},
-      {label:"Virou aperto, acabei apagando incêndio ou cobrindo pessoalmente",pts:0}
-    ]},
-  { id:"q2", scored:true, text:"Montar e ajustar a escala da equipe, com folgas, turnos e trocas, consome quanto do seu tempo numa semana comum?",
-    options:[
-      {label:"Pouco, está organizado e quase não penso nisso",pts:15},
-      {label:"Um tempo razoável, é chato mas eu dou conta",pts:8},
-      {label:"Muito, isso vira uma novela toda semana",pts:0}
-    ]},
-  { id:"q3", scored:true, text:"Se você pudesse ver como cada frentista atende um cliente novo na pista agora, o que encontraria?",
-    options:[
-      {label:"Todos seguem o mesmo padrão de atendimento que combinamos",pts:15},
-      {label:"Cada um atende do seu jeito, depende muito da pessoa",pts:8},
-      {label:"Sinceramente não sei, não tenho como acompanhar isso",pts:0}
-    ]},
-  { id:"q4", scored:true, text:"Você consegue dizer hoje quais frentistas mais vendem e ajudam a fidelizar, e quais ficam pra trás?",
-    options:[
-      {label:"Sim, acompanho por metas e números de cada um",pts:20},
-      {label:"Tenho uma noção pela observação, mas sem números",pts:10},
-      {label:"Não tenho como saber, todos entram no mesmo balde",pts:0}
-    ]},
-  { id:"q5", scored:true, text:"Como você descreveria a motivação da sua equipe de pista no dia a dia?",
-    options:[
-      {label:"Engajada, vestem a camisa e buscam resultado",pts:15},
-      {label:"Oscila, depende do dia e da pessoa",pts:8},
-      {label:"Desmotivada, é difícil manter o time animado",pts:0}
-    ]},
-  { id:"q6", scored:true, text:"Para organizar a rotina, o atendimento e o relacionamento com o cliente, no que você se apoia hoje?",
-    options:[
-      {label:"Num sistema ou ferramenta que centraliza tudo isso",pts:15},
-      {label:"Em planilhas e no WhatsApp, cada coisa num canto",pts:8},
-      {label:"Na memória e no improviso, sem ferramenta nenhuma",pts:0}
-    ]},
-  { id:"q7", scored:false, key:"papel", text:"Pra gente personalizar o seu resultado, qual é o seu papel no posto?",
-    options:[{label:"Sou dono ou sócio",val:"Dono/sócio"},{label:"Sou gerente ou responsável pela operação",val:"Gerente"},{label:"Outro (administrativo, financeiro)",val:"Outro"},{label:"Trabalho na pista (frentista)",val:"Frentista"}]},
-  { id:"q8", scored:false, key:"conhece", text:"E sobre o ClubPetro, em que ponto você está hoje?",
-    options:[{label:"Já sou ou já fui cliente",val:"Já usou"},{label:"Conheço, mas nunca cheguei a usar",val:"Conhece"},{label:"Já ouvi falar por cima",val:"Ouviu falar"},{label:"É a primeira vez que ouço falar",val:"Não conhece"}]},
-  { id:"q9", scored:false, key:"interesse", text:"Pensando no próximo passo do seu posto, o que você gostaria de destravar primeiro?",
-    options:[{label:"Organizar a equipe e a operação do dia a dia",val:"Equipe e operação"},{label:"Fazer o cliente voltar mais vezes e abastecer mais",val:"Recorrência do cliente"},{label:"Vender mais na loja de conveniência e na pista",val:"Vendas da loja e pista"},{label:"Entender de verdade quem é o meu cliente",val:"Dados do cliente"}]}
-];
+/* ============================================================
+   SCORE
+   ============================================================ */
+function blockPct(b){
+  const max = BLOCKS[b].max; if(!max) return 0;
+  return Math.round((state.blockScores[b]/max) * 100);
+}
+function totalScore(){
+  let earned = 0;
+  BLOCK_ORDER.forEach(b => earned += (state.blockScores[b]||0));
+  return Math.round((earned/SCORE_MAX) * 100);
+}
+function levelFor(score){ return LEVELS.find(l => score>=l.min && score<=l.max) || LEVELS[0]; }
+function insightFor(b, pct){
+  const lvl = pct >= 70 ? "high" : (pct >= 35 ? "mid" : "low");
+  return INSIGHTS[b][lvl];
+}
 
-const LEVELS = [
-  {min:0,max:30,name:"Operação no aperto",color:"#a64545",msg:"Sua operação roda bastante no improviso e na sua mão. O bom é que tem solução, e organizar isso costuma destravar venda rápido."},
-  {min:31,max:60,name:"Operação em ajuste",color:"#d4540a",msg:"Você já tem uma base, mas ainda escapa venda no atendimento e na rotina da pista. Alguns ajustes simples mudam esse jogo."},
-  {min:61,max:80,name:"Operação organizada",color:"#5f7a3a",msg:"Sua operação está organizada, isso é mais raro do que parece. O próximo passo é fazer o cliente voltar mais e gastar mais."},
-  {min:81,max:100,name:"Operação madura",color:"#1a1612",msg:"Seu posto está acima da média na organização. Quem está nesse nível costuma ganhar muito com fidelização e dado de cliente."}
-];
+function evaluateMql(){
+  const p42 = state.answers.P42?.tag || "";
+  const telOk = (state.phone || "").replace(/\D/g,"").length >= 10;
+  const decisor = (p42 === "decisor");
+  const cruzaMql = decisor;
+  const isMql = decisor && telOk;
+  const tag = isMql ? "MQL" : (decisor ? "MQL_sem_telefone" : "lead_nutricao");
+  return { isMql, decisor, telOk, cruzaMql, tag };
+}
 
-const answers = {};
-let order = [], pos = 0, nome = "", telefone = "";
-const el = id => document.getElementById(id);
-const screens = { intro:el("s-intro"), q:el("s-question"), result:el("s-result") };
+/* ============================================================
+   RADAR (resultado)
+   ============================================================ */
+function buildRadar(){
+  const size = 280, cx = size/2, cy = size/2, r = 92;
+  const n = BLOCK_ORDER.length;
+  const startA = -Math.PI/2;
+  const step = (Math.PI*2)/n;
+  let html = "";
 
-function show(scr){ Object.values(screens).forEach(s=>s.classList.remove("active")); scr.classList.add("active"); window.scrollTo({top:0,behavior:"smooth"}); }
-// re-dispara uma animacao CSS num elemento ja existente (forca reflow no meio)
-function replayAnim(node){ node.style.animation="none"; void node.offsetWidth; node.style.animation=""; }
+  [.25,.5,.75,1].forEach(g => {
+    const pts = BLOCK_ORDER.map((_,i) => {
+      const a = startA + i*step;
+      return `${cx+Math.cos(a)*r*g},${cy+Math.sin(a)*r*g}`;
+    }).join(" ");
+    html += `<polygon class="rr-grid" points="${pts}"/>`;
+  });
+  BLOCK_ORDER.forEach((b,i) => {
+    const a = startA + i*step;
+    html += `<line class="rr-axis" x1="${cx}" y1="${cy}" x2="${cx+Math.cos(a)*r}" y2="${cy+Math.sin(a)*r}"/>`;
+  });
+  const dataPts = BLOCK_ORDER.map((b,i) => {
+    const a = startA + i*step;
+    const v = (blockPct(b)/100) * r;
+    return `${cx+Math.cos(a)*v},${cy+Math.sin(a)*v}`;
+  }).join(" ");
+  html += `<polygon class="rr-shape" points="${dataPts}"/>`;
+  BLOCK_ORDER.forEach((b,i) => {
+    const a = startA + i*step;
+    const v = (blockPct(b)/100) * r;
+    html += `<circle class="rr-dot" cx="${cx+Math.cos(a)*v}" cy="${cy+Math.sin(a)*v}" r="3"/>`;
+  });
+  BLOCK_ORDER.forEach((b,i) => {
+    const a = startA + i*step;
+    const lr = r + 18;
+    const x = cx + Math.cos(a)*lr;
+    const y = cy + Math.sin(a)*lr;
+    const anchor = Math.abs(Math.cos(a))<.3 ? "middle" : (Math.cos(a)>0 ? "start" : "end");
+    html += `<text class="rr-label" x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="${anchor}">${BLOCKS[b].short.toUpperCase()}</text>`;
+  });
+  return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${html}</svg>`;
+}
 
-// telefone obrigatorio: o botao "Comecar" so libera com um numero valido (>=10 digitos)
-function telefoneValido(){ return el("telefone").value.replace(/\D/g,"").length >= 10; }
-function validarInicio(){ el("start").disabled = !telefoneValido(); }
-el("telefone").addEventListener("input", validarInicio);
-validarInicio();
+/* ============================================================
+   PHONE MASK
+   ============================================================ */
+function maskPhone(v){
+  const d = v.replace(/\D/g,"").slice(0,11);
+  if(d.length<=2) return d;
+  if(d.length<=6) return "("+d.slice(0,2)+") "+d.slice(2);
+  if(d.length<=10) return "("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6);
+  return "("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7);
+}
+function phoneValid(){ return (state.phone||"").replace(/\D/g,"").length >= 10; }
 
-el("start").addEventListener("click", ()=>{
-  if(el("start").disabled) return;
-  nome = el("nome").value.trim();
-  telefone = el("telefone").value.trim();
-  order = QUESTIONS.map((_,i)=>i); pos = 0;
-  el("progress").classList.add("show"); renderQuestion(); show(screens.q);
-});
-[el("nome"), el("telefone")].forEach(inp=>{
-  inp.addEventListener("keydown", e=>{ if(e.key==="Enter") el("start").click(); });
-});
-el("back").addEventListener("click", ()=>{ if(pos===0){ show(screens.intro); el("progress").classList.remove("show"); return; } pos--; renderQuestion(); });
+/* ============================================================
+   RENDER
+   ============================================================ */
+const mainEl = document.getElementById("mainArea");
+const progressArea = document.getElementById("progressArea");
+const progFill = document.getElementById("progFill");
+const progNow = document.getElementById("progNow");
+const progTotal = document.getElementById("progTotal");
+const brandCtx = document.getElementById("brandCtx");
+
+const STEP_TOTAL = TOTAL_Q + 1; // perguntas + telefone
+progTotal.textContent = STEP_TOTAL;
+
+function render(){
+  if(state.screen === "welcome") renderWelcome();
+  else if(state.screen === "question") renderQuestion();
+  else if(state.screen === "phone") renderPhone();
+  else if(state.screen === "result") renderResult();
+  updateTopbar();
+}
+
+function updateTopbar(){
+  if(state.screen === "welcome" || state.screen === "result"){
+    progressArea.classList.add("hidden");
+    brandCtx.textContent = state.screen === "result" ? "Resultado" : "Diagnóstico";
+  } else {
+    progressArea.classList.remove("hidden");
+    const now = state.screen === "phone" ? STEP_TOTAL : state.qIndex + 1;
+    progNow.textContent = now;
+    progFill.style.width = Math.round((now/STEP_TOTAL)*100) + "%";
+    const blockId = state.screen === "phone" ? null : QUESTIONS[state.qIndex].block;
+    brandCtx.textContent = blockId && BLOCKS[blockId] ? BLOCKS[blockId].name : "Qualificação";
+  }
+}
+
+function escHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]); }
+
+function renderWelcome(){
+  const resumeHtml = hasResumable ? `
+    <div class="resume-banner show">
+      <div class="rb-body">
+        <span class="rb-l">Diagnóstico em andamento</span>
+        <p class="rb-t">Você parou na pergunta ${Math.min((state.qIndex||0)+1, TOTAL_Q)} de ${TOTAL_Q}.</p>
+        <div class="rb-actions">
+          <button class="rb-go" onclick="resumeDiagnostic()">Continuar de onde parei</button>
+          <button class="rb-no" onclick="discardResume()">Começar de novo</button>
+        </div>
+      </div>
+    </div>` : "";
+
+  mainEl.innerHTML = `
+    <div class="welcome">
+      <span class="welcome-eyebrow">Diagnóstico ClubPetro · 4 minutos</span>
+      <h1 class="welcome-h1">Como está a <em>saúde</em> do seu posto?</h1>
+      <p class="welcome-lede">Em menos de cinco minutos você vê uma nota de 0 a 100 da operação do seu posto, distribuída em <strong>8 pilares</strong>, com leitura por pilar e recomendação de próximo passo. As perguntas foram montadas com quem faz consultoria de campo, então estão no jeito de conversa de dono pra dono.</p>
+      <div class="welcome-strip">
+        <div class="ws"><span class="ws-l">Perguntas</span><span class="ws-v"><em>17</em></span></div>
+        <div class="ws"><span class="ws-l">Pilares</span><span class="ws-v"><em>8</em></span></div>
+        <div class="ws"><span class="ws-l">Tempo</span><span class="ws-v"><em>~4 min</em></span></div>
+      </div>
+      ${resumeHtml}
+      <div class="start-row">
+        <button class="btn-start" onclick="startDiagnostic()">
+          <span>Começar diagnóstico</span>
+          <span class="arrow">→</span>
+        </button>
+        <span class="start-hint">Sigilo entre você e a ClubPetro</span>
+      </div>
+    </div>`;
+}
 
 function renderQuestion(){
-  const q = QUESTIONS[order[pos]];
-  el("pill").textContent = (pos+1)+" de "+QUESTIONS.length;
-  el("bar").style.width = (pos/QUESTIONS.length)*100 + "%";
-  el("qcount").textContent = "Pergunta "+(pos+1);
-  el("qtext").textContent = q.text;
-  replayAnim(el("qcount")); replayAnim(el("qtext"));   // re-anima o cabecalho a cada pergunta
-  const wrap = el("options"); wrap.innerHTML = "";
-  q.options.forEach((o,idx)=>{
-    const b = document.createElement("button");
-    b.className = "opt"; b.type = "button";
-    const prev = answers[q.id]; if(prev && prev.idx===idx) b.classList.add("sel");
-    b.innerHTML = '<span class="dot"></span><span>'+o.label+'</span>';
-    b.addEventListener("click", ()=>{
-      if(b.classList.contains("sel")) return;            // evita clique duplo
-      answers[q.id] = {idx, ...o};
-      [...wrap.children].forEach(c=>c.classList.remove("sel"));
-      b.classList.add("sel");
-      setTimeout(next,320);                              // deixa a animacao do dot rodar
-    });
-    wrap.appendChild(b);
-  });
-}
-function next(){ if(pos < QUESTIONS.length-1){ pos++; renderQuestion(); } else finish(); }
-function levelFor(score){ return LEVELS.find(l=>score>=l.min && score<=l.max) || LEVELS[0]; }
+  const q = QUESTIONS[state.qIndex];
+  const block = BLOCKS[q.block];
+  const blockName = block ? block.name : "Qualificação";
+  const selectedIdx = state.answers[q.id]?.idx;
+  const weightLabel = q.type === "score" ? `${q.max} pontos` : "qualifica";
+  const contextHtml = q.context ? `<p class="q-context">${escHtml(q.context)}</p>` : "";
 
-function finish(){
-  el("bar").style.width = "100%";
-  let score = 0;
-  QUESTIONS.forEach(q=>{ if(q.scored && answers[q.id]) score += answers[q.id].pts; });
-  if(score>100) score = 100;
+  const optsHtml = q.options.map((opt,i) => {
+    const letter = String.fromCharCode(65 + i);
+    const desc = opt.desc ? `<span class="opt-desc">${escHtml(opt.desc)}</span>` : "";
+    return `
+      <button class="opt-card ${selectedIdx===i?"selected":""}" type="button" onclick="selectOption(${i})">
+        <span class="opt-letter">${letter}</span>
+        <span class="opt-body">
+          <span class="opt-label">${escHtml(opt.label)}</span>
+          ${desc}
+        </span>
+      </button>`;
+  }).join("");
+
+  mainEl.innerHTML = `
+    <div class="question-screen">
+      <div class="q-eyebrow">
+        <span class="q-id">${q.id}</span>
+        <span class="q-sep">·</span>
+        <span class="q-block">${escHtml(blockName)}</span>
+        <span class="q-weight">${weightLabel}</span>
+      </div>
+      <h2 class="q-text">${q.text}</h2>
+      ${contextHtml}
+      <div class="q-options">${optsHtml}</div>
+      <div class="q-nav">
+        <button class="btn-back" onclick="prevQuestion()" ${state.qIndex===0?"disabled":""}>← Voltar</button>
+        <button class="btn-next" onclick="nextQuestion()" ${selectedIdx===undefined?"disabled":""}>
+          ${state.qIndex===TOTAL_Q-1 ? "Continuar" : "Próxima"}
+          <span>→</span>
+        </button>
+      </div>
+    </div>`;
+  questionStartTime = Date.now();
+  state.lastQAt = questionStartTime;
+}
+
+function renderPhone(){
+  mainEl.innerHTML = `
+    <div class="question-screen">
+      <div class="q-eyebrow">
+        <span class="q-id">Final</span>
+        <span class="q-sep">·</span>
+        <span class="q-block">Pra te mandar o resultado</span>
+        <span class="q-weight">${STEP_TOTAL} de ${STEP_TOTAL}</span>
+      </div>
+      <h2 class="q-text">Pra onde te mandamos o <em>resultado completo</em>?</h2>
+      <p class="q-context">Seu WhatsApp pra receber a leitura completa do diagnóstico e o convite do RaioX da terça. Sem spam, sem ligação automática.</p>
+      <div class="phone-card">
+        <div class="pf">
+          <label for="phoneInput">WhatsApp com DDD</label>
+          <input type="tel" id="phoneInput" inputmode="tel" placeholder="(11) 99999-9999" value="${escHtml(state.phone)}" autocomplete="tel">
+        </div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-back" onclick="prevQuestion()">← Voltar</button>
+        <button class="btn-next" id="btnGoResult" onclick="goToResult()" ${phoneValid()?"":"disabled"}>
+          Ver meu resultado
+          <span>→</span>
+        </button>
+      </div>
+    </div>`;
+
+  const phoneEl = document.getElementById("phoneInput");
+  phoneEl.addEventListener("input", (e) => {
+    e.target.value = maskPhone(e.target.value);
+    state.phone = e.target.value;
+    saveState();
+    const btn = document.getElementById("btnGoResult");
+    if(phoneValid()){
+      btn.removeAttribute("disabled");
+      phoneEl.classList.remove("invalid");
+    } else {
+      btn.setAttribute("disabled","");
+    }
+  });
+  phoneEl.addEventListener("blur", () => {
+    if(phoneEl.value.length>0 && !phoneValid()) phoneEl.classList.add("invalid");
+  });
+  setTimeout(() => phoneEl.focus(), 100);
+}
+
+function renderResult(){
+  const score = totalScore();
   const lvl = levelFor(score);
 
-  el("r-nome").textContent = nome || "Seu posto";
-  el("r-badge").textContent = lvl.name; el("r-badge").style.background = lvl.color;
-  el("r-msg").textContent = lvl.msg; el("arc").setAttribute("stroke", lvl.color);
+  // Ordena pilares pelo pct ascendente, pega os 2 mais fracos como abertos
+  const ranked = BLOCK_ORDER.map(b => ({
+    id:b,
+    name:BLOCKS[b].name,
+    pct:blockPct(b),
+    max:BLOCKS[b].max
+  })).filter(x => x.max>0).sort((a,b) => a.pct - b.pct);
+  const openIds = ranked.slice(0,2).map(x => x.id);
 
-  const papel = answers.q7 ? answers.q7.val : null;
-  const conhece = answers.q8 ? answers.q8.val : null;
-  const interesse = answers.q9 ? answers.q9.val : null;
+  const pillarsHtml = BLOCK_ORDER.map((b,idx) => {
+    const pct = blockPct(b);
+    const isOpen = openIds.includes(b);
+    const insight = isOpen ? insightFor(b, pct) : "Análise completa nesse pilar liberada após contato com um Especialista ClubPetro.";
+    return `
+      <div class="pillar-card ${isOpen?"":"locked"}">
+        <div class="pc-head">
+          <span class="pc-tag">Pilar ${String(idx+1).padStart(2,"0")}</span>
+          <span class="pc-score">${pct}<small>/100</small></span>
+        </div>
+        <span class="pc-title">${escHtml(BLOCKS[b].name)}</span>
+        <p class="pc-insight">${insight}</p>
+        <div class="pc-bar"><div class="pc-bar-fill" style="width:${pct}%"></div></div>
+        ${isOpen ? "" : `<div class="pc-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 018 0v4"/></svg> Bloqueado</div>`}
+      </div>`;
+  }).join("");
 
-  // mensagem pronta de WhatsApp que o lead envia ao ClubPetro
-  const linhasWa = [
-    "Olá, ClubPetro! 👋",
-    "",
-    "Acabei de fazer o *Diagnóstico de Saúde do Posto* e quero ver os pontos de melhoria da minha operação.",
-    "",
-    "👤 *Quem sou eu*"
-  ];
-  if(nome) linhasWa.push("Nome: " + nome);
-  if(telefone) linhasWa.push("WhatsApp: " + telefone);
-  linhasWa.push(
-    "Função no posto: " + (papel || "não informado"),
-    "",
-    "📊 *Meu diagnóstico*",
-    "Nota: *" + score + "/100*",
-    "Nível: " + lvl.name,
-    "",
-    "🎯 *O que quero destravar primeiro*",
-    interesse || "não informado",
-    "",
-    "📌 Relação com o ClubPetro: " + (conhece || "não informado"),
-    "",
-    "Pode me mostrar como melhorar o meu posto? 🚀"
-  );
-  const msgWa = linhasWa.join("\n");
-  el("r-cta").onclick = ()=> window.open("https://wa.me/"+CONFIG.CLUBPETRO_WHATSAPP+"?text="+encodeURIComponent(msgWa), "_blank");
+  mainEl.innerHTML = `
+    <div class="result">
+      <div class="result-hero">
+        <div class="result-eyebrow">${escHtml(lvl.name)}</div>
+        <h1 class="result-h1">A saúde da sua <em>operação</em> está em</h1>
+        <div class="score-display">${score}<span class="of">/100</span></div>
+        <p class="level-msg">${escHtml(lvl.msg)}</p>
+      </div>
+      <div class="result-radar-wrap">${buildRadar()}</div>
 
-  // salva no Supabase (validacao de respostas)
-  const respostas = {};
-  QUESTIONS.forEach(q=>{ respostas[q.id] = answers[q.id] ? answers[q.id].label : null; });
-  salvarSupabase({ nome: nome || null, telefone: telefone || null, score, nivel: lvl.name, papel, conhece, interesse, respostas });
+      <div class="pillars-h">
+        <span class="num">01</span>
+        <h2>Leitura por <em>pilar</em></h2>
+      </div>
+      <div class="pillars-grid">${pillarsHtml}</div>
 
-  show(screens.result); el("pill").textContent = "Resultado"; animateScore(score);
+      <div class="ctas-h">
+        <span class="num">02</span>
+        <h2>Próximos <em>passos</em></h2>
+      </div>
+      <div class="cta-grid">
+        <div class="cta-card primary">
+          <span class="cta-tag">Recomendado pra você</span>
+          <h3 class="cta-h">Quero a análise completa do meu posto agora</h3>
+          <p class="cta-d">Um Especialista ClubPetro olha seus números com você em 30 minutos, sem compromisso. Caminho direto pra resolver o que apareceu aqui.</p>
+          <button class="cta-btn" onclick="ctaWhatsApp()">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3 1.3 4.8 1.3 5.5 0 10-4.5 10-10S17.5 2 12 2zm5.5 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.7-4.4-3.9-.1-.2-1-1.3-1-2.6 0-1.2.6-1.8.9-2.1.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.6.7 2 .8 2.1.1.1.1.3 0 .5-.1.2-.1.3-.3.5-.1.2-.3.4-.4.5-.1.1-.3.3-.1.6.1.3.7 1.1 1.5 1.8 1 .9 1.9 1.2 2.2 1.3.3.1.4.1.6-.1.2-.2.7-.8.9-1.1.2-.3.4-.2.6-.1.3.1 1.6.8 1.9 1 .3.1.5.2.6.3.1.2.1.7-.1 1.3z"/></svg>
+            Falar com um Especialista ClubPetro
+          </button>
+        </div>
+        <div class="cta-card secondary">
+          <span class="cta-tag">Toda terça às 19h</span>
+          <h3 class="cta-h">RaioX da semana, sem compromisso</h3>
+          <p class="cta-d">Conversa aberta sobre as dores que aparecem no diagnóstico. Sem venda empurrada, só troca.</p>
+          <button class="cta-btn" onclick="ctaRaiox()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            Reservar minha vaga
+          </button>
+        </div>
+      </div>
+
+      <p class="save-msg" id="saveMsg"></p>
+      <p class="foot-note">6 pilares completos liberados após contato com um Especialista ClubPetro</p>
+    </div>`;
+
+  // Persiste resultado
+  saveResultToBackend(score, lvl);
 }
 
-async function salvarSupabase(payload){
+/* ============================================================
+   NAV
+   ============================================================ */
+function startDiagnostic(){
+  hasResumable = false;
+  state = freshState();
+  state.diagId = uuid();
+  state.startedAt = new Date().toISOString();
+  state.screen = "question";
+  state.qIndex = 0;
+  saveState();
+  track("diag_start", { diag_id: state.diagId });
+  render();
+}
+
+function resumeDiagnostic(){
+  hasResumable = false;
+  if(state.qIndex >= TOTAL_Q){ state.screen = "phone"; }
+  else { state.screen = "question"; }
+  track("diag_resume", { step: state.qIndex, diag_id: state.diagId });
+  render();
+}
+
+function discardResume(){
+  clearState();
+  hasResumable = false;
+  state = freshState();
+  render();
+}
+
+function selectOption(i){
+  const q = QUESTIONS[state.qIndex];
+  const opt = q.options[i];
+  // Remove pontos antigos antes de aplicar os novos
+  if(state.answers[q.id] && typeof state.answers[q.id].pts === "number"){
+    state.blockScores[q.block] = (state.blockScores[q.block]||0) - state.answers[q.id].pts;
+  }
+  state.answers[q.id] = {
+    idx: i,
+    label: opt.label,
+    val: opt.val ?? null,
+    pts: typeof opt.pts === "number" ? opt.pts : null,
+    tag: opt.tag ?? null,
+    block: q.block,
+    type: q.type
+  };
+  if(typeof opt.pts === "number"){
+    state.blockScores[q.block] = (state.blockScores[q.block]||0) + opt.pts;
+  }
+  saveState();
+  const dt = Math.round((Date.now() - questionStartTime)/1000);
+  track("diag_answer", {
+    question_id: q.id,
+    option: String.fromCharCode(65+i),
+    pts: opt.pts ?? null,
+    time_on_question: dt,
+    diag_id: state.diagId
+  });
+  render();
+  setTimeout(() => nextQuestion(), 320);
+}
+
+function nextQuestion(){
+  if(!state.answers[QUESTIONS[state.qIndex].id]) return;
+  if(state.qIndex < TOTAL_Q - 1){
+    state.qIndex++;
+    saveState();
+    render();
+  } else {
+    state.screen = "phone";
+    saveState();
+    render();
+  }
+}
+
+function prevQuestion(){
+  const curId = state.screen === "phone" ? "phone" : QUESTIONS[state.qIndex]?.id;
+  if(state.screen === "phone"){
+    state.screen = "question";
+    state.qIndex = TOTAL_Q - 1;
+  } else if(state.qIndex > 0){
+    state.qIndex--;
+  } else {
+    return;
+  }
+  saveState();
+  track("diag_back", { from: curId, to: QUESTIONS[state.qIndex]?.id || "intro", diag_id: state.diagId });
+  render();
+}
+
+function goToResult(){
+  if(!phoneValid()) return;
+  state.screen = "result";
+  state.finishedAt = new Date().toISOString();
+  saveState();
+  track("diag_phone_submit", { phone_length: state.phone.replace(/\D/g,"").length, diag_id: state.diagId });
+  render();
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+/* ============================================================
+   PERSIST RESULT
+   ============================================================ */
+async function saveResultToBackend(score, lvl){
+  const mql = evaluateMql();
+  const ranked = BLOCK_ORDER.map(b => ({ id:b, pct:blockPct(b), max:BLOCKS[b].max }))
+    .filter(x => x.max>0).sort((a,b) => a.pct - b.pct);
+  const weakBlock = ranked[0]?.id || null;
+
+  const respostasLabels = {};
+  QUESTIONS.forEach(q => { respostasLabels[q.id] = state.answers[q.id] ? state.answers[q.id].label : null; });
+  const blockPcts = {};
+  BLOCK_ORDER.forEach(b => { blockPcts[b] = blockPct(b); });
+
+  const respostasJsonb = {
+    answers: respostasLabels,
+    block_scores: blockPcts,
+    bandeira: state.answers.P15?.val || null,
+    papel_tag: state.answers.P42?.tag || null,
+    mql_tag: mql.tag,
+    cruza_mql: mql.cruzaMql,
+    dimensao_fraca: weakBlock,
+    diag_id: state.diagId,
+    started_at: state.startedAt,
+    finished_at: state.finishedAt,
+    version: "v3"
+  };
+
+  const payload = {
+    nome: null,
+    telefone: state.phone || null,
+    score: score,
+    nivel: lvl.name,
+    papel: state.answers.P42?.val || null,
+    conhece: null,
+    interesse: null,
+    respostas: respostasJsonb
+  };
+
+  track("diag_view_result", {
+    score_total: score,
+    nivel: lvl.name,
+    mql: mql.tag,
+    diag_id: state.diagId
+  });
+
   const client = getSupabase();
-  if(!client){ console.log("Supabase indisponivel, pulei o salvamento.", payload); return; }
+  if(!client){ console.warn("Supabase indisponível, resultado não salvo."); return; }
+
   try{
-    const { error } = await client.from("diagnostico_respostas").insert(payload);
-    if(error){ console.error("Erro ao salvar:", error); }
-    else{ el("savemsg").textContent = "Respostas registradas."; }
+    const { error: e1 } = await client.from("diagnostico_respostas").insert(payload);
+    if(e1){ console.error("Erro ao salvar respostas:", e1); }
+    else { const m = document.getElementById("saveMsg"); if(m) m.textContent = "Respostas registradas"; }
   }catch(e){ console.error("Falha no salvamento:", e); }
+
+  // Dispara conversion no RD via Edge Function
+  try{
+    await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + CONFIG.SUPABASE_ANON_KEY,
+        "apikey": CONFIG.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        telefone: state.phone,
+        score_total: score,
+        nivel: lvl.name,
+        dimensao_fraca: weakBlock,
+        papel_declarado: state.answers.P42?.val || null,
+        bandeira: state.answers.P15?.val || null,
+        cruza_mql: mql.cruzaMql,
+        block_scores: blockPcts,
+        diag_id: state.diagId
+      }),
+      keepalive: true
+    });
+  }catch(e){ console.warn("RD conversion best-effort falhou:", e); }
 }
 
-function animateScore(target){
-  const arc = el("arc"), numEl = el("r-score");
-  const circ = 540, fill = circ - (circ*(target/100));
-  arc.style.transition = "none"; arc.setAttribute("stroke-dashoffset", circ); numEl.textContent = "0";
-  requestAnimationFrame(()=>{ arc.style.transition = "stroke-dashoffset 1.2s cubic-bezier(.3,.8,.3,1)"; arc.setAttribute("stroke-dashoffset", fill); });
-  const dur = 1100, t0 = performance.now();
-  function tick(t){ const p = Math.min((t-t0)/dur,1); const e = 1-Math.pow(1-p,3); numEl.textContent = Math.round(e*target); if(p<1) requestAnimationFrame(tick); }
-  requestAnimationFrame(tick);
+/* ============================================================
+   CTAs
+   ============================================================ */
+function ctaWhatsApp(){
+  const score = totalScore();
+  track("diag_cta_comercial", { score_total: score, diag_id: state.diagId });
+  const msg = `Oi, acabei de fazer o diagnóstico do ClubPetro e tirei nota ${score} de 100. Quero análise completa do meu posto.`;
+  const url = "https://wa.me/" + CONFIG.CLUBPETRO_WHATSAPP + "?text=" + encodeURIComponent(msg);
+  window.open(url, "_blank");
 }
+
+function nextTuesday19h(){
+  const d = new Date();
+  const offset = (2 - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + offset);
+  d.setHours(19, 0, 0, 0);
+  return d;
+}
+function gcalDate(d){
+  const pad = n => String(n).padStart(2,"0");
+  return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+"00Z";
+}
+function ctaRaiox(){
+  const score = totalScore();
+  const start = nextTuesday19h();
+  const end = new Date(start.getTime() + 60*60*1000);
+  track("diag_cta_raiox", { score_total: score, diag_id: state.diagId });
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: "RaioX do Posto · ClubPetro",
+    details: "Conversa aberta no Meet sobre as dores que apareceram no seu diagnóstico de saúde do posto.",
+    location: CONFIG.RAIOX_MEET_LINK,
+    dates: gcalDate(start) + "/" + gcalDate(end)
+  });
+  window.open("https://calendar.google.com/calendar/render?" + params.toString(), "_blank");
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(function init(){
+  const saved = loadState();
+  if(saved && (Object.keys(saved.answers||{}).length>0 || saved.qIndex>0)){
+    state = { ...freshState(), ...saved };
+    state.screen = "welcome";
+    hasResumable = true;
+  }
+  // Tracking de saída (best-effort)
+  window.addEventListener("pagehide", () => {
+    if(state.screen === "result" || state.screen === "welcome") return;
+    const elapsed = state.startedAt ? Math.round((Date.now() - new Date(state.startedAt).getTime())/1000) : 0;
+    track("diag_abandon", { last_screen: state.screen, last_question: QUESTIONS[state.qIndex]?.id || null, time_total: elapsed, diag_id: state.diagId });
+  });
+  track("diag_view_intro", {});
+  render();
+})();
 </script>
+
 </body>
 </html>
