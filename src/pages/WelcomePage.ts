@@ -124,7 +124,7 @@ export function WelcomePage(p: WelcomePageProps): string {
         <div class="welcome-main">
           <span class="eyebrow anim-rise delay-0">Diagnóstico de saúde do posto</span>
           <h1 class="display anim-rise delay-1">
-            Entenda a <span class="ink-accent">saúde</span> da operação do seu posto.
+            Entenda a <span class="ink-accent">saúde</span> do seu posto.
           </h1>
           <p class="lede measure anim-rise delay-2">
             Uma leitura estratégica e personalizada da sua operação.
@@ -137,15 +137,25 @@ export function WelcomePage(p: WelcomePageProps): string {
 
         <aside class="welcome-visual anim-fade delay-2" aria-hidden="true">
           <div class="welcome-video-wrap" id="welcomeVideoWrap">
+            <!-- Crossfade loop: dois vídeos sobrepostos. Um toca enquanto o outro
+                 espera; perto do fim, o segundo entra com fade e o primeiro sai. -->
             <video
-              class="welcome-video"
-              id="welcomeVideo"
+              class="welcome-video is-active"
+              id="welcomeVideoA"
               autoplay
-              loop
               muted
               playsinline
               preload="auto"
               poster="/welcome-poster.jpg">
+              <source src="/welcome-loop.webm" type="video/webm">
+              <source src="/welcome-loop.mp4" type="video/mp4">
+            </video>
+            <video
+              class="welcome-video"
+              id="welcomeVideoB"
+              muted
+              playsinline
+              preload="auto">
               <source src="/welcome-loop.webm" type="video/webm">
               <source src="/welcome-loop.mp4" type="video/mp4">
             </video>

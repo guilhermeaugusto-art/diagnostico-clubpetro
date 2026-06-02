@@ -498,15 +498,71 @@ function onQuestionRendered(): void {
   questionStartTime = Date.now();
 }
 
+/* Crossfade loop entre dois vídeos.
+   Em vez do `loop` nativo (que dá um corte seco no fim), dois <video> ficam
+   sobrepostos. Quando o ativo chega perto do fim, o próximo entra com fade,
+   o ativo sai com fade, e os papéis se invertem. */
+const VIDEO_CROSSFADE_MS = 700;
+function setupWelcomeVideoLoop(): void {
+  const a = document.getElementById("welcomeVideoA") as HTMLVideoElement | null;
+  const b = document.getElementById("welcomeVideoB") as HTMLVideoElement | null;
+  if (!a || !b) return;
+
+  const safePlay = (v: HTMLVideoElement): void => {
+    v.play().catch(() => {/* autoplay com áudio mudo é permitido; ignora falhas */});
+  };
+
+  let active: HTMLVideoElement = a;
+  let standby: HTMLVideoElement = b;
+  let swapping = false;
+
+  const fadeS = VIDEO_CROSSFADE_MS / 1000;
+
+  const onTime = (): void => {
+    if (swapping) return;
+    const dur = active.duration;
+    if (!isFinite(dur) || dur <= 0) return;
+    // Quando faltar menos que o tempo de fade, inicia o swap.
+    if (active.currentTime >= dur - fadeS) {
+      swapping = true;
+      // Prepara o próximo: zera e dispara play antes de revelar.
+      try { standby.currentTime = 0; } catch { /* alguns formatos exigem ready state */ }
+      safePlay(standby);
+      // Próximo frame: cruza a opacidade.
+      requestAnimationFrame(() => {
+        standby.classList.add("is-active");
+        active.classList.remove("is-active");
+      });
+      // Ao terminar o fade, troca papéis e pausa o que saiu (economiza CPU).
+      const oldActive = active;
+      const newActive = standby;
+      window.setTimeout(() => {
+        try { oldActive.pause(); oldActive.currentTime = 0; } catch { /* ignore */ }
+        active = newActive;
+        standby = oldActive;
+        swapping = false;
+      }, VIDEO_CROSSFADE_MS);
+    }
+  };
+
+  // Mesmo listener nos dois: cada um só dispara enquanto for o ativo.
+  a.addEventListener("timeupdate", () => { if (active === a) onTime(); });
+  b.addEventListener("timeupdate", () => { if (active === b) onTime(); });
+
+  // Erro de carregamento: esconde os dois (revela fallback SVG).
+  const onErr = (): void => {
+    a.classList.remove("is-active");
+    b.classList.remove("is-active");
+  };
+  a.addEventListener("error", onErr, { once: true });
+  b.addEventListener("error", onErr, { once: true });
+
+  // Dispara o ativo. autoplay+muted já cobre a maioria; play() resolve Safari.
+  safePlay(a);
+}
+
 function onWelcomeRendered(): void {
-  /* Vídeo só é exibido se carregar com sucesso; fallback SVG fica abaixo. */
-  const video = document.getElementById("welcomeVideo") as HTMLVideoElement | null;
-  if (video) {
-    const reveal = () => video.classList.add("is-ready");
-    video.addEventListener("loadeddata", reveal, { once: true });
-    video.addEventListener("canplay", reveal, { once: true });
-    video.addEventListener("error", () => video.classList.remove("is-ready"), { once: true });
-  }
+  setupWelcomeVideoLoop();
   const input = document.getElementById("welcomeName") as HTMLInputElement | null;
   const btn = document.getElementById("btnStartDiag") as HTMLButtonElement | null;
   if (!input) return;

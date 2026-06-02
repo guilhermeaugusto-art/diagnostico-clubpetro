@@ -545,7 +545,9 @@ body:has(.welcome) .cp-header {
   }
 }
 .welcome-video {
-  position: relative;
+  /* Dois vídeos sobrepostos pra crossfade no loop. */
+  position: absolute;
+  inset: 0;
   z-index: 2;
   width: 100%;
   height: 100%;
@@ -555,7 +557,10 @@ body:has(.welcome) .cp-header {
   display: block;
   background: transparent;
   opacity: 0;
-  transition: opacity var(--dur-5) var(--ease-out);
+  /* Fade longo o suficiente para mascarar o salto entre as duas instâncias. */
+  transition: opacity 700ms cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  will-change: opacity;
 
   /* ===== Máscara combinada (fusão "PNG flutuante") =====
      Três camadas com mask-composite: intersect.
@@ -574,6 +579,8 @@ body:has(.welcome) .cp-header {
     linear-gradient(to bottom, transparent 0%, #000 22%, #000 82%, transparent 100%);
           mask-composite: intersect;       /* Firefox/spec padrão */
 }
+.welcome-video.is-active { opacity: 1; }
+/* Legado: o controlador agora usa is-active; mantido pra compatibilidade. */
 .welcome-video.is-ready { opacity: 1; }
 .welcome-visual-fallback {
   position: absolute;
@@ -1504,101 +1511,136 @@ body:has(.welcome) .cp-header {
 }
 
 /* ====================== MOBILE BREAKPOINT ======================
-   Experiência repensada pra celular: hierarquias diferentes,
-   slots reduzidos, gráfico menor com labels visíveis, CTAs
-   acessíveis com uma mão. Não é "redução linear do desktop". */
+   Experiência repensada pra celular: texto-primeiro no hero,
+   ritmo vertical mais apertado, CTAs com largura total, cards de
+   resposta com toque confortável (>= 56px). Não é "redução linear
+   do desktop". */
 @media (max-width: 720px) {
+  /* Stage padding-block mais comportado: libera fold sem cortar. */
+  .stage { padding-block: var(--sp-5) var(--sp-12); }
+
   /* HEADER mobile: logo nunca corta, padding lateral menor */
   .cp-header-row {
     grid-template-columns: auto auto;
     gap: var(--sp-3);
-    min-height: 64px;
+    min-height: 60px;
   }
   .cp-brand-logo { height: 22px; }
   .cp-header.idle .cp-header-row { grid-template-columns: 1fr; }
   .cp-progress { grid-column: 1 / -1; order: 3; padding-top: 4px; }
 
-  /* WELCOME mobile: vídeo primeiro, texto depois, sem sangria */
-  .welcome { gap: var(--sp-8); }
+  /* WELCOME mobile: TEXTO primeiro (hero real), vídeo abaixo como apoio.
+     Ritmo vertical apertado pra colocar título + nome + CTA acima da dobra. */
+  .welcome { gap: var(--sp-6); }
+  .welcome-main { order: 1; }
+  .welcome-visual { order: 2; min-height: 0; justify-content: center; }
+  .welcome-main > * + * { margin-top: var(--sp-4); }
+  .welcome-main .display { margin-top: var(--sp-3); font-size: clamp(1.875rem, 9vw, 2.5rem); line-height: 1.05; }
+  .welcome-main .lede { margin-top: var(--sp-3); font-size: var(--fs-15); line-height: 1.55; }
   .welcome-video-wrap {
     margin-right: 0;
+    margin-left: 0;
     max-width: 100%;
     aspect-ratio: 16 / 9;
+    /* No mobile a moldura larga não cabe; vídeo vira hero secundário. */
   }
-  .welcome-main { order: 2; }
-  .welcome-visual { order: 1; min-height: 0; justify-content: center; }
-  .welcome-form { max-width: 100%; }
-  .welcome-field-input { font-size: var(--fs-18); }
+  .welcome-form { max-width: 100%; gap: var(--sp-4); }
+  .welcome-field-input { font-size: 16px; padding: var(--sp-3) var(--sp-4); min-height: 52px; }
+  .welcome-field-label { font-size: var(--fs-12); }
+  /* CTA principal: largura total, peso maior pro polegar. */
+  .welcome-cta-row { flex-direction: column; align-items: stretch; gap: var(--sp-3); margin-top: var(--sp-1); }
+  .welcome-cta-row > button,
+  .welcome-cta-row > .btn { width: 100%; min-height: 56px; font-size: var(--fs-16); }
 
-  /* QUESTION mobile: cards empilhados, padding menor */
+  /* QUESTION mobile: cards mais "tocáveis", tipografia mais firme */
   .question { padding-block: var(--sp-2); }
-  .q-meta { gap: var(--sp-2); margin-bottom: var(--sp-4); }
-  .q-title { font-size: var(--fs-24); line-height: 1.22; }
-  .q-context { padding: var(--sp-3) var(--sp-4); font-size: var(--fs-13); }
+  .q-meta { gap: var(--sp-2); margin-bottom: var(--sp-3); }
+  .q-step-tag, .q-pillar-tag { font-size: var(--fs-12); }
+  .q-title { font-size: var(--fs-22); line-height: 1.22; letter-spacing: -0.015em; }
+  .q-context { padding: var(--sp-3) var(--sp-4); font-size: var(--fs-13); line-height: 1.5; }
+  .answer-grid { gap: var(--sp-2); }
   .answer-card {
-    grid-template-columns: 40px 1fr;
+    grid-template-columns: 44px 1fr;
     gap: var(--sp-3);
-    padding: var(--sp-4);
-    padding-right: var(--sp-8);
+    padding: var(--sp-4) var(--sp-4);
+    padding-right: var(--sp-9);
+    min-height: 72px;
+    align-items: center;
+    border-radius: var(--rd-lg);
   }
-  .answer-icon { width: 40px; height: 40px; }
-  .answer-icon svg { width: 20px; height: 20px; }
-  .answer-title { font-size: var(--fs-15); }
-  .answer-desc { font-size: var(--fs-13); }
-  .answer-check { top: 12px; right: 12px; width: 20px; height: 20px; }
+  .answer-icon { width: 44px; height: 44px; border-radius: var(--rd-md); }
+  .answer-icon svg, .answer-icon img { width: 22px; height: 22px; }
+  .answer-title { font-size: var(--fs-15); line-height: 1.3; }
+  .answer-desc { font-size: var(--fs-13); line-height: 1.4; }
+  .answer-check { top: 14px; right: 14px; width: 22px; height: 22px; }
+  .q-nav { gap: var(--sp-3); }
+  .q-nav .btn { min-height: 52px; }
 
-  /* CONTACT mobile: cards mais compactos, inputs grandes (touch) */
-  .contact-card { padding: var(--sp-4); gap: var(--sp-4); }
-  .contact-input { font-size: var(--fs-18); }
+  /* CONTACT mobile: tudo full-width, inputs com touch confortável */
+  .contact-stage { gap: var(--sp-4); }
+  .contact-card { padding: var(--sp-5); gap: var(--sp-4); border-radius: var(--rd-lg); }
+  .contact-input { font-size: 16px; min-height: 52px; padding: var(--sp-3) var(--sp-4); }
+  .contact-stage .btn { width: 100%; min-height: 56px; }
 
   /* RESULT mobile: hero empilhado, radar reduzido, todos labels visíveis */
   .result-hero { padding: var(--sp-5); border-radius: var(--rd-xl); }
-  .result-hero-headline { font-size: clamp(1.5rem, 6vw, 2rem); max-width: 100%; }
-  .result-hero-lede { font-size: var(--fs-14); }
+  .result-hero-topline { gap: var(--sp-3); }
+  .result-hero-headline { font-size: clamp(1.625rem, 7vw, 2rem); max-width: 100%; line-height: 1.12; }
+  .result-hero-lede { font-size: var(--fs-14); line-height: 1.55; }
   .result-hero-grid { grid-template-columns: 1fr; gap: var(--sp-6); margin-top: var(--sp-5); }
   .result-hero-left .score-dial-wrap { gap: var(--sp-2); }
-  .score-number { font-size: clamp(3.5rem, 18vw, 5rem); }
+  .score-number { font-size: clamp(4rem, 22vw, 5.5rem); }
   .score-of { font-size: clamp(1.25rem, 6vw, 1.75rem); }
   .result-trio { padding-top: var(--sp-3); gap: var(--sp-3); }
   .result-trio-item { grid-template-columns: 32px 1fr; gap: var(--sp-2); }
   .result-trio-icon { width: 32px; height: 32px; }
   .result-trio-icon svg { width: 16px; height: 16px; }
   .result-trio-value { font-size: var(--fs-14); }
-  .result-hero-radar { padding: var(--sp-4); gap: var(--sp-3); }
+  .result-hero-radar { padding: var(--sp-4); gap: var(--sp-3); border-radius: var(--rd-lg); }
   .radar-chart { max-width: 100%; }
   .radar-chart .radar-label { font-size: 11px; }
   .radar-chart .radar-label-val { font-size: 12px; }
-  .btn-radar-cta { font-size: var(--fs-12); padding: 10px 12px; }
+  .btn-radar-cta { font-size: var(--fs-13); padding: 12px 14px; min-height: 48px; width: 100%; }
 
-  /* CTA cards mobile: stack vertical */
+  /* CTA cards mobile: stack vertical, ações com peso */
   .cta-grid { grid-template-columns: 1fr; gap: var(--sp-3); }
-  .cta-card { padding: var(--sp-5); }
-  .cta-card-title { font-size: var(--fs-20); }
-  .cta-card-desc { font-size: var(--fs-14); }
+  .cta-card { padding: var(--sp-5); border-radius: var(--rd-xl); }
+  .cta-card-title { font-size: var(--fs-20); line-height: 1.2; }
+  .cta-card-desc { font-size: var(--fs-14); line-height: 1.5; }
+  .cta-card-actions .btn { width: 100%; min-height: 56px; font-size: var(--fs-16); }
 
   /* Pillars mobile: 1 coluna */
-  .pillar-grid { grid-template-columns: 1fr; }
-  .pillar-card { padding: var(--sp-4); }
+  .pillar-grid { grid-template-columns: 1fr; gap: var(--sp-3); }
+  .pillar-card { padding: var(--sp-4); border-radius: var(--rd-lg); }
 
   /* Recs mobile: 1 coluna, padding reduzido */
   .recs-grid { grid-template-columns: 1fr; gap: var(--sp-3); }
-  .rec-card { padding: var(--sp-4); }
+  .rec-card { padding: var(--sp-4); border-radius: var(--rd-lg); }
   .rec-card.is-locked { padding-top: var(--sp-9); }
   .rec-card-icon { width: 36px; height: 36px; }
   .rec-card-icon svg { width: 18px; height: 18px; }
-  .rec-card-title { font-size: var(--fs-18); }
+  .rec-card-title { font-size: var(--fs-18); line-height: 1.2; }
 
   /* Sections mais juntas */
   .result > section + section { margin-top: var(--sp-10); }
   .result { gap: var(--sp-8); }
 
   /* Path card mobile */
-  .path-card { padding: var(--sp-4) var(--sp-5); }
+  .path-card { padding: var(--sp-4) var(--sp-5); border-radius: var(--rd-lg); }
+
+  /* H2/headers responsivos das seções do resultado */
+  .h2 { font-size: clamp(1.5rem, 6vw, 1.875rem); line-height: 1.2; }
 }
 
 /* Pequeno extra para celulares estreitos (iPhone SE etc) */
 @media (max-width: 380px) {
   .shell { padding-inline: var(--sp-3); }
-  .display { font-size: clamp(1.75rem, 9vw, 2.25rem); }
+  .stage { padding-block: var(--sp-4) var(--sp-10); }
+  .display { font-size: clamp(1.625rem, 9vw, 2.125rem); }
   .h2 { font-size: var(--fs-22); }
+  .welcome-main .lede { font-size: var(--fs-14); }
+  .answer-card { grid-template-columns: 40px 1fr; padding: var(--sp-3) var(--sp-4); padding-right: var(--sp-8); min-height: 64px; }
+  .answer-icon { width: 40px; height: 40px; }
+  .answer-icon svg, .answer-icon img { width: 20px; height: 20px; }
+  .result-hero { padding: var(--sp-4); }
 }
