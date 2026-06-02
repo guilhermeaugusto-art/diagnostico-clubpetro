@@ -1,6 +1,6 @@
 import type { BlockId } from "../data/blocks";
 
-export type Screen = "welcome" | "question" | "phone" | "transition" | "result";
+export type Screen = "welcome" | "question" | "contact" | "transition" | "result";
 
 export type SignalTier = "critico" | "neutro" | "avancado";
 
@@ -42,11 +42,13 @@ export type Answer = ScoreAnswer | SingleAnswer | MultiAnswer | QualifyAnswer;
 
 export interface AppState {
   screen: Screen;
-  cursor: number;                          // posição na trilha
+  cursor: number;
   answers: Record<string, Answer>;
+  name: string;
   phone: string;
-  signal: SignalTier | null;               // calculado após 5 primeiras pontuadas
-  signalLocked: boolean;                   // true depois do checkpoint
+  email: string;
+  signal: SignalTier | null;
+  signalLocked: boolean;
   startedAt: string | null;
   finishedAt: string | null;
   diagId: string | null;
@@ -57,7 +59,9 @@ export function freshState(): AppState {
     screen: "welcome",
     cursor: 0,
     answers: {},
+    name: "",
     phone: "",
+    email: "",
     signal: null,
     signalLocked: false,
     startedAt: null,

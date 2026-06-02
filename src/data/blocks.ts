@@ -1,4 +1,4 @@
-import type { IconName } from "../lib/icons";
+import type { AnyIcon } from "../lib/renderIcon";
 
 export type BlockId =
   | "pessoas"
@@ -13,8 +13,8 @@ export interface Block {
   name: string;
   short: string;
   weight: number;        // peso da frente (sempre 100 no total)
-  icon: IconName;
-  rationale: string;     // por que pesa o que pesa, da spec
+  icon: AnyIcon;
+  rationale: string;
 }
 
 export const BLOCKS: Record<BlockId, Block> = {
@@ -23,7 +23,7 @@ export const BLOCKS: Record<BlockId, Block> = {
     name: "Pessoas e operação",
     short: "Pessoas",
     weight: 18,
-    icon: "team",
+    icon: "asset:frentista",
     rationale:
       "Sustenta o atendimento e o custo, mas sozinha não define o resultado.",
   },
@@ -32,7 +32,7 @@ export const BLOCKS: Record<BlockId, Block> = {
     name: "Marca e experiência",
     short: "Marca",
     weight: 12,
-    icon: "badge",
+    icon: "asset:marca",
     rationale:
       "Posicionamento importa, porém é em parte autoavaliação. Peso menor.",
   },
@@ -41,7 +41,7 @@ export const BLOCKS: Record<BlockId, Block> = {
     name: "Comercial e margem",
     short: "Comercial",
     weight: 24,
-    icon: "coin",
+    icon: "asset:real",
     rationale:
       "Onde o resultado do posto realmente se decide. Maior peso.",
   },
@@ -50,7 +50,7 @@ export const BLOCKS: Record<BlockId, Block> = {
     name: "Cliente e fidelização",
     short: "Fidelização",
     weight: 22,
-    icon: "heart",
+    icon: "asset:qualidade",
     rationale:
       "Eixo do diagnóstico e maior preditor de saúde de longo prazo.",
   },
@@ -59,7 +59,7 @@ export const BLOCKS: Record<BlockId, Block> = {
     name: "Dados e digital",
     short: "Dados",
     weight: 14,
-    icon: "dashboard",
+    icon: "asset:dados-base",
     rationale:
       "Infraestrutura que destrava fidelização e estanca vazamento de margem.",
   },
@@ -68,7 +68,7 @@ export const BLOCKS: Record<BlockId, Block> = {
     name: "Resiliência e mercado",
     short: "Resiliência",
     weight: 10,
-    icon: "shield",
+    icon: "asset:equipe-mercado",
     rationale:
       "Exposição ao cenário de 2026. Peso menor, porém presente.",
   },

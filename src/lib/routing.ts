@@ -72,7 +72,8 @@ function approachMessage(
     `Onde mais aperta hoje: ${frenteFraca}.`,
     z2Texto ? `O dono já disse que quer resolver primeiro ${z2Texto}.` : null,
     urg,
-    `Próximo passo sugerido: ${level.hook}`,
+    `Próximo passo sugerido: ${level.path}`,
+    `Como o ClubPetro entra: ${level.clubpetroFit}`,
   ]
     .filter(Boolean)
     .join(" ");

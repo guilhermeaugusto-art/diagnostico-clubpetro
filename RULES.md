@@ -37,7 +37,9 @@ revisa-se a regra aqui, não se ignora caso a caso.
 
 2.5 **Voltar é sempre possível** (exceto na tela inicial). Botão "Voltar" usa variante `ghost` e nunca compete com o primário.
 
-2.6 **Progresso visível mas discreto.** Régua de steps no header, nota parcial em chip secundário. Sem percentual em destaque.
+2.6 **Progresso visível mas discreto.** Régua de steps no header e radar mini com as 6 frentes evoluindo. A nota numérica NÃO é exposta durante o diagnóstico; só aparece no resultado.
+
+2.6.1 **Sem V5.** Nenhuma menção a versão na UI. Versão só fica em payloads internos e no `package.json`.
 
 2.7 **Nada de checklist técnico exposto ao usuário.** Lógica de sinal, lacunas, payload de roteamento são internos.
 
@@ -64,6 +66,12 @@ revisa-se a regra aqui, não se ignora caso a caso.
 3.9 Sem afirmação numérica de caso ClubPetro. Dados de mercado são pano de fundo, não viram afirmação.
 
 3.10 Nunca repetir a mesma palavra três vezes em duas frases seguidas (regra anti-IA). Se "posto" apareceu duas vezes, a terceira vira "operação" ou "negócio".
+
+3.11 **Termos proibidos na UI.** "Sem login", "sem cadastro", "nota de 0 a 6", "seis frentes" (no welcome), "onde dói", "gancho de resolução", "oportunidade adicional".
+
+3.12 **Termos canônicos.** "Próxima melhoria" (no lugar de "oportunidade adicional"). "Leitura por frente", "Principais pontos de atenção", "Caminho sugerido", "Como o ClubPetro ajuda".
+
+3.13 **Pontuação.** A faixa máxima visível é "Operação consistente" (61–80). Nada de "Referência na praça". Resultados acima de 70 só saem quando frentes estão de fato altas e equilibradas.
 
 ## 4. Componentes
 

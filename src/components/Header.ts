@@ -1,12 +1,15 @@
 import { Logo } from "./Logo";
 import { ProgressBar } from "./ProgressBar";
+import { RadarMini } from "./RadarMini";
+import type { AppState } from "../lib/state";
 
 interface HeaderProps {
+  state: AppState;
   idle: boolean;
   contextLabel: string;
   totalSteps: number;
   currentStep: number;
-  score: number;
+  showRadar: boolean;
 }
 
 export function Header(props: HeaderProps): string {
@@ -15,15 +18,12 @@ export function Header(props: HeaderProps): string {
     <header class="${cls}" id="cpHeader">
       <div class="shell">
         <div class="cp-header-row">
-          <a class="cp-brand" href="/" aria-label="ClubPetro · página inicial">
+          <a class="cp-brand" href="/" aria-label="ClubPetro, página inicial">
             ${Logo()}
-            <span class="cp-brand-tag">Diagnóstico · <b>${props.contextLabel}</b></span>
+            <span class="cp-brand-tag">Diagnóstico${props.contextLabel ? ` · <b>${props.contextLabel}</b>` : ""}</span>
           </a>
           ${ProgressBar({ total: props.totalSteps, current: props.currentStep })}
-          <div class="cp-score-chip" aria-live="polite" aria-label="Nota parcial">
-            Nota
-            <strong id="cpScore">${props.score}</strong>
-          </div>
+          ${props.showRadar ? RadarMini({ state: props.state, size: 108 }) : `<span class="cp-header-spacer" aria-hidden="true"></span>`}
         </div>
       </div>
     </header>

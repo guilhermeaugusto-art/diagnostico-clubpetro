@@ -26,6 +26,10 @@
   --paper:        #F7F4EE;
   --paper-warm:   #F1ECE2;
   --paper-deep:   #E8E1D2;
+  /* Welcome: cor base = média exata das bordas do vídeo.
+     Como o body, o wrap e a base por trás da máscara compartilham essa cor,
+     a junção entre vídeo e página fica invisível (fusão tipo PNG flutuante). */
+  --paper-welcome: rgb(235, 230, 233);
   --surface:      #FFFFFF;
   --surface-alt:  #FAFAF7;
   --surface-deep: #0F1A23;
@@ -107,7 +111,13 @@
   /* Layout */
   --shell-max:    1180px;
   --shell-narrow: 720px;
-  --header-h:     64px;
+  --header-h:     72px;
+  --header-h-active: 96px;
+
+  /* ClubPetro deep blue (gradiente premium nos cards escuros) */
+  --cp-blue-900: #0B1F33;
+  --cp-blue-800: #102A45;
+  --cp-blue-700: #163554;
 
   /* Vertical rhythm. Aplicação da regra 1.2 do RULES.md */
   --stack-tight:   8px;

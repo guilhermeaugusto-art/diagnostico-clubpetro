@@ -1,65 +1,64 @@
-/* Faixas de resultado (Seção 6 da spec).
-   Cada faixa traz a leitura, onde dói e o gancho de resolução.
-   Copy direta, na voz do dono, sem venda crua. */
+/* Faixas de resultado. Estrutura consultiva:
+   - name: título curto da faixa
+   - tagline: leitura geral do momento
+   - reading: leitura mais densa do estado da operação
+   - attention: principais pontos de atenção identificados
+   - path: caminho sugerido para evoluir
+   - clubpetroFit: como o ClubPetro contribui nesse momento da operação */
 
 export interface Level {
   min: number;
   max: number;
-  name: string;        // título curto da faixa
-  tagline: string;     // frase de sub-cabeçalho
-  reading: string;     // "leitura"
-  pain: string;        // "onde dói"
-  hook: string;        // "gancho"
+  name: string;
+  tagline: string;
+  reading: string;
+  attention: string;
+  path: string;
+  clubpetroFit: string;
 }
 
 export const LEVELS: Level[] = [
   {
     min: 0,
     max: 30,
-    name: "Sobrevivendo no preço",
-    tagline: "O posto opera no improviso e disputa cada cliente na bomba mais barata da esquina.",
+    name: "Operação em improviso",
+    tagline: "A operação roda no esforço diário e na disputa por preço na esquina.",
     reading:
-      "Sua operação roda sem dado, sem fidelização e refém de preço. Esforço enorme para uma margem que sempre escapa.",
-    pain:
-      "Margem que vaza todo mês e cliente que não volta. Qualquer concorrente novo na praça tira movimento.",
-    hook:
-      "Mostrar, numa conversa curta, as duas fugas de margem mais caras do seu posto e fechar a primeira ainda neste mês.",
+      "Sua operação ainda funciona sem rotina estruturada de gestão, sem dado do cliente e com forte dependência do volume puxado pelo preço. O esforço é grande, a margem é estreita.",
+    attention:
+      "Margem que vaza no mês, cliente que abastece e some, e ausência de dados claros para decidir. Qualquer concorrente novo na praça já tira movimento.",
+    path:
+      "Começar pela gestão visível do dia (litros, mix e margem em uma tela só) e por um motivo de volta claro para o cliente, ainda neste mês.",
+    clubpetroFit:
+      "Estruturar fidelização, integrar gestão e ativar relacionamento por WhatsApp para o cliente parar de ser anônimo.",
   },
   {
     min: 31,
     max: 60,
-    name: "Roda, mas vaza",
-    tagline: "O posto acerta em partes, perde no conjunto.",
+    name: "Em construção",
+    tagline: "Algumas frentes estão maduras, mas o conjunto ainda não rende.",
     reading:
-      "Você já estruturou alguns pontos, mas o retorno escapa. Falta amarrar fidelização e dado do cliente.",
-    pain:
-      "Fidelização informal e ausência de dado do cliente. O esforço existe, o resultado escapa.",
-    hook:
-      "Conectar o que já funciona a um plano simples de recorrência, para o mesmo movimento render mais sem depender de baixar preço.",
+      "Você acerta em pontos importantes, mas a operação ainda perde rendimento por falta de integração entre gestão, fidelização e dado do cliente. O resultado escapa em detalhes.",
+    attention:
+      "Fidelização informal, dado de cliente incompleto e acompanhamento de margem fragmentado. O posto trabalha mais do que precisaria para entregar o mesmo resultado.",
+    path:
+      "Amarrar o que já funciona em rotinas semanais, profissionalizar o programa de fidelização e organizar o dado do cliente para virar decisão.",
+    clubpetroFit:
+      "Programa de recorrência integrado, base própria do posto e painel de acompanhamento da operação.",
   },
   {
     min: 61,
     max: 80,
-    name: "Posto saudável",
-    tagline: "Base sólida. O próximo degrau só sobe com método e dado fino.",
+    name: "Operação consistente",
+    tagline: "Base sólida. O próximo degrau exige método fino e dado integrado.",
     reading:
-      "Você fez o básico bem feito em gente, margem e operação. Bateu no teto do que dá para crescer no braço.",
-    pain:
-      "Crescimento travado por falta de dado fino do cliente e de um programa de recorrência que escale.",
-    hook:
-      "Desenhar o próximo degrau: clientes conhecidos virando recorrência previsível e mais margem nos serviços.",
-  },
-  {
-    min: 81,
-    max: 100,
-    name: "Referência na praça",
-    tagline: "Opera com método, conhece o cliente e tem margem sob controle.",
-    reading:
-      "Posto pronto para padronizar e escalar. Você é referência na sua praça e tem maturidade para o próximo movimento.",
-    pain:
-      "Manter a vantagem e replicar o padrão sem perder qualidade na expansão.",
-    hook:
-      "Levar o que funciona para um patamar de rede, com dado e fidelização sustentando a expansão.",
+      "Sua operação já apresenta consistência nas frentes principais. O próximo movimento é refinar processos, aprofundar a relação com o cliente e fazer dado fino render mais por litro.",
+    attention:
+      "Crescimento começa a depender de método: cliente conhecido virando recorrência previsível, mix de pista e loja extraindo mais margem.",
+    path:
+      "Desenhar a próxima camada: campanhas segmentadas para clientes, mix de pista com método e leitura de dado por turno.",
+    clubpetroFit:
+      "Inteligência de dados aplicada ao seu posto, campanhas segmentadas e relacionamento integrado em escala.",
   },
 ];
 
