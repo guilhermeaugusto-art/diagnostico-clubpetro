@@ -10,8 +10,8 @@ import type { Answer, AppState } from "./state";
 import type { RequestContext } from "./context";
 
 const TABLE   = "diagnostico_respostas";
-const ID_COL  = "diag_id"; // chave que mapeia o id da sessão do front
-const BUCKET  = "diagnostic-reports";
+const ID_COL  = "id"; // PK da tabela diagnostico_respostas
+const BUCKET  = "diagnostico-pdfs";
 
 function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   return fn().catch((e) => {
@@ -41,32 +41,15 @@ export function snapshotEvents(): BufferedEvent[] {
 
 /* ============== Create / Upsert ============== */
 
-export async function createSession(id: string, version: string, context: RequestContext): Promise<void> {
+export async function createSession(id: string, _version: string, _context: RequestContext): Promise<void> {
   const client = getSupabase();
   if (!client) return;
+  // INSERT mínimo: cria a linha com o id da sessão. A maior parte dos campos
+  // vai sendo preenchida via UPDATE conforme o usuário avança. As colunas que
+  // não existem na tabela enxuta (utm, device, browser etc.) são ignoradas.
   await safe("createSession", async () => {
     const { error } = await (client.from(TABLE).insert({
-      diag_id: id,
-      started_at: new Date().toISOString(),
-      status: "in_progress",
-      diagnostic_version: version,
-      source: context.source,
-      utm_source: context.utm_source,
-      utm_medium: context.utm_medium,
-      utm_campaign: context.utm_campaign,
-      utm_content: context.utm_content,
-      utm_term: context.utm_term,
-      referrer: context.referrer,
-      landing_url: context.landing_url,
-      user_agent: context.user_agent,
-      device_type: context.device_type,
-      browser: context.browser,
-      os: context.os,
-      screen_width: context.screen_width,
-      screen_height: context.screen_height,
-      locale: context.locale,
-      events: snapshotEvents(),
-      event_count: eventBuffer.length,
+      id,
     }) as unknown as Promise<{ error: unknown }>);
     if (error) throw error;
   });
@@ -85,46 +68,31 @@ async function updateRow(id: string, patch: Record<string, unknown>): Promise<vo
 
 export async function setSessionName(id: string, name: string): Promise<void> {
   bufferEvent("name_submitted", "lifecycle", { name });
-  // Grava nas duas: lead_name (novo) e nome (legado v5)
-  await updateRow(id, {
-    lead_name: name,
-    nome: name,
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
-  });
+  await updateRow(id, { nome: name });
 }
 
 export async function setSessionContact(id: string, name: string, email: string, phone: string): Promise<void> {
   bufferEvent("contact_form_submitted", "lifecycle", { has_email: !!email, has_phone: !!phone });
   await updateRow(id, {
-    // Novos
-    lead_name: name,
-    lead_email: email,
-    lead_whatsapp: phone,
-    // Legados (v5)
-    nome: name,
-    email: email,
+    nome:     name,
+    email:    email,
     telefone: phone,
-    lgpd_consent: true,
-    lgpd_consent_at: new Date().toISOString(),
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
   });
 }
 
-export async function completeSession(id: string): Promise<void> {
-  await updateRow(id, {
-    status: "completed",
-    completed_at: new Date().toISOString(),
-  });
+export async function completeSession(_id: string): Promise<void> {
+  // No modelo enxuto não temos coluna `status`/`completed_at`. created_at já
+  // marca o momento de criação; o resto é inferido pelos campos preenchidos.
+  return;
 }
 
 /* ============== Respostas ============== */
 
-/* Atualiza a coluna `answer_<qid>` correspondente + acumula `answers_full`.
-   Mantemos um payload completo client-side em `localAnswersFull` pra
-   sobrescrever a coluna jsonb com tudo o que já foi respondido. */
-const localAnswersFull: Record<string, unknown> = {};
+/* Acumula respostas client-side e grava na coluna `respostas` jsonb da tabela
+   diagnostico_respostas. Modelo enxuto: tudo no jsonb, sem colunas por pergunta.
+   As 3 perguntas qualificadoras (S1, Z1, Z2) sobem para colunas separadas
+   (papel, conhece, interesse) que já existiam na tabela legada. */
+const localRespostas: Record<string, unknown> = {};
 
 export async function persistAnswer(
   sessionId: string,
@@ -139,8 +107,7 @@ export async function persistAnswer(
   const labelStr =
     answer.kind === "multi" ? answer.labels.join(" | ") : answer.label;
 
-  /* atualiza payload completo client-side */
-  localAnswersFull[questionId] = {
+  localRespostas[questionId] = {
     kind: answer.kind,
     label: labelStr,
     value: answer.kind === "multi" ? answer.values : answer.value,
@@ -151,46 +118,26 @@ export async function persistAnswer(
     question_text: q.text,
   };
 
-  const colName = answerColumnFor(questionId);
   const patch: Record<string, unknown> = {
-    [colName]: labelStr,
-    answers_full: localAnswersFull,
+    respostas: { ...localRespostas },
   };
 
-  // qualifications expostas em colunas próprias pra facilitar funil
-  if (questionId === "S1")   patch.papel     = answer.kind === "multi" ? null : answer.value;
-  if (questionId === "Z1")   patch.conhece   = answer.kind === "multi" ? null : answer.value;
-  if (questionId === "Z2")   patch.interesse = answer.kind === "multi" ? null : answer.value;
+  // Qualifications expostas em colunas próprias (já existiam na tabela v5)
+  if (questionId === "S1" && answer.kind !== "multi") patch.papel     = answer.value;
+  if (questionId === "Z1" && answer.kind !== "multi") patch.conhece   = answer.value;
+  if (questionId === "Z2" && answer.kind !== "multi") patch.interesse = answer.value;
 
   bufferEvent("answer_selected", "answer", {
     question_id: questionId,
     dimension: dim,
     is_multi: answer.kind === "multi",
   });
-  patch.events = snapshotEvents();
-  patch.event_count = eventBuffer.length;
 
   await updateRow(sessionId, patch);
 }
 
-/* Recupera nome da coluna `answer_<qid>` para um question_id.
-   Se o id não tem coluna explícita, retorna null (vai só pro jsonb). */
-const ANSWER_COLS = new Set([
-  "S1","S2","S3",
-  "C1","C2","C3","C4",
-  "F1","F2","F3",
-  "D1","D2","D3","D4",
-  "M1","M2","M3",
-  "P1","P2","P3",
-  "R1","R2",
-  "Z1","Z2",
-]);
-function answerColumnFor(qid: string): string {
-  return ANSWER_COLS.has(qid) ? `answer_${qid.toLowerCase()}` : "answers_full";
-}
-
 export function resetLocalAnswers(): void {
-  for (const k of Object.keys(localAnswersFull)) delete localAnswersFull[k];
+  for (const k of Object.keys(localRespostas)) delete localRespostas[k];
 }
 
 /* ============== Resultado consolidado ============== */
@@ -230,48 +177,31 @@ export async function persistResult(sessionId: string, r: ResultSnapshot): Promi
     urgency: r.urgency_tone,
   });
 
-  const patch: Record<string, unknown> = {
-    // Novos
-    overall_score: r.overall_score,
-    score_range_label: r.score_range_label,
-    urgency_tone: r.urgency_tone,
-    signal: r.signal,
-    // Legados v5 (compatibilidade com pipelines existentes)
-    score: r.overall_score,
-    nivel: r.score_range_label,
-    strongest_dimension_key: r.strongest_dimension_key,
-    strongest_dimension_label: r.strongest_dimension_label,
-    strongest_dimension_score: r.strongest_dimension_score,
-    weakest_dimension_key: r.weakest_dimension_key,
-    weakest_dimension_label: r.weakest_dimension_label,
-    weakest_dimension_score: r.weakest_dimension_score,
-    main_pain_title: r.main_pain_title,
-    main_pain_description: r.main_pain_description,
-    main_pain_risk: r.main_pain_risk,
-    radar_summary: r.radar_summary,
-    radar_summary_extra: r.radar_summary_extra,
-    next_improvement_title: r.next_improvement_title,
-    next_improvement_description: r.next_improvement_description,
-    recommendations_open: r.recommendations_open,
-    recommendations_locked: r.recommendations_locked,
-    clubpetro_solutions: r.clubpetro_solutions,
-    commercial_summary: r.commercial_summary,
-    commercial_reading: r.commercial_reading,
-    approach_message: r.approach_message,
-    readiness: r.readiness,
-    result_viewed_at: new Date().toISOString(),
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
+  // Mantém a estrutura no jsonb `respostas` com score por frente + meta extra.
+  const respostasMeta = {
+    ...localRespostas,
+    _meta: {
+      urgency_tone: r.urgency_tone,
+      signal: r.signal,
+      readiness: r.readiness,
+      dimensions: r.dimensions,
+      strongest: r.strongest_dimension_label,
+      weakest: r.weakest_dimension_label,
+      radar_summary: r.radar_summary,
+      radar_summary_extra: r.radar_summary_extra,
+    },
   };
 
-  // expande dimensões em colunas pillar_*
-  for (const b of BLOCK_ORDER) {
-    const d = r.dimensions[b];
-    if (!d) continue;
-    patch[`pillar_${b}_pct`]      = d.pct;
-    patch[`pillar_${b}_earned`]   = d.earned;
-    patch[`pillar_${b}_possible`] = d.possible;
-  }
+  const patch: Record<string, unknown> = {
+    score: r.overall_score,
+    nivel: r.score_range_label,
+    respostas: respostasMeta,
+    resumo_diagnostico: r.commercial_summary || r.main_pain_description,
+    dor_principal: r.main_pain_description,
+    proxima_melhoria: r.next_improvement_title,
+    recomendacoes: r.recommendations_open,
+    leitura_comercial: r.commercial_reading,
+  };
 
   await updateRow(sessionId, patch);
 }
@@ -281,8 +211,8 @@ export async function persistResult(sessionId: string, r: ResultSnapshot): Promi
 export async function uploadReportPdf(sessionId: string, blob: Blob): Promise<{ path: string; size: number } | null> {
   const client = getSupabase();
   if (!client) return null;
-  const date = new Date().toISOString().slice(0, 10);
-  const path = `${date}/${sessionId}.pdf`;
+  // Path padrão: diagnosticos/{id}/diagnostico-completo.pdf
+  const path = `diagnosticos/${sessionId}/diagnostico-completo.pdf`;
   const result = await safe("uploadReportPdf", async () => {
     const r = await client.storage.from(BUCKET).upload(path, blob, {
       contentType: "application/pdf",
@@ -295,27 +225,21 @@ export async function uploadReportPdf(sessionId: string, blob: Blob): Promise<{ 
   return { path: result.path, size: blob.size };
 }
 
-export async function markReportGenerated(sessionId: string, path: string, size: number): Promise<void> {
-  bufferEvent("report_generated", "report", { path, size });
+export async function markReportGenerated(sessionId: string, path: string, _size: number): Promise<void> {
+  bufferEvent("report_generated", "report", { path });
   await updateRow(sessionId, {
-    report_status: "generated",
-    report_storage_bucket: BUCKET,
-    report_storage_path: path,
-    report_file_name: `diagnostico-${sessionId}.pdf`,
-    report_file_size: size,
-    report_generated_at: new Date().toISOString(),
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
+    pdf_status: "gerado",
+    pdf_bucket: BUCKET,
+    pdf_path: path,
+    pdf_gerado_em: new Date().toISOString(),
+    pdf_liberado: false,
   });
 }
 
-export async function markReportFailed(sessionId: string, error: string): Promise<void> {
-  bufferEvent("report_generation_failed", "report", { error });
+export async function markReportFailed(sessionId: string, _error: string): Promise<void> {
+  bufferEvent("report_generation_failed", "report", { error: _error });
   await updateRow(sessionId, {
-    report_status: "failed",
-    report_generation_error: error,
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
+    pdf_status: "erro",
   });
 }
 
@@ -328,35 +252,19 @@ export async function persistRayxRequest(
 ): Promise<void> {
   bufferEvent("rayx_scheduled", "rayx", { scheduled_for: scheduledFor, meet_url: meetUrl });
   await updateRow(sessionId, {
-    rayx_requested_at: new Date().toISOString(),
-    rayx_scheduled_for: scheduledFor,
-    rayx_google_meet_url: meetUrl,
-    rayx_calendar_provider: "google",
-    rayx_status: "scheduled",
-    rayx_cta_clicked_at: new Date().toISOString(),
-    rayx_cta_count: 1,                // o painel pode incrementar via SQL se quiser histórico
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
+    raiox_data: scheduledFor,
+    raiox_status: "agendado",
+    raiox_observacao: `Meet: ${meetUrl}`,
   });
 }
 
-/* ============== CTAs ============== */
-
-export async function persistSpecialistCta(sessionId: string, score: number): Promise<void> {
+export async function persistSpecialistCta(_sessionId: string, score: number): Promise<void> {
   bufferEvent("specialist_cta_clicked", "cta", { score_total: score });
-  await updateRow(sessionId, {
-    specialist_cta_clicked_at: new Date().toISOString(),
-    specialist_cta_count: 1,
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
-  });
+  // Não há coluna específica de CTA no modelo enxuto; só GA/Pixel via track().
 }
 
-/* ============== Flush genérico de eventos ============== */
-
-export async function flushEvents(sessionId: string): Promise<void> {
-  await updateRow(sessionId, {
-    events: snapshotEvents(),
-    event_count: eventBuffer.length,
-  });
+/* Flush sem efeito no modelo enxuto (não tem coluna `events`). Mantido pra
+   compat com o app.ts que chama no pagehide. */
+export async function flushEvents(_sessionId: string): Promise<void> {
+  return;
 }

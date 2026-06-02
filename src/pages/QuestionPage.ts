@@ -27,9 +27,13 @@ const ICONS_BY_BLOCK: Record<string, AnyIcon> = {
 /* Mapa direto por VALUE específico das opções. PNG flat colorido onde
    existir ícone temático; SVG monoline como fallback consistente. */
 const VALUE_ICON: Record<string, AnyIcon> = {
-  // === Quem responde / quem opera ===
-  dono:       "asset:dono",
-  gerente:    "asset:gerente",
+  // === Quem responde / quem opera (S1) ===
+  // dono: empresário estrategista → apresentação (2 pessoas com gráfico, sugere liderança)
+  // gerente: gestor formal → executivo (homem de terno barbado)
+  // equipe: frentista de pista
+  // outro: lâmpada (perfil livre)
+  dono:       "asset:apresentacao",
+  gerente:    "asset:executivo",
   equipe:     "asset:frentista",
   outro:      "asset:lampada",
 
@@ -43,10 +47,13 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   bandeira:    "asset:posto",
 
   // === Canal e perfil de cliente ===
-  varejo:      "asset:carrinho",
+  // varejo: cliente que vai à loja → lojista (pessoa com carrinho)
+  // prazo: vende com prazo de pagamento → cronômetro
+  // misto: equilíbrio entre canais → balança
+  varejo:      "asset:lojista",
   misto:       "asset:balanca",
   prazo:       "asset:cronometro",
-  diluido:     "layers",
+  diluido:     "asset:repetir",
   concentrado: "asset:aviso-triangulo",
   refem:       "asset:concorrencia",
 
@@ -128,8 +135,9 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   primeira:    "asset:lampada",
 
   // === Maturidade / status ===
+  // apoio: tem rede de apoio → grupo (3 pessoas diversas)
   alto:        "asset:crescimento",
-  apoio:       "asset:grupo",
+  apoio:       "asset:apresentacao",
   cliente:     "asset:coracao",
   estrutura:   "asset:engrenagens",
   fraco:       "asset:atencao-circulo",
@@ -141,10 +149,11 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   segura:      "asset:balanca",
 
   // === S3 multi-select ===
+  // ambos: 2 lados conectados → balança (mais visual que setas)
   ninguem:     "asset:atencao-circulo",
   parte:       "asset:balanca",
   maioria:     "asset:check",
-  ambos:       "asset:repetir",
+  ambos:       "asset:balanca",
   nos:         "asset:grupo",
   nao_olhei:   "asset:aviso-triangulo",
   nao_olhou:   "asset:aviso-triangulo",
@@ -184,8 +193,8 @@ const KEYWORD_ICON: Array<{ rx: RegExp; icon: AnyIcon }> = [
   { rx: /tempo|prazo|cronômetro|cronometro|urgência|urgencia/i, icon: "asset:cronometro" },
   { rx: /estrela|brilho|destaque|premium/i, icon: "asset:estrela" },
   { rx: /reunião|reuniao|apresenta|consultoria|encontro/i, icon: "asset:apresentacao" },
-  { rx: /dono|propriet[áa]rio|empres[áa]rio/i, icon: "asset:dono" },
-  { rx: /gerente|gest[oã]r|supervisor|encarregad/i, icon: "asset:gerente" },
+  { rx: /dono|propriet[áa]rio|empres[áa]rio/i, icon: "asset:apresentacao" },
+  { rx: /gerente|gest[oã]r|supervisor|encarregad/i, icon: "asset:executivo" },
   { rx: /concorrent|bandeira branca|disputa/i, icon: "asset:concorrente" },
   { rx: /comunidade|bairro|praça|praca|local|região|regiao/i, icon: "asset:atendimento" },
   { rx: /agenda|calendário|calendario|encontro/i, icon: "asset:calendario" },
@@ -236,17 +245,17 @@ const ICON_ALTS: Record<string, AnyIcon[]> = {
   scale:             ["asset:balanca", "asset:gangorra"],
 
   // Pessoas
-  "asset:frentista":      ["asset:headset", "asset:gerente", "asset:equipe-mercado", "asset:grupo", "asset:atendimento", "team", "user"],
+  "asset:frentista":      ["asset:headset", "asset:executivo", "asset:equipe-mercado", "asset:grupo", "asset:atendimento", "team", "user"],
   "asset:headset":        ["asset:frentista", "asset:apresentacao", "asset:equipe-mercado", "asset:atendimento"],
   "asset:equipe-mercado": ["asset:grupo", "asset:apresentacao", "asset:frentista", "asset:atendimento", "team"],
   "asset:grupo":          ["asset:equipe-mercado", "asset:apresentacao", "asset:frentista", "team"],
-  "asset:apresentacao":   ["asset:grupo", "asset:equipe-mercado", "asset:headset", "asset:conversa"],
+  "asset:apresentacao":   ["asset:executivo", "asset:grupo", "asset:headset", "asset:conversa"],
+  "asset:executivo":      ["asset:apresentacao", "asset:headset", "asset:frentista", "user"],
+  "asset:lojista":        ["asset:carrinho", "asset:cesta", "asset:frentista"],
   "asset:conversa":       ["asset:apresentacao", "asset:headset", "asset:atendimento"],
   "asset:atendimento":    ["asset:frentista", "asset:headset", "asset:apresentacao", "asset:equipe-mercado", "stars"],
-  "asset:dono":           ["asset:gerente", "asset:apresentacao", "user"],
-  "asset:gerente":        ["asset:dono", "asset:frentista", "asset:headset"],
   team:                   ["asset:grupo", "asset:equipe-mercado", "asset:frentista", "user"],
-  user:                   ["asset:dono", "asset:frentista", "asset:coracao", "team"],
+  user:                   ["asset:executivo", "asset:frentista", "asset:coracao", "team"],
 
   // Dinheiro / margem
   "asset:real":      ["asset:margem", "asset:carrinho", "asset:cesta", "coin"],

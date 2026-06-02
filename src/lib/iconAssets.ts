@@ -13,10 +13,10 @@ export const ICON_ASSETS = {
   "asset:frentista":      "/icons/frentista.png",
   "asset:equipe-mercado": "/icons/equipe-mercado.png",  // 3 pessoas + engrenagem
   "asset:headset":        "/icons/headset.png",         // atendimento consultivo
-  "asset:dono":           "/icons/dono.png",            // homem de terno + estratégia
-  "asset:gerente":        "/icons/gerente.png",         // pessoa com carrinho (gestor de loja)
+  "asset:executivo":      "/icons/executivo.png",       // homem barbado de terno + estratégia (gestor formal)
+  "asset:lojista":        "/icons/lojista.png",         // pessoa com carrinho (cliente varejista / lojista)
   "asset:grupo":          "/icons/grupo.png",           // 3 pessoas diversas
-  "asset:apresentacao":   "/icons/apresentacao.png",    // 2 apresentando gráfico
+  "asset:apresentacao":   "/icons/apresentacao.png",    // 2 apresentando gráfico (reunião / consultoria)
   "asset:conversa":       "/icons/conversa.png",        // 2 pessoas + balão de fala
 
   // === Comercial / margem / dinheiro ===
