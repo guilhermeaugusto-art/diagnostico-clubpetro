@@ -102,7 +102,6 @@ export function WelcomePage(p: WelcomePageProps): string {
             aria-invalid="false"
             value="${escHtml(p.name)}"
           >
-          <span class="welcome-field-hint" id="welcomeNameHint">Informe seu nome para iniciar.</span>
         </label>
         <div class="welcome-cta-row">
           ${Button({
