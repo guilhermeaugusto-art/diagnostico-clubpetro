@@ -1,0 +1,137 @@
+body {
+  font-family: var(--font-sans);
+  color: var(--ink-900);
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(242,102,0,.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(15,26,35,.04), transparent 60%),
+    var(--paper);
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Vertical rhythm desktop */
+@media (min-width: 720px) {
+  :root {
+    --stack-block:   32px;
+    --stack-section: 64px;
+  }
+}
+
+/* Stack utilities: aplica espaçamento vertical consistente entre filhos.
+   Uso: <div class="stack-block">…</div> aplica gap entre filhos diretos. */
+.stack-tight   > * + * { margin-top: var(--stack-tight); }
+.stack-block   > * + * { margin-top: var(--stack-block); }
+.stack-section > * + * { margin-top: var(--stack-section); }
+
+/* Largura máxima de leitura confortável */
+.measure       { max-width: var(--measure); }
+.measure-wide  { max-width: var(--measure-wide); }
+
+#app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+.shell {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding-inline: var(--sp-5);
+}
+@media (min-width: 720px) {
+  .shell { padding-inline: var(--sp-8); }
+}
+@media (min-width: 1024px) {
+  .shell { padding-inline: var(--sp-12); }
+}
+
+.stage {
+  flex: 1;
+  width: 100%;
+  padding-block: var(--sp-8) var(--sp-16);
+}
+@media (min-width: 720px) {
+  .stage { padding-block: var(--sp-12) var(--sp-20); }
+}
+
+/* As <section> dentro de .result viram blocos com pausa consistente entre si. */
+.result > section + section { margin-top: var(--stack-section); }
+.question .q-context        { margin-top: var(--stack-tight); }
+.question .answer-grid      { margin-top: var(--stack-block); }
+.question .q-nav            { margin-top: var(--stack-block); }
+
+/* Type helpers */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cp-orange-500);
+}
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 2px;
+  background: var(--cp-orange-500);
+  border-radius: 2px;
+}
+.eyebrow.on-dark { color: var(--cp-orange-400); }
+.eyebrow.on-dark::before { background: var(--cp-orange-400); }
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  color: var(--ink-900);
+  font-size: var(--fs-display-lg);
+}
+.display .ink-accent { color: var(--cp-orange-500); }
+
+.h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  font-size: var(--fs-display-sm);
+  color: var(--ink-900);
+}
+
+.lede {
+  font-family: var(--font-sans);
+  font-size: var(--fs-16);
+  line-height: 1.6;
+  color: var(--ink-500);
+  max-width: 34em;
+}
+@media (min-width: 720px) {
+  .lede { font-size: var(--fs-18); }
+}
+
+.label-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+/* Hide content while preserving layout for assistive tech */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}

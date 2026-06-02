@@ -6,6 +6,9 @@ firebase-debug.log
 # Dependencies
 node_modules/
 
+# Build
+dist/
+
 # OS
 Thumbs.db
 .DS_Store

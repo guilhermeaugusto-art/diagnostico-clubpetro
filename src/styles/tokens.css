@@ -1,0 +1,127 @@
+/* ClubPetro · Design Tokens
+   Grid base 4: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64
+*/
+:root {
+  /* Brand */
+  --cp-orange: #F26600;
+  --cp-orange-600: #D85600;
+  --cp-orange-500: #F26600;
+  --cp-orange-400: #FF8A3D;
+  --cp-orange-100: #FFE4CC;
+  --cp-orange-50:  #FFF3E6;
+
+  /* Ink / Charcoal */
+  --ink-900: #0B1218;
+  --ink-800: #142029;
+  --ink-700: #1F2F3D;
+  --ink-600: #2D3F50;
+  --ink-500: #4A5B6D;
+  --ink-400: #6C7C8E;
+  --ink-300: #94A2B2;
+  --ink-200: #BCC6D2;
+  --ink-100: #DDE3EA;
+  --ink-50:  #EEF2F6;
+
+  /* Paper / Surface */
+  --paper:        #F7F4EE;
+  --paper-warm:   #F1ECE2;
+  --paper-deep:   #E8E1D2;
+  --surface:      #FFFFFF;
+  --surface-alt:  #FAFAF7;
+  --surface-deep: #0F1A23;
+  --surface-deep-2: #15242F;
+
+  /* Borders */
+  --border-soft:    rgba(11, 18, 24, 0.08);
+  --border-medium:  rgba(11, 18, 24, 0.14);
+  --border-strong:  rgba(11, 18, 24, 0.22);
+  --border-on-dark: rgba(255, 255, 255, 0.10);
+
+  /* Status */
+  --ok:    #1F8A5C;
+  --warn:  #C68500;
+  --danger:#C53E48;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  /* Type scale (fluid, mobile-first) */
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-22: 1.375rem;
+  --fs-24: 1.5rem;
+  --fs-28: 1.75rem;
+  --fs-32: 2rem;
+  --fs-display-sm: clamp(1.75rem, 6vw, 2.5rem);
+  --fs-display-md: clamp(2rem, 7vw, 3rem);
+  --fs-display-lg: clamp(2.25rem, 8vw, 3.5rem);
+  --fs-score:      clamp(5rem, 22vw, 8.5rem);
+
+  /* Spacing (4-grid) */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+
+  /* Radii */
+  --rd-sm:   8px;
+  --rd-md:   12px;
+  --rd-lg:   16px;
+  --rd-xl:   20px;
+  --rd-2xl:  28px;
+  --rd-full: 999px;
+
+  /* Elevation (layered shadow + hairline) */
+  --sh-0: 0 0 0 1px var(--border-soft);
+  --sh-1: 0 1px 2px rgba(11,18,24,.05), 0 0 0 1px rgba(11,18,24,.05);
+  --sh-2: 0 2px 4px rgba(11,18,24,.04), 0 8px 18px rgba(11,18,24,.06), 0 0 0 1px rgba(11,18,24,.05);
+  --sh-3: 0 6px 14px rgba(11,18,24,.06), 0 22px 44px rgba(11,18,24,.10), 0 0 0 1px rgba(11,18,24,.06);
+  --sh-glow: 0 0 0 1px var(--cp-orange-500), 0 0 0 6px rgba(242,102,0,.14), 0 14px 30px rgba(242,102,0,.22);
+  --sh-inset-light: inset 0 1px 0 rgba(255,255,255,.55);
+  --sh-inset-dark:  inset 0 1px 0 rgba(255,255,255,.05);
+
+  /* Motion */
+  --ease:     cubic-bezier(.4, 0, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-in:  cubic-bezier(.4, 0, 1, 1);
+  --dur-1: 140ms;
+  --dur-2: 220ms;
+  --dur-3: 320ms;
+  --dur-4: 480ms;
+  --dur-5: 720ms;
+
+  /* Layout */
+  --shell-max:    1180px;
+  --shell-narrow: 720px;
+  --header-h:     64px;
+
+  /* Vertical rhythm. Aplicação da regra 1.2 do RULES.md */
+  --stack-tight:   8px;
+  --stack-block:   24px;
+  --stack-section: 48px;
+
+  /* Largura máxima de leitura confortável (regra 1.5) */
+  --measure:        60ch;
+  --measure-wide:   70ch;
+
+  /* Área mínima de toque (regra 1.6) */
+  --touch:         48px;
+
+  /* Z */
+  --z-header:  80;
+  --z-overlay: 100;
+}
