@@ -1,17 +1,32 @@
 /* Motor adaptativo do diagnóstico.
-   - Constrói o leitor de respostas (ReadAnswers) que as condicionais usam.
+   - Constrói o leitor de respostas (ReadAnswers) usado pelas condicionais.
+   - Determina a trilha (dono/gerente/frentista) a partir de S1.
    - Decide a próxima pergunta visível a partir do cursor.
-   - Calcula o sinal CRÍTICO/NEUTRO/AVANÇADO depois das 5 primeiras pontuadas. */
+   - Calcula o sinal CRÍTICO/NEUTRO/AVANÇADO depois das 5 primeiras pontuadas
+     da trilha em curso. */
 
 import {
   QUESTIONS,
-  QUESTION_ORDER,
-  SIGNAL_CHECKPOINT_IDS,
+  QUESTION_ORDER_BY_TRACK,
+  SIGNAL_CHECKPOINT_IDS_BY_TRACK,
+  trackFromS1Value,
   getQuestionById,
   type Question,
   type ReadAnswers,
+  type TrackId,
 } from "../data/questions";
 import type { AppState, SignalTier } from "./state";
+
+/* --- Trilha ------------------------------------------------------------- */
+
+export function currentTrack(state: AppState): TrackId | null {
+  const a = state.answers.S1;
+  if (!a) return null;
+  if (a.kind === "single" || a.kind === "qualify") {
+    return trackFromS1Value(a.value);
+  }
+  return null;
+}
 
 /* --- Leitor de respostas ----------------------------------------------- */
 export function makeReader(state: AppState): ReadAnswers {
@@ -34,22 +49,22 @@ export function makeReader(state: AppState): ReadAnswers {
       return { value: a.value, pts: a.pts };
     },
     signal: () => state.signal,
+    track: () => currentTrack(state),
   };
 }
 
 /* --- Sinal -------------------------------------------------------------- */
 
-/* Após as 5 primeiras pontuadas (C1, F1, D1, R1, C4), calcula:
-   - percentual provisório do bloco-âncora (sobre o máximo possível das 5)
-   - número de respostas vermelhas (pts == 0) entre essas 5
-   CRÍTICO se pct provisório <= 30 OU 3+ respostas vermelhas
-   AVANÇADO se pct provisório >= 75 e 0 vermelhas
-   NEUTRO caso contrário. */
+function checkpointIdsFor(state: AppState): string[] {
+  const t = currentTrack(state);
+  return t ? SIGNAL_CHECKPOINT_IDS_BY_TRACK[t] : [];
+}
+
 export function computeSignal(state: AppState): SignalTier {
   let earned = 0;
   let max = 0;
   let reds = 0;
-  for (const id of SIGNAL_CHECKPOINT_IDS) {
+  for (const id of checkpointIdsFor(state)) {
     const q = getQuestionById(id);
     const a = state.answers[id];
     if (!q || q.type !== "score" || !a || a.kind !== "score") continue;
@@ -64,26 +79,37 @@ export function computeSignal(state: AppState): SignalTier {
 }
 
 export function allCheckpointAnswered(state: AppState): boolean {
-  return SIGNAL_CHECKPOINT_IDS.every((id) => !!state.answers[id]);
+  const ids = checkpointIdsFor(state);
+  if (ids.length === 0) return false;
+  return ids.every((id) => !!state.answers[id]);
 }
 
 /* --- Trilha de perguntas ----------------------------------------------- */
 
-/* Lista de perguntas visíveis, considerando condicionais e sinal corrente. */
+/* Lista de perguntas visíveis, considerando trilha, condicionais e sinal.
+   Antes de S1 ser respondida, mostra só S1.
+   Depois de S1, anexa as perguntas da trilha selecionada. */
 export function visibleQuestions(state: AppState): Question[] {
-  const read = makeReader(state);
   const list: Question[] = [];
-  for (const id of QUESTION_ORDER) {
+  const s1 = getQuestionById("S1");
+  if (s1) list.push(s1);
+
+  const track = currentTrack(state);
+  if (!track) return list;
+
+  const read = makeReader(state);
+  const order = QUESTION_ORDER_BY_TRACK[track];
+  for (const id of order) {
     const q = getQuestionById(id);
     if (!q) continue;
+    if (q.tracks && !q.tracks.includes(track)) continue;
     if (q.condition && !q.condition(read)) continue;
     list.push(q);
   }
   return list;
 }
 
-/* Pergunta atual baseada no cursor: percorre a trilha e devolve a primeira
-   ainda não respondida a partir do cursor. */
+/* Pergunta atual baseada no cursor. */
 export function currentQuestion(state: AppState): Question | null {
   const list = visibleQuestions(state);
   if (state.cursor >= list.length) return null;
@@ -96,5 +122,5 @@ export function questionnaireLength(state: AppState): number {
 
 /* O passo de "telefone" entra como última etapa visualmente, após as perguntas. */
 export function totalSteps(state: AppState): number {
-  return questionnaireLength(state) + 1; // +1 para a etapa de telefone
+  return questionnaireLength(state) + 1;
 }

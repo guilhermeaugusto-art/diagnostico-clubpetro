@@ -3,8 +3,6 @@ import "./styles/index.css";
 import { CONFIG } from "./lib/config";
 import { BLOCKS, BLOCK_ORDER } from "./data/blocks";
 import {
-  QUESTIONS,
-  SIGNAL_CHECKPOINT_IDS,
   type Question,
   type ScoreQuestion,
   type NoScoreOption,
@@ -28,6 +26,7 @@ import {
   computeSignal,
   allCheckpointAnswered,
   currentQuestion,
+  currentTrack,
   visibleQuestions,
   totalSteps as totalStepsFn,
 } from "./lib/engine";
@@ -693,34 +692,40 @@ async function saveResultToBackend(): Promise<void> {
   if (m) m.textContent = "Respostas registradas";
 
   // ============== Edge function RD (best-effort, mantida) ==============
-  const blockPctsObj: Record<string, number> = {};
-  BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
-  try {
-    await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + CONFIG.SUPABASE_ANON_KEY,
-        apikey: CONFIG.SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        nome: state.name,
-        email: state.email,
-        telefone: state.phone,
-        score_total: score,
-        nivel: lvl.name,
-        dimensao_fraca: ranked[0]?.id ?? null,
-        sinal: state.signal,
-        z2: state.answers.Z2?.kind === "qualify" ? state.answers.Z2.value : null,
-        readiness: routing.readiness,
-        block_scores: blockPctsObj,
-        diag_id: state.diagId,
-        approach_message: routing.approachMessage,
-      }),
-      keepalive: true,
-    });
-  } catch (e) {
-    console.warn("RD conversion best-effort falhou:", e);
+  // Frentista (papel = "outro") pontua só para comparação interna, sem MQL.
+  // Pulamos o disparo da edge function nesse caso.
+  const trilha = currentTrack(state);
+  if (trilha !== "frentista") {
+    const blockPctsObj: Record<string, number> = {};
+    BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
+    try {
+      await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + CONFIG.SUPABASE_ANON_KEY,
+          apikey: CONFIG.SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          nome: state.name,
+          email: state.email,
+          telefone: state.phone,
+          score_total: score,
+          nivel: lvl.name,
+          dimensao_fraca: ranked[0]?.id ?? null,
+          sinal: state.signal,
+          z2: routing.z2,
+          readiness: routing.readiness,
+          block_scores: blockPctsObj,
+          diag_id: state.diagId,
+          papel: trilha,
+          approach_message: routing.approachMessage,
+        }),
+        keepalive: true,
+      });
+    } catch (e) {
+      console.warn("RD conversion best-effort falhou:", e);
+    }
   }
 
   // ============== Geração + upload do PDF (background) ==============

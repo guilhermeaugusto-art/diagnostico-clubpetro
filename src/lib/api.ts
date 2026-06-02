@@ -122,10 +122,25 @@ export async function persistAnswer(
     respostas: { ...localRespostas },
   };
 
-  // Qualifications expostas em colunas próprias (já existiam na tabela v5)
-  if (questionId === "S1" && answer.kind !== "multi") patch.papel     = answer.value;
-  if (questionId === "Z1" && answer.kind !== "multi") patch.conhece   = answer.value;
-  if (questionId === "Z2" && answer.kind !== "multi") patch.interesse = answer.value;
+  // Qualifications expostas em colunas próprias (já existiam na tabela v5).
+  // Cada trilha tem sua pergunta-equivalente, mapeadas aqui no mesmo campo.
+  if (questionId === "S1" && answer.kind !== "multi") patch.papel = answer.value;
+
+  // "conhece" (já conhecia ClubPetro): D_CONHECE / G_CONHECE / sem equivalente em frentista.
+  if (
+    (questionId === "D_CONHECE" || questionId === "G_CONHECE") &&
+    answer.kind !== "multi"
+  ) {
+    patch.conhece = answer.value;
+  }
+
+  // "interesse" (o que quer resolver / dor principal): D_DOR / G_DOR / F_MELHORIA.
+  if (
+    (questionId === "D_DOR" || questionId === "G_DOR" || questionId === "F_MELHORIA") &&
+    answer.kind !== "multi"
+  ) {
+    patch.interesse = answer.value;
+  }
 
   bufferEvent("answer_selected", "answer", {
     question_id: questionId,
