@@ -1558,21 +1558,34 @@ body:has(.welcome) .cp-header {
   .q-step-tag, .q-pillar-tag { font-size: var(--fs-12); }
   .q-title { font-size: var(--fs-22); line-height: 1.22; letter-spacing: -0.015em; }
   .q-context { padding: var(--sp-3) var(--sp-4); font-size: var(--fs-13); line-height: 1.5; }
-  .answer-grid { gap: var(--sp-2); }
+  /* Cards de resposta com respiro entre si e ícones centralizados. */
+  .answer-grid { gap: var(--sp-4); }
   .answer-card {
-    grid-template-columns: 44px 1fr;
+    grid-template-columns: 48px 1fr;
     gap: var(--sp-3);
-    padding: var(--sp-4) var(--sp-4);
+    padding: var(--sp-4);
     padding-right: var(--sp-9);
     min-height: 72px;
     align-items: center;
     border-radius: var(--rd-lg);
   }
-  .answer-icon { width: 44px; height: 44px; border-radius: var(--rd-md); }
-  .answer-icon svg, .answer-icon img { width: 22px; height: 22px; }
+  /* Container do ícone: 48px, fundo gradiente, ícone PNG/SVG centralizado. */
+  .answer-icon { width: 48px; height: 48px; border-radius: var(--rd-md); }
+  .answer-icon svg { width: 24px; height: 24px; }
+  .answer-icon .icon-png { width: 30px; height: 30px; }
+  /* Remove o padding-top decorativo: com align-items:center o body fica
+     numericamente centralizado com o ícone. */
+  .answer-body { padding-top: 0; }
   .answer-title { font-size: var(--fs-15); line-height: 1.3; }
   .answer-desc { font-size: var(--fs-13); line-height: 1.4; }
-  .answer-check { top: 14px; right: 14px; width: 22px; height: 22px; }
+  /* Check verticalmente centralizado em vez de top fixo. */
+  .answer-check {
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+  }
   .q-nav { gap: var(--sp-3); }
   .q-nav .btn { min-height: 52px; }
 
@@ -1639,8 +1652,10 @@ body:has(.welcome) .cp-header {
   .display { font-size: clamp(1.625rem, 9vw, 2.125rem); }
   .h2 { font-size: var(--fs-22); }
   .welcome-main .lede { font-size: var(--fs-14); }
-  .answer-card { grid-template-columns: 40px 1fr; padding: var(--sp-3) var(--sp-4); padding-right: var(--sp-8); min-height: 64px; }
-  .answer-icon { width: 40px; height: 40px; }
-  .answer-icon svg, .answer-icon img { width: 20px; height: 20px; }
+  .answer-grid { gap: var(--sp-3); }
+  .answer-card { grid-template-columns: 44px 1fr; padding: var(--sp-3) var(--sp-4); padding-right: var(--sp-8); min-height: 64px; }
+  .answer-icon { width: 44px; height: 44px; }
+  .answer-icon svg { width: 22px; height: 22px; }
+  .answer-icon .icon-png { width: 28px; height: 28px; }
   .result-hero { padding: var(--sp-4); }
 }

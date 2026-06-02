@@ -557,8 +557,29 @@ function setupWelcomeVideoLoop(): void {
   a.addEventListener("error", onErr, { once: true });
   b.addEventListener("error", onErr, { once: true });
 
-  // Dispara o ativo. autoplay+muted já cobre a maioria; play() resolve Safari.
-  safePlay(a);
+  // Garante muted antes de qualquer play (iOS exige).
+  a.muted = true;
+  b.muted = true;
+  a.playsInline = true;
+  b.playsInline = true;
+
+  // Tenta tocar assim que possível (alguns iOS só topam depois de loadeddata).
+  const tryStart = (): void => { safePlay(a); };
+  tryStart();
+  a.addEventListener("loadeddata", tryStart, { once: true });
+  a.addEventListener("canplay", tryStart, { once: true });
+
+  // Fallback: alguns navegadores mobile só liberam autoplay no primeiro
+  // gesto do usuário. No toque/scroll inicial, força o play.
+  const resumeOnGesture = (): void => {
+    if (a.paused) safePlay(a);
+    document.removeEventListener("touchstart", resumeOnGesture);
+    document.removeEventListener("click", resumeOnGesture);
+    document.removeEventListener("scroll", resumeOnGesture);
+  };
+  document.addEventListener("touchstart", resumeOnGesture, { passive: true, once: true });
+  document.addEventListener("click", resumeOnGesture, { once: true });
+  document.addEventListener("scroll", resumeOnGesture, { passive: true, once: true });
 }
 
 function onWelcomeRendered(): void {

@@ -144,6 +144,8 @@ export function WelcomePage(p: WelcomePageProps): string {
               autoplay
               muted
               playsinline
+              webkit-playsinline="true"
+              disableremoteplayback
               preload="auto"
               poster="/welcome-poster.jpg">
               <source src="/welcome-loop.webm" type="video/webm">
@@ -154,6 +156,8 @@ export function WelcomePage(p: WelcomePageProps): string {
               id="welcomeVideoB"
               muted
               playsinline
+              webkit-playsinline="true"
+              disableremoteplayback
               preload="auto">
               <source src="/welcome-loop.webm" type="video/webm">
               <source src="/welcome-loop.mp4" type="video/mp4">
