@@ -275,21 +275,12 @@ async function uploadPdf(sessionId: string, blob: Blob, fileName: string): Promi
   return result ? result.path : null;
 }
 
-/* Gera um link assinado (validade longa) pra abrir o PDF direto, sem ceremônia. */
-async function signUrl(path: string | null): Promise<string | null> {
+/* URL pública e permanente do PDF (bucket público). O caminho tem o UUID da
+   sessão, então o link não é adivinhável/listável. Sem token, sem expirar,
+   abre direto, sem o problema de assinatura (InvalidJWT) dos links assinados. */
+function publicUrl(path: string | null): string | null {
   if (!path) return null;
-  const ONE_YEAR = 60 * 60 * 24 * 365;
-  const r = await safe("signUrl", async () => {
-    const res = await fetch(`${CONFIG.SUPABASE_URL}/storage/v1/object/sign/${BUCKET}/${path}`, {
-      method: "POST",
-      headers: REST_HEADERS,
-      body: JSON.stringify({ expiresIn: ONE_YEAR }),
-    });
-    if (!res.ok) throw new Error(`signUrl HTTP ${res.status}: ${await res.text()}`);
-    return (await res.json()) as { signedURL?: string };
-  });
-  if (!r || !r.signedURL) return null;
-  return `${CONFIG.SUPABASE_URL}/storage/v1${r.signedURL}`;
+  return `${CONFIG.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
 /* Sobe os dois PDFs (comercial + cliente) no bucket privado, grava os caminhos
@@ -297,7 +288,8 @@ async function signUrl(path: string | null): Promise<string | null> {
 export async function uploadReports(sessionId: string, comercial: Blob, cliente: Blob): Promise<void> {
   const comercialPath = await uploadPdf(sessionId, comercial, "comercial.pdf");
   const clientePath   = await uploadPdf(sessionId, cliente, "cliente.pdf");
-  const [comercialUrl, clienteUrl] = await Promise.all([signUrl(comercialPath), signUrl(clientePath)]);
+  const comercialUrl = publicUrl(comercialPath);
+  const clienteUrl   = publicUrl(clientePath);
   bufferEvent("report_generated", "report", { comercial: comercialPath, cliente: clientePath });
   const now = new Date().toISOString();
   await updateRow(sessionId, {
