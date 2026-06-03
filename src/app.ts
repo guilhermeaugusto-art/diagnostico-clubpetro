@@ -207,31 +207,6 @@ function handleAction(action: string): void {
   }
 }
 
-/* Baixa o PDF do diagnóstico automaticamente, gerado das respostas, sem botão.
-   Dispara uma vez por sessão quando o resultado aparece. */
-let pdfAutoBaixado = false;
-async function autoDownloadClientPdf(): Promise<void> {
-  if (pdfAutoBaixado) return;
-  pdfAutoBaixado = true;
-  try {
-    const { generateClientPdf } = await import("./lib/report");
-    const content = buildReportContent(state);
-    const blob = await generateClientPdf(content);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const first = (state.name || "diagnostico").trim().split(/\s+/)[0].toLowerCase() || "diagnostico";
-    a.href = url;
-    a.download = `diagnostico-${first}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-    track("client_pdf_downloaded", { diag_id: state.diagId }, state.diagId);
-  } catch (e) {
-    console.warn("download automático do PDF falhou:", e);
-    pdfAutoBaixado = false; // permite nova tentativa se falhou
-  }
-}
 
 /* ============== Welcome / boot actions ============== */
 
@@ -740,8 +715,6 @@ function onResultRendered(): void {
     });
   }, 1900);
   saveResultToBackend();
-  // Baixa o PDF do diagnóstico sozinho, sem o usuário precisar clicar.
-  void autoDownloadClientPdf();
 }
 
 function animateScore(el: HTMLElement, target: number, dur: number, delay: number): void {

@@ -332,6 +332,8 @@ export async function persistRayxRequest(
     raiox_data: scheduledFor,
     raiox_status: "agendado",
     raiox_observacao: `Meet: ${meetUrl}`,
+    // Ao agendar o Raio-X, o PDF do cliente fica liberado para ser enviado.
+    pdf_liberado: true,
   });
 }
 
