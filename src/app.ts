@@ -46,8 +46,7 @@ import {
   persistResult,
   persistRayxRequest,
   persistSpecialistCta,
-  uploadReportPdf,
-  markReportGenerated,
+  uploadReports,
   markReportFailed,
   resetLocalAnswers,
   flushEvents,
@@ -845,15 +844,14 @@ async function saveResultToBackend(): Promise<void> {
 async function generateAndUploadReport(): Promise<void> {
   if (!state.diagId) return;
   track("report_generation_started", {}, state.diagId);
-  const { generateReportPdf } = await import("./lib/report");
+  const { generateReportPdf, generateClientPdf } = await import("./lib/report");
   const content = buildReportContent(state);
-  const blob = await generateReportPdf(content);
-  const upload = await uploadReportPdf(state.diagId, blob);
-  if (!upload) {
-    await markReportFailed(state.diagId, "upload_failed");
-    return;
-  }
-  await markReportGenerated(state.diagId, upload.path, upload.size);
+  // Comercial (interno, completo) + cliente (limpo). Ambos no bucket privado.
+  const [comercial, cliente] = await Promise.all([
+    generateReportPdf(content),
+    generateClientPdf(content),
+  ]);
+  await uploadReports(state.diagId, comercial, cliente);
 }
 
 /* ============== CTAs ============== */

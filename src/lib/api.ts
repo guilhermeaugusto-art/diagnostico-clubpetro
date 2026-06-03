@@ -260,12 +260,11 @@ export async function persistResult(sessionId: string, r: ResultSnapshot): Promi
 
 /* ============== Report (PDF) ============== */
 
-export async function uploadReportPdf(sessionId: string, blob: Blob): Promise<{ path: string; size: number } | null> {
+async function uploadPdf(sessionId: string, blob: Blob, fileName: string): Promise<string | null> {
   const client = getSupabase();
   if (!client) return null;
-  // Path padrão: diagnosticos/{id}/diagnostico-completo.pdf
-  const path = `diagnosticos/${sessionId}/diagnostico-completo.pdf`;
-  const result = await safe("uploadReportPdf", async () => {
+  const path = `diagnosticos/${sessionId}/${fileName}`;
+  const result = await safe(`uploadPdf:${fileName}`, async () => {
     const r = await client.storage.from(BUCKET).upload(path, blob, {
       contentType: "application/pdf",
       upsert: true,
@@ -273,17 +272,23 @@ export async function uploadReportPdf(sessionId: string, blob: Blob): Promise<{ 
     if (r.error) throw r.error;
     return r.data;
   });
-  if (!result) return null;
-  return { path: result.path, size: blob.size };
+  return result ? result.path : null;
 }
 
-export async function markReportGenerated(sessionId: string, path: string, _size: number): Promise<void> {
-  bufferEvent("report_generated", "report", { path });
+/* Sobe os dois PDFs (comercial + cliente) no bucket privado e grava os caminhos.
+   Leitura depois via URL assinada (service role). */
+export async function uploadReports(sessionId: string, comercial: Blob, cliente: Blob): Promise<void> {
+  const comercialPath = await uploadPdf(sessionId, comercial, "comercial.pdf");
+  const clientePath   = await uploadPdf(sessionId, cliente, "cliente.pdf");
+  bufferEvent("report_generated", "report", { comercial: comercialPath, cliente: clientePath });
+  const now = new Date().toISOString();
   await updateRow(sessionId, {
-    pdf_status: "gerado",
+    pdf_status: (comercialPath || clientePath) ? "gerado" : "erro",
     pdf_bucket: BUCKET,
-    pdf_path: path,
-    pdf_gerado_em: new Date().toISOString(),
+    pdf_comercial_path: comercialPath,
+    pdf_comercial_gerado_em: comercialPath ? now : null,
+    pdf_cliente_path: clientePath,
+    pdf_cliente_gerado_em: clientePath ? now : null,
     pdf_liberado: false,
   });
 }

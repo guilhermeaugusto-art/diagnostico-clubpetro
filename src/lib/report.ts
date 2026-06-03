@@ -147,6 +147,106 @@ export async function generateReportPdf(content: ReportContent): Promise<Blob> {
   return doc.output("blob");
 }
 
+/* ============== PDF DO CLIENTE ==============
+   Versão limpa, focada no valor para o dono do posto: nota, leitura por frente,
+   por onde começar, próximas melhorias e como o ClubPetro ajuda. SEM leitura
+   comercial, SEM respostas cruas, SEM marca de documento interno. */
+export async function generateClientPdf(content: ReportContent): Promise<Blob> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4", compress: true });
+  const c: Cursor = { y: PAGE_PADDING };
+
+  drawClientCover(doc, content, c);
+
+  newPage(doc, c);
+  drawSection(doc, c, "Leitura por frente");
+  for (const d of content.dimensions) {
+    ensureSpace(doc, c, 80);
+    drawDimensionBlock(doc, c, d);
+  }
+
+  ensureSpace(doc, c, 140);
+  drawSection(doc, c, "Por onde começar");
+  drawTitleParagraph(
+    doc, c,
+    content.weakest ? `Comece por: ${content.weakest.name}` : "Próximo passo",
+    content.pain.description,
+  );
+
+  ensureSpace(doc, c, 180);
+  drawSection(doc, c, "Próximas melhorias para o seu posto");
+  for (const r of content.recommendations.open) {
+    ensureSpace(doc, c, 90);
+    drawRecBlock(doc, c, r, false);
+  }
+
+  ensureSpace(doc, c, 140);
+  drawSection(doc, c, "Como o ClubPetro ajuda");
+  for (const s of content.clubpetroSolutions) {
+    ensureSpace(doc, c, 60);
+    drawTitleParagraph(doc, c, s.title, s.reason);
+    drawSpacer(c, 8);
+  }
+
+  ensureSpace(doc, c, 80);
+  drawSpacer(c, 10);
+  drawParagraph(
+    doc, c,
+    "Fale com um Especialista ClubPetro para colocar essas melhorias em prática no seu posto.",
+    INK, "body-bold",
+  );
+
+  paginate(doc);
+  return doc.output("blob");
+}
+
+function drawClientCover(doc: any, content: ReportContent, c: Cursor) {
+  doc.setFillColor(ORANGE);
+  doc.rect(0, 0, PAGE_WIDTH, 6, "F");
+
+  doc.setFontSize(11);
+  doc.setTextColor(INK_MUTED);
+  doc.setFont("helvetica", "normal");
+  doc.text("ClubPetro · Diagnóstico de Saúde do Posto", PAGE_PADDING, 56);
+
+  doc.setFontSize(28);
+  doc.setTextColor(INK);
+  doc.setFont("helvetica", "bold");
+  const headline = content.lead.name
+    ? `Diagnóstico de ${content.lead.name.split(/\s+/)[0]}`
+    : "Diagnóstico do seu posto";
+  doc.text(headline, PAGE_PADDING, 110);
+
+  doc.setFontSize(13);
+  doc.setTextColor(INK_MUTED);
+  doc.setFont("helvetica", "normal");
+  let y = 140;
+  for (const line of wrap(doc, content.overall.levelTagline, PAGE_WIDTH - PAGE_PADDING * 2)) {
+    doc.text(line, PAGE_PADDING, y); y += 18;
+  }
+
+  doc.setFontSize(72);
+  doc.setTextColor(scoreColor(content.overall.score));
+  doc.setFont("helvetica", "bold");
+  doc.text(`${content.overall.score}`, PAGE_PADDING, y + 96);
+  doc.setFontSize(22);
+  doc.setTextColor(INK_MUTED);
+  doc.text("/100", PAGE_PADDING + 110, y + 96);
+
+  doc.setFontSize(14);
+  doc.setTextColor(INK);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Faixa atual: ${content.overall.levelName}`, PAGE_PADDING, y + 136);
+
+  doc.setFontSize(9);
+  doc.setTextColor(INK_MUTED);
+  doc.setFont("helvetica", "normal");
+  doc.text("A leitura do seu posto: por onde o lucro está vazando e por onde começar.",
+    PAGE_PADDING, PAGE_HEIGHT - 40);
+
+  c.y = PAGE_HEIGHT;
+}
+
 /* ============== Helpers de desenho ============== */
 
 function newPage(doc: any, c: Cursor) {
