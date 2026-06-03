@@ -275,11 +275,26 @@ async function uploadPdf(sessionId: string, blob: Blob, fileName: string): Promi
   return result ? result.path : null;
 }
 
-/* Sobe os dois PDFs (comercial + cliente) no bucket privado e grava os caminhos.
-   Leitura depois via URL assinada (service role). */
+/* Gera um link assinado (validade longa) pra abrir o PDF direto, sem ceremônia. */
+async function signUrl(path: string | null): Promise<string | null> {
+  if (!path) return null;
+  const client = getSupabase();
+  if (!client) return null;
+  const ONE_YEAR = 60 * 60 * 24 * 365;
+  const r = await safe("signUrl", async () => {
+    const res = await client.storage.from(BUCKET).createSignedUrl(path, ONE_YEAR);
+    if (res.error) throw res.error;
+    return res.data;
+  });
+  return r ? r.signedUrl : null;
+}
+
+/* Sobe os dois PDFs (comercial + cliente) no bucket privado, grava os caminhos
+   e um link assinado clicável de cada um (pra abrir direto da tabela). */
 export async function uploadReports(sessionId: string, comercial: Blob, cliente: Blob): Promise<void> {
   const comercialPath = await uploadPdf(sessionId, comercial, "comercial.pdf");
   const clientePath   = await uploadPdf(sessionId, cliente, "cliente.pdf");
+  const [comercialUrl, clienteUrl] = await Promise.all([signUrl(comercialPath), signUrl(clientePath)]);
   bufferEvent("report_generated", "report", { comercial: comercialPath, cliente: clientePath });
   const now = new Date().toISOString();
   await updateRow(sessionId, {
@@ -287,8 +302,10 @@ export async function uploadReports(sessionId: string, comercial: Blob, cliente:
     pdf_bucket: BUCKET,
     pdf_comercial_path: comercialPath,
     pdf_comercial_gerado_em: comercialPath ? now : null,
+    pdf_comercial_url: comercialUrl,
     pdf_cliente_path: clientePath,
     pdf_cliente_gerado_em: clientePath ? now : null,
+    pdf_cliente_url: clienteUrl,
     pdf_liberado: false,
   });
 }
