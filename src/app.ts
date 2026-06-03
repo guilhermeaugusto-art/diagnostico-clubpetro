@@ -60,6 +60,7 @@ let bootContext: RequestContext | null = null;
 
 import { Header } from "./components/Header";
 import { resetRadarMiniState } from "./components/RadarMini";
+import { BarsProgress } from "./components/BarsProgress";
 import { WelcomePage } from "./pages/WelcomePage";
 import { QuestionPage } from "./pages/QuestionPage";
 import { ContactPage } from "./pages/ContactPage";
@@ -95,8 +96,8 @@ function headerCurrentStep(): number {
 function renderHeader(): string {
   /* Radar mini aparece a partir do diagnóstico em andamento e segue até o contact.
      Welcome e transition ficam idle (sem progresso, sem radar). */
-  const showRadar =
-    state.screen === "question" || state.screen === "contact";
+  // Radar só no resultado. Durante as respostas o visual é o gráfico de barras.
+  const showRadar = false;
   return Header({
     state,
     idle: state.screen === "welcome" || state.screen === "transition" || state.screen === "result",
@@ -147,6 +148,7 @@ function renderBody(): string {
         selectedIndexes,
         openText,
         plural: isPluralPosto(state),
+        barsHtml: BarsProgress(state),
       });
     }
     case "contact":
@@ -447,8 +449,27 @@ function refreshSelectionUI(): void {
     el.classList.toggle("is-selected", selected);
     el.setAttribute("aria-checked", selected ? "true" : "false");
   });
-  const chip = document.getElementById("cpScore");
-  if (chip) chip.textContent = String(totalScore(state));
+  updateBarsLive();
+}
+
+/* Anima o gráfico de barras conforme a resposta muda (sobe/desce), sem mostrar
+   número. A barra do pilar da pergunta atual recebe um leve destaque. */
+function updateBarsLive(): void {
+  const bs = blockScores(state);
+  const q = currentQuestion(state);
+  const bump = q && q.block !== "qualif" ? q.block : null;
+  BLOCK_ORDER.forEach((b) => {
+    const el = document.querySelector<HTMLElement>(`.bars-fill[data-block="${b}"]`);
+    if (!el) return;
+    const v = Math.max(0, Math.min(100, bs[b].pct || 0));
+    el.dataset.target = String(v);
+    el.style.setProperty("--v", `${v}%`);
+    const item = el.closest<HTMLElement>(".bars-item");
+    if (item && bump === b) {
+      item.classList.add("is-bumped");
+      window.setTimeout(() => item.classList.remove("is-bumped"), 600);
+    }
+  });
 }
 
 /* ============== Navegação ============== */

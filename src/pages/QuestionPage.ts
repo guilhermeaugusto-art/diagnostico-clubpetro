@@ -13,6 +13,7 @@ interface QuestionPageProps {
   selectedIndexes?: number[];   // para segmentation-multi
   openText?: string;            // para perguntas type: "open"
   plural?: boolean;             // dois ou mais postos: liga o plural no texto
+  barsHtml?: string;            // gráfico de barras por pilar (durante as respostas)
 }
 
 /* Ícone padrão por bloco como fallback final. Usa PNG flat colorido. */
@@ -424,6 +425,7 @@ export function QuestionPage(p: QuestionPageProps): string {
   return `
     <div class="shell stage">
       <section class="question">
+        ${p.barsHtml || ""}
         <div class="q-meta anim-fade">
           <span class="q-step-tag">
             <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}
@@ -464,6 +466,7 @@ function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
   return `
     <div class="shell stage">
       <section class="question">
+        ${p.barsHtml || ""}
         <div class="q-meta anim-fade">
           <span class="q-step-tag">
             <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}
