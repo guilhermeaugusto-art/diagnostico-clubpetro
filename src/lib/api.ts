@@ -4,6 +4,7 @@
    Eventos são bufferizados localmente e flushados em momentos-chave. */
 
 import { getSupabase } from "./supabase";
+import { CONFIG } from "./config";
 import { BLOCKS, BLOCK_ORDER } from "../data/blocks";
 import { QUESTIONS } from "../data/questions";
 import type { Answer, AppState } from "./state";
@@ -12,6 +13,19 @@ import type { RequestContext } from "./context";
 const TABLE   = "diagnostico_respostas";
 const ID_COL  = "id"; // PK da tabela diagnostico_respostas
 const BUCKET  = "diagnostico-pdfs";
+
+/* Persistência da LINHA via PostgREST direto (fetch), não pelo supabase-js.
+   Motivo: o caminho via cliente vinha falhando em silêncio no navegador
+   enquanto o INSERT passava. O fetch direto é o mesmo caminho REST validado
+   manualmente, e `keepalive` garante que os UPDATEs do fim do fluxo (resultado,
+   conclusão, RD) não sejam cancelados quando a tela troca. */
+const REST_URL = `${CONFIG.SUPABASE_URL}/rest/v1/${TABLE}`;
+const REST_HEADERS: Record<string, string> = {
+  apikey: CONFIG.SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+  "Content-Type": "application/json",
+  Prefer: "return=minimal",
+};
 
 function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   return fn().catch((e) => {
@@ -42,25 +56,28 @@ export function snapshotEvents(): BufferedEvent[] {
 /* ============== Create / Upsert ============== */
 
 export async function createSession(id: string, _version: string, _context: RequestContext): Promise<void> {
-  const client = getSupabase();
-  if (!client) return;
-  // INSERT mínimo: cria a linha com o id da sessão. A maior parte dos campos
-  // vai sendo preenchida via UPDATE conforme o usuário avança. As colunas que
-  // não existem na tabela enxuta (utm, device, browser etc.) são ignoradas.
+  // INSERT mínimo: cria a linha com o id da sessão. O resto entra via UPDATE.
   await safe("createSession", async () => {
-    const { error } = await (client.from(TABLE).insert({
-      id,
-    }) as unknown as Promise<{ error: unknown }>);
-    if (error) throw error;
+    const res = await fetch(REST_URL, {
+      method: "POST",
+      headers: REST_HEADERS,
+      body: JSON.stringify({ id }),
+      keepalive: true,
+    });
+    if (!res.ok) throw new Error(`createSession HTTP ${res.status}: ${await res.text()}`);
   });
 }
 
 async function updateRow(id: string, patch: Record<string, unknown>): Promise<void> {
-  const client = getSupabase();
-  if (!client) return;
+  if (!id) return;
   await safe("updateRow", async () => {
-    const { error } = await (client.from(TABLE).update(patch).eq(ID_COL, id) as unknown as Promise<{ error: unknown }>);
-    if (error) throw error;
+    const res = await fetch(`${REST_URL}?${ID_COL}=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: REST_HEADERS,
+      body: JSON.stringify(patch),
+      keepalive: true,
+    });
+    if (!res.ok) throw new Error(`updateRow HTTP ${res.status}: ${await res.text()}`);
   });
 }
 
