@@ -201,46 +201,60 @@ export async function generateClientPdf(content: ReportContent): Promise<Blob> {
 }
 
 function drawClientCover(doc: any, content: ReportContent, c: Cursor) {
+  // Faixa superior laranja
   doc.setFillColor(ORANGE);
   doc.rect(0, 0, PAGE_WIDTH, 6, "F");
 
-  doc.setFontSize(11);
-  doc.setTextColor(INK_MUTED);
+  // Eyebrow
   doc.setFont("helvetica", "normal");
-  doc.text("ClubPetro · Diagnóstico de Saúde do Posto", PAGE_PADDING, 56);
+  doc.setFontSize(10.5);
+  doc.setTextColor(INK_MUTED);
+  doc.text("CLUBPETRO · DIAGNÓSTICO DE SAÚDE DO POSTO", PAGE_PADDING, 70);
 
-  doc.setFontSize(28);
-  doc.setTextColor(INK);
+  // Título
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(30);
+  doc.setTextColor(INK);
   const headline = content.lead.name
     ? `Diagnóstico de ${content.lead.name.split(/\s+/)[0]}`
     : "Diagnóstico do seu posto";
-  doc.text(headline, PAGE_PADDING, 110);
+  doc.text(headline, PAGE_PADDING, 120);
 
+  // Subtítulo (tagline da faixa)
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(13);
   doc.setTextColor(INK_MUTED);
-  doc.setFont("helvetica", "normal");
-  let y = 140;
-  for (const line of wrap(doc, content.overall.levelTagline, PAGE_WIDTH - PAGE_PADDING * 2)) {
-    doc.text(line, PAGE_PADDING, y); y += 18;
+  let y = 150;
+  for (const line of wrap(doc, content.overall.levelTagline, PAGE_WIDTH - PAGE_PADDING * 2 - 30)) {
+    doc.text(line, PAGE_PADDING, y); y += 19;
   }
 
-  doc.setFontSize(72);
-  doc.setTextColor(scoreColor(content.overall.score));
+  // Nota grande, com "/100" alinhado pela largura real do número
+  y += 58;
   doc.setFont("helvetica", "bold");
-  doc.text(`${content.overall.score}`, PAGE_PADDING, y + 96);
+  doc.setFontSize(80);
+  doc.setTextColor(scoreColor(content.overall.score));
+  const scoreStr = `${content.overall.score}`;
+  doc.text(scoreStr, PAGE_PADDING, y);
+  const sw = doc.getTextWidth(scoreStr);
   doc.setFontSize(22);
   doc.setTextColor(INK_MUTED);
-  doc.text("/100", PAGE_PADDING + 110, y + 96);
+  doc.text("/100", PAGE_PADDING + sw + 12, y);
 
-  doc.setFontSize(14);
-  doc.setTextColor(INK);
+  // Faixa atual
+  y += 34;
   doc.setFont("helvetica", "bold");
-  doc.text(`Faixa atual: ${content.overall.levelName}`, PAGE_PADDING, y + 136);
+  doc.setFontSize(10.5);
+  doc.setTextColor(INK_MUTED);
+  doc.text("FAIXA ATUAL", PAGE_PADDING, y);
+  doc.setFontSize(17);
+  doc.setTextColor(INK);
+  doc.text(content.overall.levelName, PAGE_PADDING, y + 22);
 
+  // Rodapé da capa
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(INK_MUTED);
-  doc.setFont("helvetica", "normal");
   doc.text("A leitura do seu posto: por onde o lucro está vazando e por onde começar.",
     PAGE_PADDING, PAGE_HEIGHT - 40);
 
@@ -324,15 +338,18 @@ function drawCover(doc: any, content: ReportContent, c: Cursor) {
 }
 
 function drawSection(doc: any, c: Cursor, title: string) {
-  ensureSpace(doc, c, 36);
+  // Respiro antes do título (não aplica no topo da página).
+  if (c.y > PAGE_PADDING + 6) c.y += 20;
+  ensureSpace(doc, c, 44);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(ORANGE);
   doc.text(title, PAGE_PADDING, c.y);
-  c.y += 8;
-  doc.setDrawColor(0xE0, 0xE0, 0xE0);
+  c.y += 11;
+  doc.setDrawColor(0xE0, 0xD8, 0xC8);
+  doc.setLineWidth(0.7);
   doc.line(PAGE_PADDING, c.y, PAGE_WIDTH - PAGE_PADDING, c.y);
-  c.y += 18;
+  c.y += 22;
 }
 
 function drawSubsection(doc: any, c: Cursor, title: string) {
@@ -440,29 +457,28 @@ function drawScoreBlock(doc: any, c: Cursor, content: ReportContent) {
 }
 
 function drawDimensionBlock(doc: any, c: Cursor, d: ReportContent["dimensions"][number]) {
-  ensureSpace(doc, c, 70);
+  ensureSpace(doc, c, 66);
   const w = PAGE_WIDTH - PAGE_PADDING * 2;
 
+  // Nome à esquerda, nota alinhada à direita (mesma linha de base).
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(11.5);
   doc.setTextColor(INK);
   doc.text(d.name, PAGE_PADDING, c.y);
 
-  doc.setFontSize(12);
   doc.setTextColor(scoreColor(d.pct));
-  doc.text(`${d.pct}/100`, PAGE_PADDING + w - 60, c.y);
+  doc.text(`${d.pct}/100`, PAGE_WIDTH - PAGE_PADDING, c.y, { align: "right" });
 
-  c.y += 8;
-  // barra de fundo
-  doc.setFillColor(0xEE, 0xEE, 0xEE);
-  doc.roundedRect(PAGE_PADDING, c.y, w, 6, 3, 3, "F");
-  // barra preenchida
+  // Barra de progresso fina e arredondada.
+  c.y += 10;
+  doc.setFillColor(0xEC, 0xE6, 0xDA);
+  doc.roundedRect(PAGE_PADDING, c.y, w, 5, 2.5, 2.5, "F");
   doc.setFillColor(scoreColor(d.pct));
-  doc.roundedRect(PAGE_PADDING, c.y, Math.max(2, (w * d.pct) / 100), 6, 3, 3, "F");
+  doc.roundedRect(PAGE_PADDING, c.y, Math.max(3, (w * d.pct) / 100), 5, 2.5, 2.5, "F");
 
-  c.y += 14;
-  drawParagraph(doc, c, d.insight, INK_MUTED, "body");
-  drawSpacer(c, 10);
+  c.y += 18;
+  drawParagraph(doc, c, d.insight, INK_MUTED, "small");
+  drawSpacer(c, 14);
 }
 
 function drawRecBlock(doc: any, c: Cursor, r: { title: string; desc: string; impact: string }, lockedLabel: boolean) {
