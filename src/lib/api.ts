@@ -278,15 +278,18 @@ async function uploadPdf(sessionId: string, blob: Blob, fileName: string): Promi
 /* Gera um link assinado (validade longa) pra abrir o PDF direto, sem ceremônia. */
 async function signUrl(path: string | null): Promise<string | null> {
   if (!path) return null;
-  const client = getSupabase();
-  if (!client) return null;
   const ONE_YEAR = 60 * 60 * 24 * 365;
   const r = await safe("signUrl", async () => {
-    const res = await client.storage.from(BUCKET).createSignedUrl(path, ONE_YEAR);
-    if (res.error) throw res.error;
-    return res.data;
+    const res = await fetch(`${CONFIG.SUPABASE_URL}/storage/v1/object/sign/${BUCKET}/${path}`, {
+      method: "POST",
+      headers: REST_HEADERS,
+      body: JSON.stringify({ expiresIn: ONE_YEAR }),
+    });
+    if (!res.ok) throw new Error(`signUrl HTTP ${res.status}: ${await res.text()}`);
+    return (await res.json()) as { signedURL?: string };
   });
-  return r ? r.signedUrl : null;
+  if (!r || !r.signedURL) return null;
+  return `${CONFIG.SUPABASE_URL}/storage/v1${r.signedURL}`;
 }
 
 /* Sobe os dois PDFs (comercial + cliente) no bucket privado, grava os caminhos
