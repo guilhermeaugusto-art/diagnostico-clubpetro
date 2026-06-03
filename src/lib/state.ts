@@ -37,8 +37,13 @@ export interface QualifyAnswer {
   label: string;
   value: string;
 }
+/* Resposta de texto aberto (perguntas type: "open"). Não pontua. */
+export interface TextAnswer {
+  kind: "text";
+  text: string;
+}
 
-export type Answer = ScoreAnswer | SingleAnswer | MultiAnswer | QualifyAnswer;
+export type Answer = ScoreAnswer | SingleAnswer | MultiAnswer | QualifyAnswer | TextAnswer;
 
 export interface AppState {
   screen: Screen;

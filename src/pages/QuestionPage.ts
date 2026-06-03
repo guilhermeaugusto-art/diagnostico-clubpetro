@@ -2,7 +2,7 @@ import { BLOCKS } from "../data/blocks";
 import type { Question } from "../data/questions";
 import { AnswerCard } from "../components/AnswerCard";
 import { Button } from "../components/Button";
-import { escHtml, pad2 } from "../lib/format";
+import { escHtml, pad2, applyForms } from "../lib/format";
 import type { AnyIcon } from "../lib/renderIcon";
 
 interface QuestionPageProps {
@@ -11,6 +11,8 @@ interface QuestionPageProps {
   totalSteps: number;
   selectedIndex?: number;       // para single / score / qualify
   selectedIndexes?: number[];   // para segmentation-multi
+  openText?: string;            // para perguntas type: "open"
+  plural?: boolean;             // dois ou mais postos: liga o plural no texto
 }
 
 /* Ícone padrão por bloco como fallback final. Usa PNG flat colorido. */
@@ -357,6 +359,13 @@ export function QuestionPage(p: QuestionPageProps): string {
     ? "Qualificação"
     : BLOCKS[blockKey].name;
 
+  // Pergunta de texto aberto (frentista): layout próprio com textarea.
+  if (q.type === "open") {
+    return renderOpenQuestion(p, blockName);
+  }
+
+  const pl = p.plural === true;
+
   // Rótulo do tipo na meta line. NUNCA expor pontuação para não induzir
   // o usuário a marcar a alternativa "vencedora".
   const metaLabel = q.type === "segmentation-multi"
@@ -378,8 +387,8 @@ export function QuestionPage(p: QuestionPageProps): string {
         : p.selectedIndex === i;
       return AnswerCard({
         index: i,
-        label: opt.label,
-        desc: opt.desc,
+        label: applyForms(opt.label, pl),
+        desc: applyForms(opt.desc ?? "", pl),
         icon: optionIcons[i],
         selected,
         multi: isMulti,
@@ -388,7 +397,7 @@ export function QuestionPage(p: QuestionPageProps): string {
     .join("");
 
   const context = q.context
-    ? `<p class="q-context anim-fade delay-2">${escHtml(q.context)}</p>`
+    ? `<p class="q-context anim-fade delay-2">${applyForms(escHtml(q.context), pl)}</p>`
     : "";
 
   // Tipo de pergunta determina o footer:
@@ -421,7 +430,7 @@ export function QuestionPage(p: QuestionPageProps): string {
           </span>
           <span class="q-pillar-tag">${escHtml(blockName)} · ${escHtml(metaLabel)}</span>
         </div>
-        <h2 class="q-title anim-rise delay-1">${q.text}</h2>
+        <h2 class="q-title anim-rise delay-1">${applyForms(q.text, pl)}</h2>
         ${context}
         <div class="answer-grid anim-fade delay-3"
              role="${grouping === "checkbox" ? "group" : "radiogroup"}"
@@ -437,6 +446,57 @@ export function QuestionPage(p: QuestionPageProps): string {
             disabled: p.currentIndex === 0,
           })}
           ${continueBtn}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+/* Pergunta de texto aberto: enunciado + textarea + Continuar.
+   Não pontua; serve de leitura qualitativa (trilha do frentista). */
+function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
+  const q = p.question;
+  const pl = p.plural === true;
+  const placeholder = "placeholder" in q && q.placeholder ? q.placeholder : "Escreva com as suas palavras.";
+  const context = q.context
+    ? `<p class="q-context anim-fade delay-2">${applyForms(escHtml(q.context), pl)}</p>`
+    : "";
+  return `
+    <div class="shell stage">
+      <section class="question">
+        <div class="q-meta anim-fade">
+          <span class="q-step-tag">
+            <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}
+          </span>
+          <span class="q-pillar-tag">${escHtml(blockName)} · Resposta aberta</span>
+        </div>
+        <h2 class="q-title anim-rise delay-1">${applyForms(q.text, pl)}</h2>
+        ${context}
+        <div class="open-wrap anim-fade delay-3">
+          <textarea
+            id="openInput"
+            class="open-input"
+            rows="4"
+            maxlength="600"
+            placeholder="${escHtml(placeholder)}"
+          >${escHtml(p.openText || "")}</textarea>
+        </div>
+        <div class="q-nav">
+          ${Button({
+            variant: "ghost",
+            label: "Voltar",
+            iconLeft: "arrowBack",
+            dataAction: "back",
+            disabled: p.currentIndex === 0,
+          })}
+          ${Button({
+            variant: "primary",
+            size: "md",
+            label: "Continuar",
+            iconRight: "arrow",
+            dataAction: "advance-open",
+            id: "btnAdvanceOpen",
+          })}
         </div>
       </section>
     </div>

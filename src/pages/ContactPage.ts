@@ -27,7 +27,9 @@ export function ContactPage(p: ContactPageProps): string {
               : "Falta pouco."}
           </h2>
           <p class="lede measure">
-            Onde mandamos o resultado completo do seu diagnóstico.
+            Pra onde enviamos o seu raio-x completo? Assim que você terminar, a gente
+            manda no seu WhatsApp a leitura do seu posto: por onde o lucro está vazando
+            hoje e os primeiros passos pra resolver. Sem custo, e sem enrolação.
           </p>
         </header>
 

@@ -335,6 +335,30 @@ body:has(.welcome) .cp-header {
 }
 .answer-card.is-selected .answer-check svg { opacity: 1; }
 
+/* ============ OPEN TEXT (resposta aberta) ============ */
+.open-wrap { margin-top: var(--stack-block); }
+.open-input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--fs-16);
+  line-height: 1.55;
+  color: var(--ink-900);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--rd-md);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(11, 18, 24, .03);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.open-input::placeholder { color: var(--ink-300); }
+.open-input:focus {
+  border-color: var(--cp-orange-500);
+  box-shadow: 0 0 0 4px rgba(242, 102, 0, .12);
+}
+
 /* ============ QUESTION LAYOUT ============ */
 .question { max-width: 880px; margin-inline: auto; }
 .q-meta {

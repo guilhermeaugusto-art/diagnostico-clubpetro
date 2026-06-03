@@ -127,7 +127,9 @@ export function buildReportContent(state: AppState): ReportContent {
       if (!a) return null;
       const answers = a.kind === "multi"
         ? a.labels.map((label, i) => ({ label, value: a.values[i], weight: null }))
-        : [{ label: a.label, value: a.value, weight: a.kind === "score" ? a.pts : null }];
+        : a.kind === "text"
+          ? [{ label: a.text, value: a.text, weight: null }]
+          : [{ label: a.label, value: a.value, weight: a.kind === "score" ? a.pts : null }];
       const dim = q.block === "qualif" ? "Qualificação" : BLOCKS[q.block].name;
       return { qid: q.id, qtext: q.text, dimension: dim, answers };
     })

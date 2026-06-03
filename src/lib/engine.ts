@@ -28,6 +28,26 @@ export function currentTrack(state: AppState): TrackId | null {
   return null;
 }
 
+/* Define se o texto deve ir no plural (dois ou mais postos).
+   Dono: pela quantidade de postos. Gerente: pelo escopo (um ou vários).
+   Frentista: sempre singular (uma pessoa em um posto). */
+export function isPluralPosto(state: AppState): boolean {
+  const track = currentTrack(state);
+  if (track === "dono") {
+    const v = state.answers["D_PT_POSTOS"];
+    if (v && (v.kind === "single" || v.kind === "qualify")) {
+      return v.value === "2a4" || v.value === "5mais";
+    }
+  }
+  if (track === "gerente") {
+    const v = state.answers["G_PT_REDE"];
+    if (v && (v.kind === "single" || v.kind === "qualify")) {
+      return v.value === "varios";
+    }
+  }
+  return false;
+}
+
 /* --- Leitor de respostas ----------------------------------------------- */
 export function makeReader(state: AppState): ReadAnswers {
   return {

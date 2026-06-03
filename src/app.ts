@@ -29,6 +29,7 @@ import {
   currentTrack,
   visibleQuestions,
   totalSteps as totalStepsFn,
+  isPluralPosto,
 } from "./lib/engine";
 import { buildRoutingPayload } from "./lib/routing";
 import { getSupabase } from "./lib/supabase";
@@ -40,6 +41,7 @@ import {
   setSessionName,
   setSessionContact,
   completeSession,
+  markRdSent,
   persistAnswer,
   persistResult,
   persistRayxRequest,
@@ -137,12 +139,15 @@ function renderBody(): string {
           : undefined;
       const selectedIndexes =
         a && a.kind === "multi" ? a.selectedIndexes : [];
+      const openText = a && a.kind === "text" ? a.text : "";
       return QuestionPage({
         question: q,
         currentIndex: state.cursor,
         totalSteps: totalStepsFn(state),
         selectedIndex,
         selectedIndexes,
+        openText,
+        plural: isPluralPosto(state),
       });
     }
     case "contact":
@@ -196,6 +201,7 @@ function handleAction(action: string): void {
     case "discard":        return discardAndStart();
     case "back":           return prevStep();
     case "advance-multi":  return advanceFromMulti();
+    case "advance-open":   return advanceFromOpen();
     case "submit-contact": return goToTransition();
     case "cta-whatsapp":   return ctaWhatsApp();
     case "cta-raiox":      return ctaRaiox();
@@ -353,6 +359,16 @@ function advanceFromMulti(): void {
   nextStep();
 }
 
+function advanceFromOpen(): void {
+  const q = currentQuestion(state);
+  if (!q || q.type !== "open") return;
+  const el = document.getElementById("openInput") as HTMLTextAreaElement | null;
+  state.answers[q.id] = { kind: "text", text: el ? el.value.trim() : "" };
+  saveState(state);
+  afterAnswer(q);
+  nextStep();
+}
+
 function setScoreAnswer(q: ScoreQuestion, idx: number): void {
   const opt = q.options[idx] as ScoreOption;
   const ans: Answer = {
@@ -475,8 +491,10 @@ function goToTransition(): void {
   // Persiste contato no Supabase, registra consentimento implícito (LGPD)
   // e marca a sessão como completa.
   if (state.diagId) {
+    const trilha = currentTrack(state);
+    const isMql = trilha === "dono" || trilha === "gerente";
     setSessionContact(state.diagId, state.name, state.email, state.phone);
-    completeSession(state.diagId);
+    completeSession(state.diagId, isMql);
   }
   track(
     "contact_form_submitted",
@@ -496,6 +514,16 @@ function goToTransition(): void {
 
 function onQuestionRendered(): void {
   questionStartTime = Date.now();
+  // Pergunta de texto aberto: salva o texto a cada digitação.
+  const open = document.getElementById("openInput") as HTMLTextAreaElement | null;
+  if (open) {
+    open.addEventListener("input", () => {
+      const q = currentQuestion(state);
+      if (!q || q.type !== "open") return;
+      state.answers[q.id] = { kind: "text", text: open.value };
+      saveState(state);
+    });
+  }
 }
 
 /* Crossfade loop entre dois vídeos.
@@ -776,7 +804,7 @@ async function saveResultToBackend(): Promise<void> {
     const blockPctsObj: Record<string, number> = {};
     BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
     try {
-      await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
+      const res = await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -800,6 +828,8 @@ async function saveResultToBackend(): Promise<void> {
         }),
         keepalive: true,
       });
+      // Marca no banco que o lead já foi enviado ao RD Station.
+      if (res.ok && state.diagId) markRdSent(state.diagId);
     } catch (e) {
       console.warn("RD conversion best-effort falhou:", e);
     }

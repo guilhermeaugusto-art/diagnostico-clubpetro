@@ -32,3 +32,14 @@ export function phoneDigitsOnly(v: string): string {
 export function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
+
+/* Singular/plural por número de postos.
+   Sintaxe nas strings: {{forma singular|forma plural}}.
+   Quem responde 1 posto vê a primeira forma; 2 ou mais, a segunda.
+   Ex.: "{{o seu posto|os seus postos}}" -> "o seu posto" ou "os seus postos". */
+export function applyForms(text: string, plural: boolean): string {
+  if (!text) return text;
+  return text.replace(/\{\{([^|}]*)\|([^}]*)\}\}/g, (_m, sing, plur) =>
+    plural ? plur : sing,
+  );
+}

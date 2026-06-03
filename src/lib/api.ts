@@ -80,10 +80,21 @@ export async function setSessionContact(id: string, name: string, email: string,
   });
 }
 
-export async function completeSession(_id: string): Promise<void> {
-  // No modelo enxuto não temos coluna `status`/`completed_at`. created_at já
-  // marca o momento de criação; o resto é inferido pelos campos preenchidos.
-  return;
+/* Marca a conclusão do diagnóstico (chegou ao fim do raio-x) e se virou MQL
+   (dono ou gerente que deixou contato). created_at já marca o início. */
+export async function completeSession(id: string, mql: boolean): Promise<void> {
+  await updateRow(id, {
+    concluido_em: new Date().toISOString(),
+    mql,
+  });
+}
+
+/* Marca que o lead já foi enviado ao RD Station (após o POST na Edge Function). */
+export async function markRdSent(id: string): Promise<void> {
+  await updateRow(id, {
+    rd_enviado: true,
+    rd_enviado_em: new Date().toISOString(),
+  });
 }
 
 /* ============== Respostas ============== */
@@ -105,12 +116,16 @@ export async function persistAnswer(
   const dimLabel = dim === "qualif" ? "Qualificação" : BLOCKS[dim]?.name ?? dim;
 
   const labelStr =
-    answer.kind === "multi" ? answer.labels.join(" | ") : answer.label;
+    answer.kind === "multi" ? answer.labels.join(" | ")
+      : answer.kind === "text" ? answer.text
+        : answer.label;
 
   localRespostas[questionId] = {
     kind: answer.kind,
     label: labelStr,
-    value: answer.kind === "multi" ? answer.values : answer.value,
+    value: answer.kind === "multi" ? answer.values
+      : answer.kind === "text" ? answer.text
+        : answer.value,
     pts: answer.kind === "score" ? answer.pts : null,
     vague: answer.kind === "score" ? answer.vague === true : false,
     dimension_key: dim,
@@ -124,12 +139,12 @@ export async function persistAnswer(
 
   // Qualifications expostas em colunas próprias (já existiam na tabela v5).
   // Cada trilha tem sua pergunta-equivalente, mapeadas aqui no mesmo campo.
-  if (questionId === "S1" && answer.kind !== "multi") patch.papel = answer.value;
+  if (questionId === "S1" && answer.kind !== "multi" && answer.kind !== "text") patch.papel = answer.value;
 
   // "conhece" (já conhecia ClubPetro): D_CONHECE / G_CONHECE / sem equivalente em frentista.
   if (
     (questionId === "D_CONHECE" || questionId === "G_CONHECE") &&
-    answer.kind !== "multi"
+    answer.kind !== "multi" && answer.kind !== "text"
   ) {
     patch.conhece = answer.value;
   }
@@ -137,7 +152,7 @@ export async function persistAnswer(
   // "interesse" (o que quer resolver / dor principal): D_DOR / G_DOR / F_MELHORIA.
   if (
     (questionId === "D_DOR" || questionId === "G_DOR" || questionId === "F_MELHORIA") &&
-    answer.kind !== "multi"
+    answer.kind !== "multi" && answer.kind !== "text"
   ) {
     patch.interesse = answer.value;
   }
@@ -207,10 +222,15 @@ export async function persistResult(sessionId: string, r: ResultSnapshot): Promi
     },
   };
 
+  // Pontuação por pilar em coluna dedicada: { "pessoas": 70, "marca": 60, ... }
+  const pontuacaoPilares: Record<string, number> = {};
+  for (const [k, v] of Object.entries(r.dimensions)) pontuacaoPilares[k] = v.pct;
+
   const patch: Record<string, unknown> = {
     score: r.overall_score,
     nivel: r.score_range_label,
     respostas: respostasMeta,
+    pontuacao_pilares: pontuacaoPilares,
     resumo_diagnostico: r.commercial_summary || r.main_pain_description,
     dor_principal: r.main_pain_description,
     proxima_melhoria: r.next_improvement_title,
