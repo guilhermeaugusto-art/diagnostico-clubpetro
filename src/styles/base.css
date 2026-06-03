@@ -9,15 +9,33 @@
 body {
   font-family: var(--font-sans);
   color: var(--ink-900);
+  /* Glows radiais bem mais discretos: o clima de "gradiente de IA" sai,
+     o paper fica no centro. A profundidade passa a vir da textura, não do brilho. */
   background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(242,102,0,.06), transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, rgba(15,26,35,.04), transparent 60%),
+    radial-gradient(1200px 600px at 80% -10%, rgba(242,102,0,.03), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(15,26,35,.02), transparent 60%),
     var(--paper);
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
   transition: background-color var(--dur-3) var(--ease);
 }
+
+/* Grão de papel: textura analógica sutil que tira a cara de "plástico de IA".
+   Fractal noise em SVG, fixo, atrás do conteúdo (#app cria seu próprio
+   contexto de empilhamento, então o grão fica sob a UI e sobre o paper). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+@media (prefers-reduced-motion: reduce) { body::before { opacity: 0.04; } }
 
 /* Welcome: cor base = média das bordas do vídeo (rgb 235,230,233).
    Glow laranja sutil por cima dá vida sem criar contraste justo onde a

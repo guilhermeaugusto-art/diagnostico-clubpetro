@@ -21,6 +21,30 @@ import type { AppState } from "../lib/state";
 import { escHtml } from "../lib/format";
 import { Icons } from "../lib/icons";
 
+/* Frase curta que nomeia o ponto cego de cada frente fraca, em linguagem de
+   dono: o radar encanta, esta linha explica. Sem travessão, sem emoji,
+   no máximo 20 palavras (RULES 3.1, 3.2, 3.5). */
+const WEAK_LINE: Record<BlockId, string> = {
+  pessoas:     "A operação ainda depende de esforço individual, sem rotina que sustente o atendimento.",
+  marca:       "Falta um motivo de escolha além do preço, e isso entrega o cliente ao concorrente.",
+  comercial:   "A margem é acompanhada no feeling, e dinheiro escapa todo mês sem aparecer.",
+  fidelizacao: "Você sabe quem abastece, não sabe quem volta nem por quê.",
+  dados:       "A decisão ainda roda no achismo, sem painel que mostre o que acontece.",
+  resiliencia: "Sobra pouco fôlego de caixa para planejar movimento próprio na praça.",
+};
+
+/* Uma barra da leitura por pilar: nome, trilha, preenchimento e valor exato.
+   A frente mais fraca recebe destaque (cor de atenção). */
+function radarBar(name: string, pct: number, weak: boolean): string {
+  return `
+    <div class="radar-bar-row${weak ? " is-weak" : ""}">
+      <span class="radar-bar-name">${escHtml(name)}</span>
+      <span class="radar-bar-track"><span class="radar-bar-fill" style="width:${pct}%"></span></span>
+      <span class="radar-bar-val">${pct}</span>
+    </div>
+  `;
+}
+
 export function ResultPage(state: AppState): string {
   const score = totalScore(state);
   const lvl = levelFor(score);
@@ -37,6 +61,15 @@ export function ResultPage(state: AppState): string {
   const nextImprovement = nextImprovementFor(ranked[0]?.id);
   const heroPain = mainPain(state);
   const urgency = urgencyFor(score);
+
+  /* Leitura por barras (valor exato por pilar) e a frase do ponto mais fraco.
+     ranked já vem do mais fraco ao mais forte, então a primeira é o ponto fraco. */
+  const weakId = ranked[0]?.id as BlockId | undefined;
+  const barsHtml = ranked
+    .map((r) => radarBar(BLOCKS[r.id].short, r.pct, r.id === weakId))
+    .join("");
+  const weakName = weakId ? BLOCKS[weakId].short : "";
+  const weakLine = weakId ? WEAK_LINE[weakId] : "";
 
   const pillarsHtml = BLOCK_ORDER
     .filter((b) => bs[b].possible > 0)
@@ -138,7 +171,15 @@ export function ResultPage(state: AppState): string {
             </div>
 
             <div class="result-hero-radar anim-fade delay-2">
-              ${RadarChart({ state, width: 480 })}
+              <span class="radar-panel-eyebrow">Raio-x dos pilares</span>
+              ${RadarChart({ state, width: 480, theme: "paper" })}
+              <div class="radar-bars">${barsHtml}</div>
+              ${weakName ? `
+              <div class="radar-weakest">
+                <span class="radar-weakest-label">Ponto mais fraco</span>
+                <p class="radar-weakest-name">${escHtml(weakName)}</p>
+                <p class="radar-weakest-line">${escHtml(weakLine)}</p>
+              </div>` : ""}
               <p class="result-hero-radar-reading">${escHtml(radar.p1)}</p>
             </div>
           </div>

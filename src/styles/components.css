@@ -150,7 +150,20 @@ body:has(.welcome) .cp-header {
   user-select: none;
 }
 .btn:disabled, .btn[aria-disabled="true"] {
-  opacity: .45; pointer-events: none;
+  pointer-events: none;
+}
+/* Disabled do primário NÃO é "laranja apagado" (que lê como botão principal
+   desligado). Vira neutro de verdade, em tinta, pra que o laranja cheio fique
+   sendo só o estado ativo, decidido. */
+.btn-primary:disabled, .btn-primary[aria-disabled="true"],
+.btn-on-dark:disabled, .btn-on-dark[aria-disabled="true"] {
+  background: var(--ink-100);
+  color: var(--ink-400);
+  box-shadow: inset 0 0 0 1px var(--border-medium);
+}
+.btn-secondary:disabled, .btn-secondary[aria-disabled="true"],
+.btn-ghost:disabled, .btn-ghost[aria-disabled="true"] {
+  opacity: .5;
 }
 .btn .btn-arrow {
   font-family: var(--font-sans);
@@ -162,12 +175,14 @@ body:has(.welcome) .cp-header {
 .btn-primary {
   background: var(--cp-orange-500);
   color: #fff;
+  /* Profundidade contida: sombra curta e em tinta quente, sem o "glow" de halo
+     laranja que lê como botão de IA. Contraste vem do laranja cheio, não do brilho. */
   box-shadow:
-    0 1px 0 rgba(255,255,255,.3) inset,
-    0 1px 2px rgba(170, 68, 0, .25),
-    0 8px 22px rgba(242, 102, 0, .28);
+    0 1px 0 rgba(255,255,255,.22) inset,
+    0 1px 1px rgba(170, 68, 0, .22),
+    0 4px 12px rgba(170, 68, 0, .18);
 }
-.btn-primary:hover { background: var(--cp-orange-600); transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 2px 4px rgba(170,68,0,.3), 0 12px 28px rgba(242,102,0,.34); }
+.btn-primary:hover { background: var(--cp-orange-600); transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 2px 3px rgba(170,68,0,.26), 0 8px 18px rgba(170,68,0,.24); }
 .btn-primary:active { transform: translateY(0); }
 
 .btn-secondary {
@@ -220,9 +235,11 @@ body:has(.welcome) .cp-header {
   text-align: left;
   padding: var(--sp-5) var(--sp-5);
   padding-right: var(--sp-10); /* espaço para o check no canto direito */
-  border-radius: var(--rd-lg);
+  border-radius: var(--rd-md);
   background: var(--surface);
-  box-shadow: var(--sh-1);
+  /* Borda fina como base (via ::before), sombra mínima só pra descolar do paper.
+     Cartão editorial: definido pela borda, não por sombra mole. */
+  box-shadow: 0 1px 2px rgba(11, 18, 24, .03);
   transition:
     transform var(--dur-2) var(--ease-out),
     box-shadow var(--dur-2) var(--ease),
@@ -235,23 +252,26 @@ body:has(.welcome) .cp-header {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1.5px solid transparent;
-  transition: border-color var(--dur-2) var(--ease);
+  /* Hairline sempre presente: a borda fina é o que define o cartão. */
+  border: 1px solid var(--border-medium);
+  transition: border-color var(--dur-2) var(--ease), border-width var(--dur-1) var(--ease);
   pointer-events: none;
   z-index: 1;
 }
 .answer-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--sh-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(11, 18, 24, .06);
 }
-.answer-card:hover::before { border-color: var(--ink-100); }
+.answer-card:hover::before { border-color: var(--ink-200); }
 .answer-card:focus-visible::before { border-color: var(--cp-orange-500); }
+/* Seleção decidida: preenchimento de acento + borda laranja firme, sem glow.
+   Fica "travado", não flutuando. */
 .answer-card.is-selected {
-  background: linear-gradient(180deg, #FFF8F0 0%, #FFFFFF 80%);
-  box-shadow: var(--sh-glow);
-  transform: translateY(-2px);
+  background: var(--cp-orange-50);
+  box-shadow: none;
+  transform: none;
 }
-.answer-card.is-selected::before { border-color: var(--cp-orange-500); }
+.answer-card.is-selected::before { border-color: var(--cp-orange-500); border-width: 1.5px; }
 
 .answer-icon {
   width: 48px;
@@ -277,7 +297,7 @@ body:has(.welcome) .cp-header {
 
 .answer-body { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; padding-top: 2px; }
 .answer-title {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: var(--fs-16);
   line-height: 1.35;
@@ -427,7 +447,7 @@ body:has(.welcome) .cp-header {
 }
 .welcome-field-input {
   width: 100%;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--fs-22);
   letter-spacing: -0.01em;
@@ -563,20 +583,19 @@ body:has(.welcome) .cp-header {
   will-change: opacity;
 
   /* ===== Máscara combinada (fusão "PNG flutuante") =====
-     Três camadas com mask-composite: intersect.
-     Bordas largas (top/base/laterais com 18-22%) e cantos bem difusos
-     (radial parando em 45%) eliminam qualquer linha de junção visível
-     com o paper, mesmo na parte superior do vídeo onde antes havia corte. */
+     Três camadas com mask-composite: intersect. Miolo SÓLIDO, só a beirada
+     suaviza: o radial mantém o vídeo cheio até 72% do raio (antes 45%, quando
+     mais da metade já esmaecia), e os degradês de borda viram um feather fino. */
   -webkit-mask-image:
-    radial-gradient(110% 110% at 50% 50%, #000 45%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 16%, #000 84%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 22%, #000 82%, transparent 100%);
+    radial-gradient(120% 120% at 50% 50%, #000 72%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
   -webkit-mask-composite: source-in;       /* Safari/Chrome (sintaxe antiga) */
 
           mask-image:
-    radial-gradient(110% 110% at 50% 50%, #000 45%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 16%, #000 84%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 22%, #000 82%, transparent 100%);
+    radial-gradient(120% 120% at 50% 50%, #000 72%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
           mask-composite: intersect;       /* Firefox/spec padrão */
 }
 .welcome-video.is-active { opacity: 1; }
@@ -614,9 +633,10 @@ body:has(.welcome) .cp-header {
 .contact-head .lede { font-size: var(--fs-15); }
 .contact-card {
   padding: var(--sp-5);
-  border-radius: var(--rd-xl);
+  border-radius: var(--rd-lg);
   background: var(--surface);
-  box-shadow: var(--sh-2);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 2px 8px rgba(11, 18, 24, .05);
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
@@ -635,7 +655,7 @@ body:has(.welcome) .cp-header {
 }
 .contact-input {
   width: 100%;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--fs-22);
   letter-spacing: -0.01em;
@@ -928,7 +948,7 @@ body:has(.welcome) .cp-header {
   color: rgba(255,255,255,.55);
 }
 .result-trio-value {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: var(--fs-16);
   letter-spacing: -0.005em;
@@ -937,22 +957,100 @@ body:has(.welcome) .cp-header {
   overflow-wrap: anywhere;
 }
 
+/* Painel do radar EM PAPEL dentro do hero escuro: rótulos em tinta, sem glow,
+   sem azul de dashboard. O papel sobre o azul faz o raio-x saltar. */
 .result-hero-radar {
   position: relative;
-  padding: var(--sp-5);
-  border-radius: var(--rd-xl);
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--border-on-dark);
+  padding: var(--sp-6);
+  border-radius: var(--rd-lg);
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 12px 32px rgba(11, 18, 24, .30);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
+}
+.radar-panel-eyebrow {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cp-orange-600);
 }
 .result-hero-radar-reading {
   font-size: var(--fs-13);
   line-height: 1.6;
-  color: rgba(255,255,255,.78);
+  color: var(--ink-500);
   padding-top: var(--sp-3);
-  border-top: 1px solid var(--border-on-dark);
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Leitura por barras: valor exato por pilar, sem o leitor precisar adivinhar. */
+.radar-bars { display: flex; flex-direction: column; gap: var(--sp-2); }
+.radar-bar-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 26px;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.radar-bar-name {
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--ink-700);
+  overflow-wrap: anywhere;
+}
+.radar-bar-track {
+  position: relative;
+  height: 8px;
+  background: var(--paper-deep);
+  border-radius: var(--rd-full);
+  overflow: hidden;
+}
+.radar-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cp-orange-500);
+  border-radius: inherit;
+}
+.radar-bar-val {
+  font-family: var(--font-sans);
+  font-size: var(--fs-13);
+  font-weight: 700;
+  color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.radar-bar-row.is-weak .radar-bar-fill { background: var(--danger); }
+.radar-bar-row.is-weak .radar-bar-name { color: var(--danger); }
+
+/* Frase que nomeia o ponto fraco: o radar encanta, isto explica. */
+.radar-weakest {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--rd-md);
+  background: var(--cp-orange-50);
+  border: 1px solid var(--cp-orange-100);
+}
+.radar-weakest-label {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cp-orange-600);
+}
+.radar-weakest-name {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: var(--fs-18);
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+.radar-weakest-line {
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--ink-600);
 }
 .score-dial-wrap { display: flex; align-items: baseline; gap: var(--sp-3); margin-top: var(--sp-4); }
 .score-number {
@@ -1043,11 +1141,42 @@ body:has(.welcome) .cp-header {
   fill: #ffffff;
 }
 .radar-chart .radar-label-val {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 700;
   fill: var(--cp-orange-400);
   font-variant-numeric: tabular-nums;
+}
+
+/* ===== Radar EM PAPEL (resultado) =====
+   Sobrescreve o legado escuro: grade em tinta clara, forma sem glow,
+   rótulos em tinta, Fidelização ancorada e destacada. */
+.radar-chart--paper .radar-grid { stroke: var(--ink-100); stroke-width: 0.8; }
+.radar-chart--paper .radar-shape {
+  fill: rgba(242, 102, 0, 0.14);
+  stroke: var(--cp-orange-500);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  filter: none;
+}
+.radar-chart--paper .radar-dot {
+  fill: #fff;
+  stroke: var(--cp-orange-500);
+  stroke-width: 1.6;
+}
+.radar-chart--paper .radar-dot-lead {
+  fill: var(--cp-orange-500);
+  stroke: var(--cp-orange-600);
+}
+.radar-chart--paper .radar-label {
+  fill: var(--ink-400);
+}
+.radar-chart--paper .radar-label-lead {
+  fill: var(--cp-orange-600);
+  font-weight: 700;
+}
+.radar-chart--paper .radar-label-val {
+  fill: var(--ink-700);
 }
 
 /* CTAs no hero, lado esquerdo, fora do radar.
@@ -1124,10 +1253,11 @@ body:has(.welcome) .cp-header {
 /* PATH CARD (caminho + como ClubPetro ajuda) */
 .path-card {
   padding: var(--sp-6) var(--sp-8);
-  border-radius: var(--rd-xl);
+  border-radius: var(--rd-lg);
   background: var(--surface);
-  box-shadow: var(--sh-2);
+  border: 1px solid var(--border-soft);
   border-left: 4px solid var(--cp-orange-500);
+  box-shadow: 0 1px 2px rgba(11, 18, 24, .03);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
@@ -1159,7 +1289,7 @@ body:has(.welcome) .cp-header {
   margin-bottom: var(--sp-5);
 }
 .section-header-num {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: var(--fs-13);
   letter-spacing: 0;
@@ -1184,9 +1314,10 @@ body:has(.welcome) .cp-header {
 
 .pillar-card {
   padding: var(--sp-5);
-  border-radius: var(--rd-lg);
+  border-radius: var(--rd-md);
   background: var(--surface);
-  box-shadow: var(--sh-1);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 1px 2px rgba(11, 18, 24, .03);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
@@ -1208,7 +1339,7 @@ body:has(.welcome) .cp-header {
 .pillar-card-icon svg { width: 22px; height: 22px; color: var(--cp-orange-600); }
 .pillar-card-icon .icon-png { width: 32px; height: 32px; object-fit: contain; display: block; }
 .pillar-card-name {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: var(--fs-16);
   color: var(--ink-900);
@@ -1266,9 +1397,10 @@ body:has(.welcome) .cp-header {
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-6);
-  border-radius: var(--rd-xl);
+  border-radius: var(--rd-lg);
   background: var(--surface);
-  box-shadow: var(--sh-2);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 2px 8px rgba(11, 18, 24, .05);
   overflow: hidden;
   isolation: isolate;
 }
@@ -1433,11 +1565,13 @@ body:has(.welcome) .cp-header {
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-6);
-  border-radius: var(--rd-xl);
+  border-radius: var(--rd-lg);
   background: var(--surface);
-  box-shadow: var(--sh-2);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 2px 8px rgba(11, 18, 24, .05);
 }
 .cta-card.is-primary {
+  border: 0;
   background:
     radial-gradient(560px 280px at 90% 0%, rgba(242,102,0,.38), transparent 60%),
     linear-gradient(160deg, var(--cp-blue-800) 0%, var(--cp-blue-900) 100%);
@@ -1564,7 +1698,9 @@ body:has(.welcome) .cp-header {
     grid-template-columns: 48px 1fr;
     gap: var(--sp-3);
     padding: var(--sp-4);
-    padding-right: var(--sp-9);
+    /* Reserva à direita maior que o alcance do check (14+22=36px) pra o título
+       nunca passar por baixo do círculo de seleção. */
+    padding-right: var(--sp-10);
     min-height: 72px;
     align-items: center;
     border-radius: var(--rd-lg);
@@ -1653,7 +1789,7 @@ body:has(.welcome) .cp-header {
   .h2 { font-size: var(--fs-22); }
   .welcome-main .lede { font-size: var(--fs-14); }
   .answer-grid { gap: var(--sp-3); }
-  .answer-card { grid-template-columns: 44px 1fr; padding: var(--sp-3) var(--sp-4); padding-right: var(--sp-8); min-height: 64px; }
+  .answer-card { grid-template-columns: 44px 1fr; padding: var(--sp-3) var(--sp-4); padding-right: var(--sp-10); min-height: 64px; }
   .answer-icon { width: 44px; height: 44px; }
   .answer-icon svg { width: 22px; height: 22px; }
   .answer-icon .icon-png { width: 28px; height: 28px; }

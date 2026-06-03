@@ -1,53 +1,63 @@
 import { Button } from "../components/Button";
 import { escHtml } from "../lib/format";
 
-/* Ilustração placeholder enquanto o vídeo final não está disponível.
-   Composição premium minimal alinhada à paleta ClubPetro (azul + laranja),
-   integrada ao paper da página. Quando o video carregar, o video sobe por z-index. */
+/* Fallback enquanto o vídeo carrega (ou se falhar).
+   Motivo de marca, não cena de estoque: um medidor de "saúde" em arco, flat,
+   na paleta ClubPetro, integrado ao paper. Sem grid de dashboard, sem 3D,
+   sem brilho forte. Lê como "diagnóstico/nota", não como banco de imagem. */
 function welcomeIllustration(): string {
+  /* Arco track (270°, de 135° a 45° passando por baixo) e arco de valor (~72%).
+     Coordenadas calculadas em torno de C=(480,300), R=180. */
   return `
-    <svg viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice" class="welcome-illustration" role="img" aria-label="Diagnóstico do posto">
+    <svg viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice" class="welcome-illustration" role="img" aria-label="Medidor de saúde do posto">
       <defs>
-        <radialGradient id="cpGlow" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stop-color="#F26600" stop-opacity="0.35"/>
-          <stop offset="60%" stop-color="#F26600" stop-opacity="0.06"/>
+        <radialGradient id="cpGlow" cx="50%" cy="52%" r="52%">
+          <stop offset="0%" stop-color="#F26600" stop-opacity="0.08"/>
           <stop offset="100%" stop-color="#F26600" stop-opacity="0"/>
         </radialGradient>
-        <linearGradient id="cpBlue" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#163554"/>
-          <stop offset="100%" stop-color="#0B1F33"/>
-        </linearGradient>
-        <linearGradient id="cpOrange" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="cpArc" x1="0" y1="1" x2="1" y2="0">
           <stop offset="0%" stop-color="#FF8A3D"/>
           <stop offset="100%" stop-color="#D85600"/>
         </linearGradient>
       </defs>
-      <circle cx="480" cy="270" r="240" fill="url(#cpGlow)"/>
-      <g opacity="0.18">
-        <circle cx="480" cy="270" r="200" fill="none" stroke="#0B1F33" stroke-width="0.8"/>
-        <circle cx="480" cy="270" r="150" fill="none" stroke="#0B1F33" stroke-width="0.8"/>
-        <circle cx="480" cy="270" r="100" fill="none" stroke="#0B1F33" stroke-width="0.8"/>
-        <line x1="480" y1="70"  x2="480" y2="470" stroke="#0B1F33" stroke-width="0.8"/>
-        <line x1="280" y1="270" x2="680" y2="270" stroke="#0B1F33" stroke-width="0.8"/>
-        <line x1="338" y1="128" x2="622" y2="412" stroke="#0B1F33" stroke-width="0.8"/>
-        <line x1="622" y1="128" x2="338" y2="412" stroke="#0B1F33" stroke-width="0.8"/>
+
+      <circle cx="480" cy="300" r="250" fill="url(#cpGlow)"/>
+
+      <!-- Track do medidor: arco fino em tinta clara -->
+      <path d="M 352.74 427.28 A 180 180 0 1 1 607.26 427.28"
+            fill="none" stroke="#0B1F33" stroke-opacity="0.12"
+            stroke-width="10" stroke-linecap="round"/>
+
+      <!-- Ticks discretos ao longo do arco -->
+      <g stroke="#0B1F33" stroke-opacity="0.16" stroke-width="3" stroke-linecap="round">
+        <line x1="352.74" y1="427.28" x2="345.67" y2="434.35"/>
+        <line x1="300" y1="300" x2="290" y2="300"/>
+        <line x1="352.74" y1="172.72" x2="345.67" y2="165.65"/>
+        <line x1="480" y1="120" x2="480" y2="110"/>
+        <line x1="607.26" y1="172.72" x2="614.33" y2="165.65"/>
+        <line x1="660" y1="300" x2="670" y2="300"/>
       </g>
-      <polygon points="480,130 660,240 620,400 340,400 300,240"
-               fill="url(#cpOrange)" opacity="0.85"/>
-      <circle cx="480" cy="130" r="7" fill="#fff"/>
-      <circle cx="660" cy="240" r="7" fill="#fff"/>
-      <circle cx="620" cy="400" r="7" fill="#fff"/>
-      <circle cx="340" cy="400" r="7" fill="#fff"/>
-      <circle cx="300" cy="240" r="7" fill="#fff"/>
-      <g transform="translate(480, 270)">
-        <circle r="70" fill="url(#cpBlue)"/>
-        <circle r="70" fill="none" stroke="#FF8A3D" stroke-width="2" opacity="0.6"/>
-        <text x="0" y="8" text-anchor="middle"
-              font-family="Plus Jakarta Sans, Inter, sans-serif"
-              font-size="26" font-weight="700" fill="#fff" letter-spacing="-0.5">
-          CP
-        </text>
-      </g>
+
+      <!-- Arco de valor (~72% dos 270°), na cor da marca -->
+      <path d="M 352.74 427.28 A 180 180 0 1 1 634.94 208.18"
+            fill="none" stroke="url(#cpArc)"
+            stroke-width="12" stroke-linecap="round"/>
+
+      <!-- Marcador na ponta do valor -->
+      <circle cx="634.94" cy="208.18" r="9" fill="#fff" stroke="#D85600" stroke-width="3"/>
+
+      <!-- Núcleo: rótulo editorial, sem número (não simular uma nota real) -->
+      <text x="480" y="296" text-anchor="middle"
+            font-family="Fraunces, Georgia, serif"
+            font-size="34" font-weight="600" fill="#1F2F3D" letter-spacing="-0.5">
+        Saúde
+      </text>
+      <text x="480" y="330" text-anchor="middle"
+            font-family="Inter, system-ui, sans-serif"
+            font-size="15" font-weight="600" fill="#6C7C8E"
+            letter-spacing="3" style="text-transform:uppercase">
+        DO POSTO
+      </text>
     </svg>
   `;
 }
