@@ -158,15 +158,31 @@ export function ResultPage(state: AppState): string {
                 ${trioItem("Próxima melhoria", nextImprovement, "spark")}
               </div>
 
-              <div class="result-hero-cta-row">
-                <button class="btn btn-hero-primary" type="button" data-action="cta-whatsapp">
-                  <img class="btn-cta-png" src="/icons/headset.png" alt="" loading="lazy" decoding="async"/>
-                  <span>Falar com especialista</span>
-                </button>
-                <button class="btn btn-hero-secondary" type="button" data-action="cta-raiox">
-                  <img class="btn-cta-png" src="/icons/calendario.png" alt="" loading="lazy" decoding="async"/>
-                  <span>Agendar raio-x</span>
-                </button>
+              <div class="result-next" id="resultNext">
+                <div class="result-next-cta" id="resultNextCta">
+                  <p class="result-next-micro">
+                    Você já viu onde está perdendo. Agora veja por onde começar a virar o jogo.
+                  </p>
+                  <button class="btn btn-hero-primary btn-block" type="button" data-action="show-raiox-explainer">
+                    <span>Entenda os próximos passos</span>
+                  </button>
+                </div>
+
+                <div class="result-raiox is-hidden" id="resultRaiox">
+                  <span class="result-raiox-eyebrow">Próxima terça, ao vivo, só pra quem fez o diagnóstico</span>
+                  <h3 class="result-raiox-title">O que é o Raio-X do posto</h3>
+                  <div class="result-raiox-text">
+                    <p>Toda terça-feira, ao vivo, acontece o Raio-X: uma sessão fechada, só pra quem fez o diagnóstico, com os maiores especialistas do mercado de postos.</p>
+                    <p>Não é uma auditoria do seu posto. É uma leitura do cenário que o seu diagnóstico revelou, com os caminhos que o ClubPetro usa pra resolver cada ponto: fidelização, margem, equipe e gestão.</p>
+                    <p>Dá pra acompanhar do celular, de onde você estiver. E como é fechado, você senta com quem vive esse mercado todo dia.</p>
+                  </div>
+                  <div class="result-raiox-actions">
+                    <button class="btn btn-hero-primary btn-block" type="button" data-action="cta-raiox">
+                      <span>Confirmar minha presença no Raio-X</span>
+                    </button>
+                    <button class="btn-link-back" type="button" data-action="hide-raiox-explainer">Voltar</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -224,37 +240,21 @@ export function ResultPage(state: AppState): string {
         </section>
 
         <section>
-          ${SectionHeader({ num: 5, title: "Próximos passos" })}
-          <div class="cta-grid">
-            <div class="cta-card is-primary anim-rise" style="animation-delay:3200ms;">
-              <span class="cta-card-tag"><img class="cta-card-tag-png" src="/icons/whatsapp-color.png" alt="" loading="lazy" decoding="async"/><span>30 minutos no seu posto</span></span>
-              <h3 class="cta-card-title">Levar o resultado para um <em>Especialista ClubPetro</em>.</h3>
+          <div class="result-cta-final">
+            <div class="cta-card is-primary anim-rise" style="animation-delay:3400ms;">
+              <span class="cta-card-tag"><img class="cta-card-tag-png" src="/icons/headset.png" alt="" loading="lazy" decoding="async"/><span>Direto ao ponto</span></span>
+              <h3 class="cta-card-title">Fale com um <em>Especialista ClubPetro</em>.</h3>
               <p class="cta-card-desc">
-                Conversa direta sobre os números do seu posto e o caminho para o que apareceu aqui.
+                Já entendeu a sua dor? Senta com quem vive o mercado de postos todo dia e
+                vê o que dá pra melhorar no seu, como fazer e por onde começar.
               </p>
               <div class="cta-card-actions">
                 ${Button({
                   variant: "on-dark",
                   size: "lg",
-                  label: "Fale com um Especialista ClubPetro",
+                  label: "Falar com um especialista",
                   iconRight: "arrow",
                   dataAction: "cta-whatsapp",
-                })}
-              </div>
-            </div>
-            <div class="cta-card anim-rise" style="animation-delay:3300ms;">
-              <span class="cta-card-tag"><img class="cta-card-tag-png" src="/icons/calendario.png" alt="" loading="lazy" decoding="async"/><span>Toda terça às 19h</span></span>
-              <h3 class="cta-card-title">RaioX do posto, <em>conversa aberta</em>.</h3>
-              <p class="cta-card-desc">
-                Encontro em vídeo sobre as dores que aparecem em diagnósticos como o seu.
-                Reserve sua vaga e receba o convite no seu e-mail.
-              </p>
-              <div class="cta-card-actions">
-                ${Button({
-                  variant: "primary",
-                  label: "Reservar vaga e agendar",
-                  iconRight: "arrow",
-                  dataAction: "cta-raiox",
                 })}
               </div>
             </div>

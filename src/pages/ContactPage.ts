@@ -22,14 +22,12 @@ export function ContactPage(p: ContactPageProps): string {
         <header class="contact-head">
           <span class="eyebrow">Última etapa</span>
           <h2 class="h2">
-            ${hi
-              ? `Falta pouco, <span style="color:var(--cp-orange-500);">${escHtml(hi)}</span>.`
-              : "Falta pouco."}
+            Seu raio-x está <span style="color:var(--cp-orange-500);">pronto</span>${hi ? `, ${escHtml(hi)}` : ""}.
           </h2>
           <p class="lede measure">
-            Pra onde enviamos o seu raio-x completo? Assim que você terminar, a gente
-            manda no seu WhatsApp a leitura do seu posto: por onde o lucro está vazando
-            hoje e os primeiros passos pra resolver. Sem custo, e sem enrolação.
+            Deixa o seu WhatsApp que a gente te manda agora a leitura completa do
+            seu posto: por onde o seu lucro está vazando hoje e os primeiros passos
+            pra resolver.
           </p>
         </header>
 

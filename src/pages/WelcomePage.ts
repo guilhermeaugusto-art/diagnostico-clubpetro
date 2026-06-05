@@ -136,10 +136,8 @@ export function WelcomePage(p: WelcomePageProps): string {
             Entenda a <span class="ink-accent">saúde</span> do seu posto.
           </h1>
           <p class="lede measure anim-rise delay-2">
-            Uma leitura estratégica e personalizada da sua operação.
-            Você descobre onde estão os principais pontos de atenção,
-            quais melhorias podem gerar mais impacto e como evoluir
-            gestão, fidelização e margem com clareza.
+            Em poucos minutos, um raio-x do seu posto: onde o lucro está vazando
+            hoje, o que rende mais mexer primeiro, e por onde começar a virar o jogo.
           </p>
           ${ctaArea}
         </div>

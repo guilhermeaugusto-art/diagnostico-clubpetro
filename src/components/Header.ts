@@ -1,15 +1,9 @@
 import { Logo } from "./Logo";
-import { ProgressBar } from "./ProgressBar";
-import { RadarMini } from "./RadarMini";
-import type { AppState } from "../lib/state";
 
 interface HeaderProps {
-  state: AppState;
   idle: boolean;
   contextLabel: string;
-  totalSteps: number;
-  currentStep: number;
-  showRadar: boolean;
+  barsHtml?: string;   // gráfico de barras por pilar (durante as respostas), no header
 }
 
 export function Header(props: HeaderProps): string {
@@ -22,8 +16,9 @@ export function Header(props: HeaderProps): string {
             ${Logo()}
             <span class="cp-brand-tag">Diagnóstico${props.contextLabel ? ` · <b>${props.contextLabel}</b>` : ""}</span>
           </a>
-          ${ProgressBar({ total: props.totalSteps, current: props.currentStep })}
-          ${props.showRadar ? RadarMini({ state: props.state, size: 108 }) : `<span class="cp-header-spacer" aria-hidden="true"></span>`}
+          ${props.barsHtml
+            ? `<div class="cp-header-bars">${props.barsHtml}</div>`
+            : `<span class="cp-header-spacer" aria-hidden="true"></span>`}
         </div>
       </div>
     </header>

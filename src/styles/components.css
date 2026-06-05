@@ -362,37 +362,25 @@ body:has(.welcome) .cp-header {
 /* ============ BARRAS POR PILAR (durante as respostas) ============
    Substitui o radar na fase de respostas. Nomes sim, número nunca.
    Visual editorial: papel e tinta, laranja da marca, sem glow. */
-.bars-chart {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-  padding-bottom: var(--sp-6);
-  margin-bottom: var(--sp-6);
-  border-bottom: 1px solid var(--border-soft);
-}
-.bars-eyebrow {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-400);
-}
+/* Gráfico compacto no header: colunas pequenas com o nome do pilar embaixo.
+   Editorial: papel e tinta, laranja da marca, sem glow. */
+.cp-header-bars { justify-self: end; min-width: 0; }
+.bars-chart { display: flex; }
+.bars-eyebrow { display: none; }
 .bars-grid {
   display: flex;
   align-items: flex-end;
-  gap: var(--sp-4);
+  gap: var(--sp-2);
 }
 .bars-item {
-  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-3);
-  min-width: 0;
+  gap: 5px;
 }
 .bars-track {
-  width: 12px;
-  height: 72px;
+  width: 9px;
+  height: 32px;
   display: flex;
   align-items: flex-end;
   background: var(--paper-warm);
@@ -404,35 +392,24 @@ body:has(.welcome) .cp-header {
 .bars-fill {
   width: 100%;
   height: var(--v, 0%);
-  /* Leve profundidade (mais claro no topo), sem neon. */
   background: linear-gradient(180deg, var(--cp-orange-400), var(--cp-orange-500));
   border-radius: var(--rd-full);
-  /* Movimento macio e um pouco mais longo, ease-out suave. */
-  transition:
-    height 460ms var(--ease-out),
-    width 460ms var(--ease-out),
-    filter 320ms var(--ease);
-  will-change: height, width;
+  transition: height 460ms var(--ease-out), filter 320ms var(--ease);
+  will-change: height;
 }
 .bars-name {
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-300);
+  letter-spacing: 0.01em;
+  color: var(--ink-400);
   text-align: center;
-  line-height: 1.25;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  line-height: 1.1;
+  white-space: nowrap;
   transition: color 320ms var(--ease);
 }
-/* Pilar da pergunta atual: nome em tinta forte e um anel discreto no trilho,
-   pra pessoa saber qual barra a resposta move. */
-.bars-item.is-active .bars-name { color: var(--ink-700); font-weight: 700; }
 .bars-item.is-active .bars-track { box-shadow: inset 0 0 0 1.5px var(--cp-orange-100); }
-/* Destaque gentil quando a barra muda: clareia de leve, com transição, sem glow. */
-.bars-item.is-bumped .bars-fill { filter: brightness(1.08); }
-.bars-item.is-bumped .bars-name { color: var(--ink-700); }
+.bars-item.is-active .bars-name { color: var(--cp-orange-600); font-weight: 700; }
+.bars-item.is-bumped .bars-fill { filter: brightness(1.12); }
 @media (prefers-reduced-motion: reduce) {
   .bars-fill { transition: none; }
 }
@@ -442,10 +419,12 @@ body:has(.welcome) .cp-header {
 .q-meta {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--sp-3);
   flex-wrap: wrap;
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-4);
 }
+.is-hidden { display: none !important; }
 .q-step-tag {
   display: inline-flex;
   align-items: center;
@@ -1289,6 +1268,68 @@ body:has(.welcome) .cp-header {
   gap: var(--sp-3);
   margin-top: var(--sp-2);
 }
+
+/* ===== Próximos passos no hero: CTA único + explicação do Raio-X (troca in-place) ===== */
+.result-next { margin-top: var(--sp-2); }
+.result-next-cta,
+.result-raiox { display: flex; flex-direction: column; gap: var(--sp-3); }
+.result-next-micro {
+  font-size: var(--fs-14);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 42ch;
+}
+.result-next-sep {
+  height: 1px;
+  background: var(--border-on-dark);
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.result-raiox-eyebrow {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cp-orange-400);
+}
+.result-raiox-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #fff;
+}
+.result-raiox-text { display: flex; flex-direction: column; gap: var(--sp-3); }
+.result-raiox-text p {
+  font-size: var(--fs-15);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 52ch;
+}
+.result-raiox-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.btn-link-back {
+  align-self: center;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--fs-13);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--dur-2) var(--ease);
+}
+.btn-link-back:hover { color: #fff; }
+
+/* Card final do especialista (porta direta pro comercial). */
+.result-cta-final { max-width: 760px; margin-inline: auto; }
 .btn-hero-primary,
 .btn-hero-secondary {
   display: inline-flex;
@@ -1768,22 +1809,12 @@ body:has(.welcome) .cp-header {
   .cp-header.idle .cp-header-row { grid-template-columns: 1fr; }
   .cp-progress { grid-column: 1 / -1; order: 3; width: 100%; padding-top: 2px; }
 
-  /* BARRAS mobile: na horizontal (linhas), barra de cima um pouco maior. */
-  .bars-chart { padding-bottom: var(--sp-5); margin-bottom: var(--sp-5); }
-  .bars-grid { flex-direction: column; align-items: stretch; gap: var(--sp-3); }
-  .bars-item { flex-direction: row; align-items: center; gap: var(--sp-3); }
-  .bars-name {
-    flex: 0 0 108px;
-    width: 108px;
-    order: -1;
-    text-align: left;
-    font-size: 11px;
-    color: var(--ink-400);
-  }
-  .bars-track { flex: 1 1 auto; width: auto; height: 8px; }
-  .bars-fill { width: var(--v, 0%); height: 100%; background: linear-gradient(90deg, var(--cp-orange-400), var(--cp-orange-500)); }
-  .bars-item:first-child .bars-track { height: 12px; }
-  .bars-item:first-child .bars-name { font-size: 12px; color: var(--ink-600); }
+  /* Header mobile: gráfico com nomes, centralizado abaixo da logo. */
+  .cp-header-bars { justify-self: center; width: 100%; }
+  .bars-chart { justify-content: center; width: 100%; }
+  .bars-grid { gap: 6px; }
+  .bars-track { width: 8px; height: 28px; }
+  .bars-name { font-size: 7px; }
 
   /* WELCOME mobile: TEXTO primeiro (hero real), vídeo abaixo como apoio.
      Ritmo vertical apertado pra colocar título + nome + CTA acima da dobra. */

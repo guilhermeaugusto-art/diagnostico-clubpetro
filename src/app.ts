@@ -94,17 +94,12 @@ function headerCurrentStep(): number {
 }
 
 function renderHeader(): string {
-  /* Radar mini aparece a partir do diagnóstico em andamento e segue até o contact.
-     Welcome e transition ficam idle (sem progresso, sem radar). */
-  // Radar só no resultado. Durante as respostas o visual é o gráfico de barras.
-  const showRadar = false;
+  // Durante as respostas, o gráfico de barras por pilar fica no header (à direita).
+  const barsHtml = state.screen === "question" ? BarsProgress(state) : "";
   return Header({
-    state,
     idle: state.screen === "welcome" || state.screen === "transition" || state.screen === "result",
     contextLabel: headerContextLabel(),
-    totalSteps: totalStepsFn(state),
-    currentStep: headerCurrentStep(),
-    showRadar,
+    barsHtml,
   });
 }
 
@@ -148,7 +143,6 @@ function renderBody(): string {
         selectedIndexes,
         openText,
         plural: isPluralPosto(state),
-        barsHtml: BarsProgress(state),
       });
     }
     case "contact":
@@ -206,7 +200,25 @@ function handleAction(action: string): void {
     case "submit-contact": return goToTransition();
     case "cta-whatsapp":   return ctaWhatsApp();
     case "cta-raiox":      return ctaRaiox();
+    case "show-raiox-explainer": return toggleRaioxExplainer(true);
+    case "hide-raiox-explainer": return toggleRaioxExplainer(false);
   }
+}
+
+/* Troca, no mesmo lugar do resultado, entre os CTAs e a explicação do Raio-X,
+   com um fade suave. Sem trocar de página. */
+function toggleRaioxExplainer(show: boolean): void {
+  const cta = document.getElementById("resultNextCta");
+  const raiox = document.getElementById("resultRaiox");
+  if (!cta || !raiox) return;
+  const enter = show ? raiox : cta;
+  const leave = show ? cta : raiox;
+  leave.classList.add("is-hidden");
+  enter.classList.remove("is-hidden");
+  enter.classList.remove("anim-fade");
+  void enter.offsetWidth; // reinicia a animação
+  enter.classList.add("anim-fade");
+  if (show) enter.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 
