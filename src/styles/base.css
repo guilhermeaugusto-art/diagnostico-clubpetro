@@ -37,6 +37,51 @@ body::before {
 }
 @media (prefers-reduced-motion: reduce) { body::before { opacity: 0.04; } }
 
+/* ============ ORBS DE AMBIENTE (deriva lenta, estilo PS5) ============
+   Camada decorativa: círculos da marca com desfoque grande e movimento muito
+   lento. Ficam atrás do conteúdo (fora do #app, então sobrevivem ao re-render),
+   não capturam clique e só aparecem em welcome e question. Opacidade baixíssima
+   para dar profundidade sem virar neon nem "gradiente de IA". */
+.cp-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 700ms var(--ease);
+}
+body:has(.welcome) .cp-orbs,
+body:has(.question) .cp-orbs { opacity: 1; }
+
+.cp-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  will-change: transform;
+}
+.cp-orb:nth-child(1) {
+  width: 46vw; height: 46vw; max-width: 620px; max-height: 620px;
+  top: -8vh; left: -6vw;
+  background: radial-gradient(circle at 50% 50%, rgba(242, 102, 0, 0.07), rgba(242, 102, 0, 0) 70%);
+  animation: orbDriftA 26s ease-in-out infinite alternate;
+}
+.cp-orb:nth-child(2) {
+  width: 38vw; height: 38vw; max-width: 520px; max-height: 520px;
+  bottom: -10vh; right: -4vw;
+  background: radial-gradient(circle at 50% 50%, rgba(242, 102, 0, 0.05), rgba(242, 102, 0, 0) 70%);
+  animation: orbDriftB 32s ease-in-out infinite alternate;
+}
+.cp-orb:nth-child(3) {
+  width: 30vw; height: 30vw; max-width: 420px; max-height: 420px;
+  top: 40%; left: 54%;
+  background: radial-gradient(circle at 50% 50%, rgba(15, 26, 35, 0.035), rgba(15, 26, 35, 0) 70%);
+  animation: orbDriftC 38s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-orb { animation: none; }
+}
+
 /* Welcome: cor base = média das bordas do vídeo (rgb 235,230,233).
    Glow laranja sutil por cima dá vida sem criar contraste justo onde a
    máscara do vídeo dissolve, mantendo a fusão "PNG flutuante". */

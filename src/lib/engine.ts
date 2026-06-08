@@ -6,7 +6,6 @@
      da trilha em curso. */
 
 import {
-  QUESTIONS,
   QUESTION_ORDER_BY_TRACK,
   SIGNAL_CHECKPOINT_IDS_BY_TRACK,
   trackFromS1Value,

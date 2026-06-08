@@ -63,5 +63,7 @@ export const LEVELS: Level[] = [
 ];
 
 export function levelFor(score: number): Level {
+  const last = LEVELS[LEVELS.length - 1];
+  if (score >= last.max) return last;
   return LEVELS.find((l) => score >= l.min && score <= l.max) || LEVELS[0];
 }

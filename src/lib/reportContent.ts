@@ -186,8 +186,8 @@ function dimensionInsight(b: BlockId, pct: number): string {
   const MAP: Record<BlockId, Record<string, string>> = {
     pessoas: {
       high: "Equipe estável e processo claro. Sustenta qualquer programa de evolução.",
-      mid:  "Equipe oscila e o turnover incomoda. O custo da rotatividade aparece todo mês.",
-      low:  "Pessoas no improviso. Sem base, qualquer ação perde força em 30 dias.",
+      mid:  "Equipe oscila e a rotatividade incomoda. O custo aparece todo mês.",
+      low:  "Pessoas no improviso. Sem base, qualquer ação perde força logo no início.",
     },
     marca: {
       high: "Posicionamento claro além do preço. Cliente reconhece motivo de escolha.",
@@ -197,7 +197,7 @@ function dimensionInsight(b: BlockId, pct: number): string {
     comercial: {
       high: "Margem sob controle e mix puxando lucro. Aqui o resultado se decide.",
       mid:  "Acompanha parte da margem, mas deixa pontos cegos. Cada lacuna pesa em centavos por litro.",
-      low:  "Margem no escuro e preço no feeling. Resultado refém da bomba mais barata.",
+      low:  "Margem no escuro e preço no instinto. Resultado refém da bomba mais barata.",
     },
     fidelizacao: {
       high: "Programa estruturado e motivo de volta conhecido. Base pronta pra escalar.",
@@ -221,11 +221,11 @@ function dimensionInsight(b: BlockId, pct: number): string {
 function riskFor(b: BlockId | undefined): string {
   if (!b) return "Sem leitura específica de risco.";
   const MAP: Record<BlockId, string> = {
-    pessoas: "Atendimento inconsistente cria experiência variável. Risco: perda de cliente por experiência ruim e custo recorrente de turnover.",
+    pessoas: "Atendimento inconsistente cria experiência variável. Risco: perda de cliente por experiência ruim e custo recorrente de rotatividade.",
     marca: "Disputa só por preço comprime margem. Risco: chegada de concorrente derruba movimento rapidamente.",
     comercial: "Margem sem método deixa dinheiro na mesa todo mês. Risco: prejuízo composto que só aparece no balanço.",
     fidelizacao: "Cliente anônimo limita recorrência. Risco: programa do concorrente leva sua base inteira.",
-    dados: "Decisão por feeling cria oportunidade invisível. Risco: oportunidades de venda e ajuste de margem passam despercebidas.",
+    dados: "Decisão por instinto cria oportunidade invisível. Risco: oportunidades de venda e ajuste de margem passam despercebidas.",
     resiliencia: "Caixa apertado deixa o posto reativo. Risco: qualquer pressão de mercado vira sufoco operacional.",
   };
   return MAP[b];
@@ -234,7 +234,7 @@ function riskFor(b: BlockId | undefined): string {
 function nextImprovementDescription(b: BlockId | undefined): string {
   if (!b) return "Estruturar a próxima camada da operação com método e dado.";
   const MAP: Record<BlockId, string> = {
-    pessoas: "Implementar escala de pista em 1 página, com folga prevista e gatilho para hora extra. Acelera estabilidade da equipe em 30 dias.",
+    pessoas: "Implementar escala de pista em 1 página, com folga prevista e gatilho para hora extra. Acelera a estabilidade da equipe.",
     marca: "Construir um diferencial além do preço em 1 página, validado no cliente fiel. Sai da disputa só por preço.",
     comercial: "Acompanhar margem por litro toda semana e ativar oferta na pista com script simples. Margem visível, decisão informada.",
     fidelizacao: "Programa de fidelização rodando em 7 dias: cadastro no caixa, acúmulo por litro, oferta direta no WhatsApp.",
@@ -305,7 +305,7 @@ function buildCommercialReading(state: AppState, weakest: BlockId[]): ReportCont
   const abordagem = top
     ? `Comece pela dor real: "${BLOCKS[top].name.toLowerCase()} está puxando o resultado pra baixo". ` +
       `Não venda solução de cara. Pergunte como o posto trata esse ponto hoje e ouça. ` +
-      `Em seguida, traga 1 caso concreto de outro posto que evoluiu nessa frente com método. ` +
+      `Em seguida, traga um caso concreto de outro posto que evoluiu nessa frente com método. ` +
       `Só depois apresente como o ClubPetro entra.`
     : "Comece entendendo a operação atual e o que mais incomoda no dia a dia.";
 
@@ -317,8 +317,8 @@ function buildCommercialReading(state: AppState, weakest: BlockId[]): ReportCont
   ];
 
   const proximosPassos = [
-    "Confirmar participação no RaioX (próxima terça às 19h).",
-    "Enviar PDF completo do diagnóstico por e-mail após confirmação do RaioX.",
+    "Confirmar participação no Raio-X (próxima terça, ao vivo).",
+    "Enviar PDF completo do diagnóstico por e-mail após confirmação do Raio-X.",
     "Agendar follow-up em 7 dias caso não compareça.",
   ];
 

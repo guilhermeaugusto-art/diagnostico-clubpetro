@@ -36,6 +36,20 @@
 .delay-5  { animation-delay: 400ms; }
 .delay-6  { animation-delay: 480ms; }
 
+/* Deriva lenta dos orbs de ambiente (amplitude 3-5%, sem girar). */
+@keyframes orbDriftA {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(3%, 4%, 0) scale(1.06); }
+}
+@keyframes orbDriftB {
+  from { transform: translate3d(0, 0, 0) scale(1.04); }
+  to   { transform: translate3d(-4%, -3%, 0) scale(1); }
+}
+@keyframes orbDriftC {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-3%, 3%, 0) scale(1.08); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

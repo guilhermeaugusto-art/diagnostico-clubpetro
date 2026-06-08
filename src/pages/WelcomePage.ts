@@ -166,7 +166,7 @@ export function WelcomePage(p: WelcomePageProps): string {
               playsinline
               webkit-playsinline="true"
               disableremoteplayback
-              preload="auto">
+              preload="none">
               <source src="/welcome-loop.webm" type="video/webm">
               <source src="/welcome-loop.mp4" type="video/mp4">
             </video>

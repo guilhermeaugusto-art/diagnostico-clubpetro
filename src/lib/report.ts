@@ -448,10 +448,10 @@ function drawScoreBlock(doc: any, c: Cursor, content: ReportContent) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(INK_MUTED);
-  doc.text(`Ponto mais forte: ${content.strongest?.name ?? "—"} (${content.strongest?.pct ?? 0})`,
-    x + 160, c.y + 68);
-  doc.text(`Ponto de atenção: ${content.weakest?.name ?? "—"} (${content.weakest?.pct ?? 0})`,
-    x + 160, c.y + 80);
+  const strongTxt = content.strongest ? `${content.strongest.name} (${content.strongest.pct})` : "Sem dado";
+  const weakTxt = content.weakest ? `${content.weakest.name} (${content.weakest.pct})` : "Sem dado";
+  doc.text(`Ponto mais forte: ${strongTxt}`, x + 160, c.y + 68);
+  doc.text(`Ponto de atenção: ${weakTxt}`, x + 160, c.y + 80);
 
   c.y += 100;
 }

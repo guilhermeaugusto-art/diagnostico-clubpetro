@@ -1157,7 +1157,7 @@ export const QUESTIONS: Question[] = [
     tracks: ["gerente"],
     text: "Você usa algum <em>sistema</em> que mostra venda e estoque, ou é tudo na planilha e no caderno?",
     context:
-      "Sem sistema na mão, decisão depende de feeling, e isso custa a margem.",
+      "Sem sistema na mão, decisão depende do instinto, e isso custa a margem.",
     options: [
       { label: "Uso sistema e tomo decisão por ele.",
         desc: "Sistema vivo no dia a dia.",
@@ -1649,8 +1649,13 @@ export const QUESTIONS: Question[] = [
 
 /* --- Helpers ------------------------------------------------------------ */
 
+/* Índice id -> pergunta, montado uma vez. getQuestionById é chamado muitas
+   vezes por render (engine/sinal), então O(1) evita varrer as ~82 perguntas. */
+const QUESTION_BY_ID: Map<string, Question> = new Map(
+  QUESTIONS.map((q) => [q.id, q]),
+);
 export function getQuestionById(id: string): Question | undefined {
-  return QUESTIONS.find((q) => q.id === id);
+  return QUESTION_BY_ID.get(id);
 }
 
 /* Ordem de exibição por trilha (S1 entra primeiro em todas).
@@ -1699,8 +1704,9 @@ export const SIGNAL_CHECKPOINT_IDS_BY_TRACK: Record<TrackId, string[]> = {
 };
 
 /* ID da pergunta de "o que mais incomoda / quer resolver" por trilha.
-   Usada para o payload de roteamento comercial. Frentista responde
-   F_MELHORIA, que é qualify mas não vira MQL. */
+   Usada para o payload de roteamento comercial. Frentista responde F_MELHORIA,
+   que é pergunta aberta (texto): não vira MQL e, por ser texto livre, não
+   alimenta o z2 do payload (que só lê respostas de opção). */
 export const PAIN_QUESTION_ID_BY_TRACK: Record<TrackId, string> = {
   dono:      "D_DOR",
   gerente:   "G_DOR",

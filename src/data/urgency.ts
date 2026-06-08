@@ -48,10 +48,13 @@ export const URGENCY_TONES: UrgencyTone[] = [
   },
 ];
 
+/* Limiares alinhados às faixas de LEVELS (0-30 / 31-60 / 61-80) e ao teto
+   real de pontuação (85), para que status e faixa nunca se contradigam.
+   Os cinco tons ficam alcançáveis: 81-85 chega a "strong". */
 export function urgencyFor(score: number): UrgencyTone {
-  if (score < 40) return URGENCY_TONES[0];
-  if (score < 60) return URGENCY_TONES[1];
-  if (score < 75) return URGENCY_TONES[2];
-  if (score < 90) return URGENCY_TONES[3];
+  if (score <= 30) return URGENCY_TONES[0];
+  if (score <= 50) return URGENCY_TONES[1];
+  if (score <= 60) return URGENCY_TONES[2];
+  if (score <= 80) return URGENCY_TONES[3];
   return URGENCY_TONES[4];
 }

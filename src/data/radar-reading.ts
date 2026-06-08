@@ -21,15 +21,15 @@ const THEME: Record<BlockId, string> = {
    Tom consultivo, forte, sem alarmismo. */
 const PAIN_SINGLE: Record<BlockId, string> = {
   pessoas:
-    "Suas respostas indicam que a operação ainda depende muito de esforço individual. Sem rotina padronizada, treinamento contínuo e consistência da equipe, o atendimento oscila do cliente para o cliente e processos importantes ficam no improviso. Isso compromete experiência, gera retrabalho e trava qualquer plano de evolução que dependa de execução de pista.",
+    "Suas respostas indicam que a operação ainda depende muito de esforço individual. Sem rotina padronizada, treinamento contínuo e consistência da equipe, o atendimento oscila de um cliente para o outro e processos importantes ficam no improviso. Isso compromete experiência, gera retrabalho e trava qualquer plano de evolução que dependa de execução de pista.",
   marca:
     "As respostas mostram um posto que compete principalmente pelo preço. Sem motivo de escolha claro, a marca não constrói preferência, e qualquer concorrente novo na praça puxa movimento com facilidade. A operação fica refém da bomba mais barata da esquina, num jogo que pressiona margem todo mês.",
   comercial:
     "O comercial aparece como o ponto mais frágil do diagnóstico. Margem acompanhada sem método, mix de pista pouco trabalhado e oferta sem ativação na pista deixam dinheiro na mesa todo mês, sem que o dono perceba onde está vazando. Cada centavo de margem perdido por litro vira prejuízo composto no fim do mês.",
   fidelizacao:
-    "As respostas indicam que o cliente abastece e some. Sem programa estruturado de fidelização e sem captura do dado do cliente, o caixa depende de movimento novo o tempo todo. Quando um concorrente próximo lança um programa de verdade, ele leva embora a base que hoje volta no informal, e o posto perde recorrência sem nem saber.",
+    "As respostas indicam que o cliente abastece e some. Sem fidelização estruturada e sem captura do dado do cliente, o caixa depende de movimento novo o tempo todo. Quando um concorrente próximo lança um programa de verdade, ele leva embora a base que hoje volta no informal, e o posto perde recorrência sem nem saber.",
   dados:
-    "Suas respostas mostram uma operação que ainda roda no achismo. Sem dado integrado e sem painel claro, decisão depende do feeling do dono no dia a dia. Comportamento de cliente, frequência de retorno, ticket médio e oportunidades de ação comercial passam despercebidos. O posto trabalha mais do que precisaria pra entregar o mesmo resultado.",
+    "Suas respostas mostram uma operação que ainda roda no achismo. Sem dado integrado e sem painel claro, decisão depende do instinto do dono no dia a dia. Comportamento de cliente, frequência de retorno, ticket médio e oportunidades de ação comercial passam despercebidos. O posto trabalha mais do que precisaria pra entregar o mesmo resultado.",
   resiliencia:
     "O diagnóstico mostra pouco fôlego para os próximos meses. Caixa apertado e exposição à concorrência irregular deixam o posto reativo, sem espaço pra planejar movimentos próprios. Qualquer pressão de mercado vira sufoco operacional e empurra a gestão pro curto prazo.",
 };
@@ -69,6 +69,12 @@ export function mainPain(state: AppState): string {
   }
   const low1 = ranked[0];
   const low2 = ranked[1];
+  /* Empate praticamente total entre as frentes: não há um ponto isolado
+     puxando o resultado, então a leitura por uma frente seria arbitrária. */
+  const spread = ranked[ranked.length - 1].pct - low1.pct;
+  if (spread < 5) {
+    return "As frentes aparecem muito niveladas entre si, sem um ponto isolado puxando o resultado. O foco do próximo passo está no conjunto da operação, em ganhar consistência, e não em apagar um incêndio específico.";
+  }
   /* Se a segunda frente já está em zona saudável (>= 60), o quadro é "uma
      frente puxando o resultado", não combinação. */
   if (!low2 || low2.pct >= 60) {
@@ -96,6 +102,15 @@ export function radarReading(state: AppState): { p1: string; p2: string } {
   /* Caracteriza o desempenho geral pra abrir o parágrafo de forma adequada. */
   const pcts = ranked.map((r) => r.pct);
   const spread = (pcts[pcts.length - 1] || 0) - (pcts[0] || 0);
+
+  /* Empate quase total: leitura neutra, sem afirmar forte vs. frágil. */
+  if (spread < 5) {
+    return {
+      p1: "O radar mostra as frentes muito niveladas entre si, sem uma diferença relevante que destaque um ponto forte ou um ponto frágil isolado.",
+      p2: "Isso sugere que o próximo avanço não está em uma frente específica, e sim em dar consistência ao conjunto da operação para que ela ganhe previsibilidade.",
+    };
+  }
+
   const opener =
     spread >= 30 ? "O radar mostra uma operação com desempenho desigual entre as frentes."
       : spread >= 15 ? "O radar mostra uma operação com forças e fragilidades bem distribuídas."

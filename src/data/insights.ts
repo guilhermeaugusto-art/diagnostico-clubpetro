@@ -11,7 +11,7 @@ type Tier = "high" | "mid" | "low";
 export const INSIGHTS: Record<BlockId, Record<Tier, string>> = {
   pessoas: {
     high: "Equipe estável, processo claro e clima saudável. Base sólida para qualquer programa de retenção crescer rápido.",
-    mid:  "Equipe oscila e o turnover incomoda. O custo dessa rotatividade aparece em cada saída e no atendimento.",
+    mid:  "Equipe oscila e a rotatividade incomoda. O custo aparece em cada saída e no atendimento.",
     low:  "Pessoas no improviso. Sem essa base, qualquer ação de fidelização perde força no primeiro mês.",
   },
   marca: {
@@ -22,7 +22,7 @@ export const INSIGHTS: Record<BlockId, Record<Tier, string>> = {
   comercial: {
     high: "Margem sob controle, método de precificação e mix puxando lucro. É aqui que o resultado se decide e você está atento.",
     mid:  "Você acompanha parte da margem, mas deixa pontos cegos. Cada lacuna no método pesa em centavos por litro.",
-    low:  "Margem no escuro e preço no feeling. O resultado do posto fica refém da gasolina mais barata da esquina.",
+    low:  "Margem no escuro e preço no instinto. O resultado do posto fica refém da gasolina mais barata da esquina.",
   },
   fidelizacao: {
     high: "Programa estruturado e motivo de volta conhecido. Base pronta para virar recorrência previsível.",
@@ -35,7 +35,7 @@ export const INSIGHTS: Record<BlockId, Record<Tier, string>> = {
     low:  "Cliente abastece e some, e a gestão depende de planilha na mão. Sem dado, fidelização não roda.",
   },
   resiliencia: {
-    high: "Pouca exposição à concorrência desleal e conformidade em dia. Caixa preparado para os próximos 24 meses.",
+    high: "Pouca exposição à concorrência desleal e conformidade em dia. Caixa preparado para atravessar os próximos meses.",
     mid:  "Exposição moderada ao mercado irregular e à pressão de margem. Vale blindar o caixa antes de a pressão apertar.",
     low:  "Alta exposição à concorrência desleal e fôlego de caixa curto. Cenário sensível, primeiro passo é proteger.",
   },

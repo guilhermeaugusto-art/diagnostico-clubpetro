@@ -51,83 +51,10 @@ body:has(.welcome) .cp-header {
 @media (min-width: 720px) { .cp-brand-tag { display: inline-flex; } }
 
 .cp-header-spacer { width: 84px; height: 1px; }
-.cp-header.idle .cp-progress,
-.cp-header.idle .radar-mini,
 .cp-header.idle .cp-header-spacer { display: none; }
 .cp-header.idle .cp-header-row {
   grid-template-columns: 1fr;
   min-height: var(--header-h);
-}
-
-/* ============ RADAR MINI (header) ============ */
-.radar-mini {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 108px;
-  flex: 0 0 auto;
-}
-.radar-mini svg {
-  width: 92px;
-  height: 92px;
-  display: block;
-  overflow: visible;
-}
-.radar-mini .radar-grid {
-  fill: none;
-  stroke: var(--ink-200);
-  stroke-width: 0.6;
-  opacity: 0.85;
-}
-.radar-mini .radar-shape {
-  fill: rgba(242, 102, 0, 0.22);
-  stroke: var(--cp-orange-500);
-  stroke-width: 1.4;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 1px 4px rgba(242,102,0,0.15));
-}
-.radar-mini .radar-dot {
-  fill: var(--cp-orange-500);
-}
-.radar-mini-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-400);
-  white-space: nowrap;
-}
-@media (max-width: 720px) {
-  .radar-mini { width: 80px; gap: 2px; }
-  .radar-mini svg { width: 64px; height: 64px; }
-  .radar-mini-label { font-size: 9px; letter-spacing: 0.04em; }
-}
-
-/* ============ PROGRESS ============ */
-.cp-progress {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-}
-.cp-progress-step {
-  flex: 0 1 18px;
-  height: 4px;
-  border-radius: var(--rd-full);
-  background: var(--ink-100);
-  transition: background var(--dur-2) var(--ease), flex-basis var(--dur-2) var(--ease);
-}
-.cp-progress-step.done { background: var(--cp-orange-500); }
-.cp-progress-step.now {
-  background: var(--ink-800);
-  flex-basis: 28px;
-  height: 6px;
-}
-@media (max-width: 480px) {
-  .cp-progress-step { flex-basis: 10px; }
-  .cp-progress-step.now { flex-basis: 18px; }
 }
 
 /* ============ BUTTONS ============ */
@@ -412,7 +339,8 @@ body:has(.welcome) .cp-header {
 .bars-item.is-active .bars-name { color: var(--cp-orange-600); font-weight: 700; }
 .bars-item.is-bumped .bars-fill { filter: brightness(1.12); }
 @media (prefers-reduced-motion: reduce) {
-  .bars-fill { transition: none; }
+  .bars-fill { transition: none; filter: none; }
+  .bars-item.is-bumped .bars-fill { filter: none; }
 }
 
 /* ============ QUESTION LAYOUT ============ */
@@ -1190,6 +1118,17 @@ body:has(.welcome) .cp-header {
 }
 .section-intro b { color: var(--ink-900); font-weight: 600; }
 
+/* Nota discreta abaixo de uma seção (ex.: frente não avaliada neste perfil). */
+.section-note {
+  font-size: var(--fs-13);
+  line-height: 1.55;
+  color: var(--ink-400);
+  max-width: var(--measure);
+  margin-top: var(--sp-4);
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--border-soft);
+}
+
 /* RADAR CHART (resultado) — sem corte de labels, mais respiro lateral */
 .radar-chart {
   width: 100%;
@@ -1259,15 +1198,6 @@ body:has(.welcome) .cp-header {
 }
 .radar-chart--paper .radar-label-val {
   fill: var(--ink-700);
-}
-
-/* CTAs no hero, lado esquerdo, fora do radar.
-   Primário em laranja sólido, secundário em ghost translúcido sobre o azul. */
-.result-hero-cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-top: var(--sp-2);
 }
 
 /* ===== Próximos passos no hero: CTA único + explicação do Raio-X (troca in-place) ===== */
@@ -1697,12 +1627,6 @@ body:has(.welcome) .cp-header {
 .btn-discover:hover .btn-arrow { transform: translateX(3px); }
 
 /* ============ CTAs (final) ============ */
-.cta-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-4);
-}
-@media (min-width: 720px) { .cta-grid { grid-template-columns: 1.3fr 1fr; gap: var(--sp-5); } }
 
 .cta-card {
   display: flex;
@@ -1808,7 +1732,6 @@ body:has(.welcome) .cp-header {
   .cp-brand-logo { height: 22px; }
   .cp-header-spacer { display: none; }
   .cp-header.idle .cp-header-row { grid-template-columns: 1fr; }
-  .cp-progress { grid-column: 1 / -1; order: 3; width: 100%; padding-top: 2px; }
 
   /* Header mobile: gráfico com nomes, centralizado abaixo da logo. */
   .cp-header-bars { justify-self: center; width: 100%; }
@@ -1906,7 +1829,6 @@ body:has(.welcome) .cp-header {
   .btn-radar-cta { font-size: var(--fs-13); padding: 12px 14px; min-height: 48px; width: 100%; }
 
   /* CTA cards mobile: stack vertical, ações com peso */
-  .cta-grid { grid-template-columns: 1fr; gap: var(--sp-3); }
   .cta-card { padding: var(--sp-5); border-radius: var(--rd-xl); }
   .cta-card-title { font-size: var(--fs-20); line-height: 1.2; }
   .cta-card-desc { font-size: var(--fs-14); line-height: 1.5; }

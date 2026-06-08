@@ -27,7 +27,7 @@ import { Icons } from "../lib/icons";
 const WEAK_LINE: Record<BlockId, string> = {
   pessoas:     "A operação ainda depende de esforço individual, sem rotina que sustente o atendimento.",
   marca:       "Falta um motivo de escolha além do preço, e isso entrega o cliente ao concorrente.",
-  comercial:   "A margem é acompanhada no feeling, e dinheiro escapa todo mês sem aparecer.",
+  comercial:   "A margem é acompanhada no instinto, e dinheiro escapa todo mês sem aparecer.",
   fidelizacao: "Você sabe quem abastece, não sabe quem volta nem por quê.",
   dados:       "A decisão ainda roda no achismo, sem painel que mostre o que acontece.",
   resiliencia: "Sobra pouco fôlego de caixa para planejar movimento próprio na praça.",
@@ -58,6 +58,11 @@ export function ResultPage(state: AppState): string {
   const radar = radarReading(state);
   const heroStrong = strongestBlock(state);
   const heroWeak = weakestBlock(state);
+  /* Empate quase total: não há forte vs. frágil isolado, então o trio do hero
+     vira leitura neutra em vez de apontar dois pilares com o mesmo valor. */
+  const framesTied =
+    ranked.length > 1 && ranked[ranked.length - 1].pct - ranked[0].pct < 5;
+  const dimsCount = BLOCK_ORDER.filter((b) => bs[b].possible > 0).length;
   const nextImprovement = nextImprovementFor(ranked[0]?.id);
   const heroPain = mainPain(state);
   const urgency = urgencyFor(score);
@@ -153,15 +158,19 @@ export function ResultPage(state: AppState): string {
               </div>
 
               <div class="result-trio">
-                ${trioItem("Ponto mais forte", heroStrong ? `${heroStrong.name} ${heroStrong.pct}` : "—", "trend")}
-                ${trioItem("Ponto de atenção", heroWeak ? `${heroWeak.name} ${heroWeak.pct}` : "—", "alert")}
+                ${framesTied
+                  ? trioItem("Leitura geral", "Frentes niveladas", "trend")
+                  : trioItem("Ponto mais forte", heroStrong ? `${heroStrong.name} ${heroStrong.pct}` : "Ainda sem leitura", "trend")}
+                ${framesTied
+                  ? trioItem("Foco sugerido", "Consistência do conjunto", "alert")
+                  : trioItem("Ponto de atenção", heroWeak ? `${heroWeak.name} ${heroWeak.pct}` : "Ainda sem leitura", "alert")}
                 ${trioItem("Próxima melhoria", nextImprovement, "spark")}
               </div>
 
               <div class="result-next" id="resultNext">
                 <div class="result-next-cta" id="resultNextCta">
                   <p class="result-next-micro">
-                    Você já viu onde está perdendo. Agora veja por onde começar a virar o jogo.
+                    Você já viu onde está perdendo. Agora veja por onde começar a recuperar margem.
                   </p>
                   <button class="btn btn-hero-primary btn-block" type="button" data-action="show-raiox-explainer">
                     <span>Entenda os próximos passos</span>
@@ -208,6 +217,10 @@ export function ResultPage(state: AppState): string {
             ${weakestName ? `Sua maior oportunidade está em <b>${escHtml(weakestName)}</b>` : ""}${strongestName ? `, e a frente mais consistente é <b>${escHtml(strongestName)}</b>` : ""}.
           </p>
           <div class="pillar-grid">${pillarsHtml}</div>
+          ${dimsCount < 6 ? `
+          <p class="section-note">
+            Uma ou mais frentes não foram avaliadas neste perfil de respondente, por isso não aparecem acima.
+          </p>` : ""}
         </section>
 
         <section>

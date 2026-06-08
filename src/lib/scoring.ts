@@ -3,7 +3,7 @@
    "Perfil" = perguntas score visíveis para esse respondente. */
 
 import { BLOCKS, BLOCK_ORDER, type BlockId } from "../data/blocks";
-import { QUESTIONS, type ScoreQuestion } from "../data/questions";
+import { type ScoreQuestion } from "../data/questions";
 import { visibleQuestions } from "./engine";
 import type { AppState } from "./state";
 import { phoneDigitsOnly } from "./format";
@@ -118,9 +118,15 @@ export interface Gap {
   reason: "vague" | "unmeasured";
 }
 export function collectGaps(state: AppState): Gap[] {
+  /* Itera apenas sobre as perguntas score visíveis do perfil (mesma fonte de
+     blockScores). Assim respostas órfãs de uma trilha abandonada (quando o
+     respondente volta ao S1 e troca o papel) não inflam a penalidade nem
+     poluem routing.gaps. Em um fluxo legítimo o resultado é idêntico. */
+  const visible = visibleQuestions(state).filter(
+    (q): q is ScoreQuestion => q.type === "score"
+  );
   const gaps: Gap[] = [];
-  for (const q of QUESTIONS) {
-    if (q.type !== "score") continue;
+  for (const q of visible) {
     const a = state.answers[q.id];
     if (a && a.kind === "score" && a.vague) {
       gaps.push({ questionId: q.id, reason: "vague" });

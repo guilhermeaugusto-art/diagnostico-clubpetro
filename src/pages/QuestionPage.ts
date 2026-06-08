@@ -353,6 +353,19 @@ function diversifyIcons(icons: AnyIcon[]): AnyIcon[] {
   });
 }
 
+/* Ícones resolvidos são determinísticos pelo conteúdo estático da pergunta.
+   Memoiza por id para não reavaliar até ~37 regex por opção a cada render. */
+const OPTION_ICON_CACHE: Map<string, AnyIcon[]> = new Map();
+function optionIconsFor(q: Question): AnyIcon[] {
+  const hit = OPTION_ICON_CACHE.get(q.id);
+  if (hit) return hit;
+  const icons = diversifyIcons(
+    ((q as any).options as any[]).map((opt) => iconForOption(q.block, opt)),
+  );
+  OPTION_ICON_CACHE.set(q.id, icons);
+  return icons;
+}
+
 export function QuestionPage(p: QuestionPageProps): string {
   const q = p.question;
   const blockKey = q.block;
@@ -376,9 +389,7 @@ export function QuestionPage(p: QuestionPageProps): string {
       : "Resposta única";
 
   /* Resolve ícones e diversifica para a mesma pergunta não ter dois ícones iguais. */
-  const optionIcons = diversifyIcons(
-    q.options.map((opt: any) => iconForOption(blockKey, opt)),
-  );
+  const optionIcons = optionIconsFor(q);
 
   const opts = q.options
     .map((opt: any, i: number) => {

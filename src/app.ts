@@ -15,12 +15,10 @@ import {
   totalScore,
   blockScores,
   rankedBlocks,
-  weakBlockIds,
   phoneValid,
   emailValid,
   nameValid,
   contactValid,
-  collectGaps,
 } from "./lib/scoring";
 import {
   computeSignal,
@@ -32,7 +30,6 @@ import {
   isPluralPosto,
 } from "./lib/engine";
 import { buildRoutingPayload } from "./lib/routing";
-import { getSupabase } from "./lib/supabase";
 import { track } from "./lib/tracking";
 import { uuid, maskPhone, phoneDigitsOnly } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
@@ -59,7 +56,6 @@ import { buildResultRecommendations } from "./data/recommendations";
 let bootContext: RequestContext | null = null;
 
 import { Header } from "./components/Header";
-import { resetRadarMiniState } from "./components/RadarMini";
 import { BarsProgress } from "./components/BarsProgress";
 import { WelcomePage } from "./pages/WelcomePage";
 import { QuestionPage } from "./pages/QuestionPage";
@@ -85,12 +81,6 @@ function headerContextLabel(): string {
   if (!q) return "";
   if (q.block === "qualif") return "Qualificação";
   return BLOCKS[q.block].short;
-}
-
-function headerCurrentStep(): number {
-  if (state.screen === "contact") return totalStepsFn(state) - 1;
-  if (state.screen === "result") return totalStepsFn(state);
-  return Math.min(state.cursor, totalStepsFn(state) - 1);
 }
 
 function renderHeader(): string {
@@ -237,7 +227,6 @@ function startDiagnostic(): void {
   state.startedAt = new Date().toISOString();
   state.screen = "question";
   state.cursor = 0;
-  resetRadarMiniState();
   saveState(state);
   // Persiste a sessão (fire-and-forget) e zera buffer local de respostas.
   resetLocalAnswers();
@@ -267,7 +256,6 @@ function discardAndStart(): void {
   state.startedAt = new Date().toISOString();
   state.screen = "question";
   state.cursor = 0;
-  resetRadarMiniState();
   resetLocalAnswers();
   saveState(state);
   if (state.diagId) {
@@ -470,14 +458,18 @@ function updateBarsLive(): void {
   const bs = blockScores(state);
   const q = currentQuestion(state);
   const bump = q && q.block !== "qualif" ? q.block : null;
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   BLOCK_ORDER.forEach((b) => {
     const el = document.querySelector<HTMLElement>(`.bars-fill[data-block="${b}"]`);
     if (!el) return;
     const v = Math.max(0, Math.min(100, bs[b].pct || 0));
+    const prev = Number(el.dataset.target ?? "NaN");
+    const changed = prev !== v;
     el.dataset.target = String(v);
     el.style.setProperty("--v", `${v}%`);
+    // Só pulsa a barra ativa quando o valor de fato mudou e há movimento.
     const item = el.closest<HTMLElement>(".bars-item");
-    if (item && bump === b) {
+    if (item && bump === b && changed && !reduce) {
       item.classList.add("is-bumped");
       window.setTimeout(() => item.classList.remove("is-bumped"), 600);
     }
@@ -491,14 +483,47 @@ function nextStep(): void {
   const list = visibleQuestions(state);
   const nextCursor = state.cursor + 1;
   if (nextCursor < list.length) {
+    // Continua nas perguntas: atualiza só o corpo e preserva o nó das barras,
+    // para que a transição de preenchimento (950ms) rode contínua através da
+    // troca de pergunta, sem o corte seco do innerHTML completo.
     state.cursor = nextCursor;
+    saveState(state);
+    softRenderQuestion();
   } else {
     state.cursor = list.length;
     state.screen = "contact";
+    saveState(state);
+    render();
   }
-  saveState(state);
-  render();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* Re-render leve da tela de pergunta: troca o corpo, mantém o header e as
+   barras no DOM (a transição CSS em curso não é interrompida) e só move o
+   destaque da barra ativa e o rótulo de contexto. */
+function softRenderQuestion(): void {
+  const headerEl = document.getElementById("cpHeader");
+  if (!headerEl || headerEl.parentElement !== root()) {
+    render();
+    return;
+  }
+  while (headerEl.nextSibling) root().removeChild(headerEl.nextSibling);
+  headerEl.insertAdjacentHTML("afterend", renderBody());
+  updateHeaderForQuestion();
+  onQuestionRendered();
+}
+
+/* Atualiza, no header preservado, o rótulo de contexto e qual barra fica ativa,
+   sem recriar os nós de preenchimento (.bars-fill). */
+function updateHeaderForQuestion(): void {
+  const label = headerContextLabel();
+  const tag = document.querySelector<HTMLElement>(".cp-brand-tag");
+  if (tag) tag.innerHTML = `Diagnóstico${label ? ` · <b>${label}</b>` : ""}`;
+  const q = currentQuestion(state);
+  const active = q && q.block !== "qualif" ? q.block : null;
+  document.querySelectorAll<HTMLElement>(".bars-item").forEach((item) => {
+    item.classList.toggle("is-active", item.getAttribute("data-block") === active);
+  });
 }
 
 function prevStep(): void {
@@ -623,6 +648,12 @@ function setupWelcomeVideoLoop(): void {
   b.muted = true;
   a.playsInline = true;
   b.playsInline = true;
+
+  // B entra com preload "none" no HTML para não competir com o vídeo principal
+  // no primeiro paint (metade do payload). Assim que A começa a tocar, B carrega
+  // em background, com folga de sobra até o primeiro crossfade (fim do 1º loop).
+  const primeStandby = (): void => { try { b.load(); } catch { /* ignore */ } };
+  a.addEventListener("playing", primeStandby, { once: true });
 
   // Tenta tocar assim que possível (alguns iOS só topam depois de loadeddata).
   const tryStart = (): void => { safePlay(a); };
