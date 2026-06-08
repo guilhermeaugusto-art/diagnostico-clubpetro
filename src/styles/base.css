@@ -105,22 +105,36 @@ body:has(.question) .cp-bokeh { opacity: 1; }
   width: var(--s);
   height: var(--s);
   border-radius: 50%;
-  /* Poeira dourada/laranja (referência PS5): miolo âmbar quente -> halo laranja.
-     A opacidade por ponto vem do --o, sem dupla multiplicação. */
-  background: radial-gradient(circle at 50% 42%,
-    rgba(255, 184, 102, 1) 0%,
-    rgba(242, 102, 0, 0.82) 45%,
-    rgba(242, 102, 0, 0) 72%);
+  /* Círculo luminoso (bokeh real): miolo quente brilhante, transição âmbar->laranja
+     e um anel sutil antes da queda suave. Lê como luz fora de foco, não disco
+     chapado. O box-shadow dá um glow proporcional ao tamanho (efeito ember). */
+  background: radial-gradient(circle at 50% 44%,
+    rgba(255, 226, 188, 0.98) 0%,
+    rgba(255, 156, 66, 0.85) 32%,
+    rgba(242, 102, 0, 0.58) 55%,
+    rgba(255, 178, 92, 0.34) 69%,
+    rgba(242, 102, 0, 0) 80%);
+  box-shadow: 0 0 var(--s) rgba(242, 102, 0, calc(var(--o, .6) * 0.45));
   opacity: 0;
   filter: blur(var(--b));
   will-change: transform, opacity;
-  /* Coreografia: cada ponto ENTRA escalonado ao acessar (uma vez) e depois
-     ASSENTA numa deriva muito lenta e coerente (sobe de leve), em vez de
-     jitter aleatório perpétuo. O calm só começa após a entrada. */
-  animation:
-    bokehIn 2.2s var(--ease-out) var(--d, 0s) both,
-    bokehCalm calc(var(--t, 30s) * 1.5) ease-in-out calc(2.4s + var(--d, 0s)) infinite;
+  /* Coreografia em 3 camadas, sem sincronia:
+     1) bokehIn  - entra escalonado ao acessar (uma vez);
+     2) bokehDrift* - deriva lenta numa TRAJETÓRIA própria (4 variações por
+        nth-child), em vez de todos subindo igual;
+     3) bokehTwinkle - cintilar de brilho em período diferente do drift. */
+  animation-name: bokehIn, var(--drift, bokehDriftA), bokehTwinkle;
+  animation-duration: 2.2s, calc(var(--t, 24s) * 1.6), calc(var(--t, 24s) * 0.7);
+  animation-timing-function: var(--ease-out), ease-in-out, ease-in-out;
+  animation-delay: var(--d, 0s), calc(2.4s + var(--d, 0s)), calc(2.4s + var(--d, 0s));
+  animation-iteration-count: 1, infinite, infinite;
+  animation-fill-mode: both, none, none;
+  animation-direction: normal, normal, alternate;
 }
+.cp-bokeh i:nth-child(4n+1) { --drift: bokehDriftA; }
+.cp-bokeh i:nth-child(4n+2) { --drift: bokehDriftB; }
+.cp-bokeh i:nth-child(4n+3) { --drift: bokehDriftC; }
+.cp-bokeh i:nth-child(4n)   { --drift: bokehDriftD; }
 @media (prefers-reduced-motion: reduce) {
   .cp-bokeh i { animation: none; opacity: var(--o); transform: none; }
 }

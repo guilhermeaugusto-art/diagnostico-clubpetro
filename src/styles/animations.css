@@ -56,12 +56,37 @@
   55%  { opacity: var(--o, .6); }
   100% { opacity: var(--o, .6); transform: translate3d(0, 0, 0) scale(1); }
 }
-/* Bokeh, assentado: deriva lenta e coerente (sobe de leve), quase imperceptível.
-   É o que tira a sensação de "pontos aleatórios" em movimento perpétuo. */
-@keyframes bokehCalm {
-  0%   { transform: translate3d(0, 0, 0) scale(1);        opacity: var(--o, .6); }
-  50%  { transform: translate3d(0, -6px, 0) scale(1.015); opacity: calc(var(--o, .6) * 0.85); }
-  100% { transform: translate3d(0, 0, 0) scale(1);        opacity: var(--o, .6); }
+/* Bokeh, deriva: cada partícula segue uma trajetória própria, lenta e fechada
+   (volta à origem), com leve variação de escala. Quatro variações dão a sensação
+   orgânica de flutuar, sem o "todos subindo igual" nem jitter aleatório. */
+@keyframes bokehDriftA {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(-7px, -11px, 0) scale(1.03); }
+  66%  { transform: translate3d(5px, -5px, 0) scale(0.99); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes bokehDriftB {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(8px, -7px, 0) scale(1.02); }
+  66%  { transform: translate3d(3px, 6px, 0) scale(0.98); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes bokehDriftC {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(-6px, 9px, 0) scale(1.03); }
+  66%  { transform: translate3d(-9px, -4px, 0) scale(1); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes bokehDriftD {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(6px, 10px, 0) scale(0.98); }
+  66%  { transform: translate3d(-4px, 4px, 0) scale(1.03); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+/* Cintilar de brilho, em período diferente do drift (desincronia = vivo). */
+@keyframes bokehTwinkle {
+  from { opacity: var(--o, .6); }
+  to   { opacity: calc(var(--o, .6) * 0.6); }
 }
 
 /* Halo atrás do vídeo da welcome: respira de leve para dar vida às bordas. */
