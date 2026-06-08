@@ -50,6 +50,12 @@
   to   { transform: translate3d(-3%, 3%, 0) scale(1.08); }
 }
 
+/* Partícula de bokeh: sobe devagar com leve cintilar (usa o --o de cada ponto). */
+@keyframes bokehFloat {
+  0%, 100% { transform: translate3d(0, 8px, 0) scale(1);    opacity: calc(var(--o, .4) * 0.5); }
+  50%      { transform: translate3d(0, -12px, 0) scale(1.08); opacity: var(--o, .4); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

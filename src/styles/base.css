@@ -82,6 +82,41 @@ body:has(.question) .cp-orbs { opacity: 1; }
   .cp-orb { animation: none; }
 }
 
+/* ============ BOKEH (campo de partículas, estilo PS5) ============
+   Pontos de luz quentes em vários tamanhos: os pequenos ficam nítidos (frente)
+   e os grandes desfocados (fundo), criando profundidade. Sobem devagar com leve
+   cintilar. Camada decorativa atrás do conteúdo, só em welcome e question. */
+.cp-bokeh {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 700ms var(--ease);
+}
+body:has(.welcome) .cp-bokeh,
+body:has(.question) .cp-bokeh { opacity: 1; }
+
+.cp-bokeh i {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%,
+    rgba(255, 214, 176, var(--o)) 0%,
+    rgba(242, 102, 0, calc(var(--o) * 0.55)) 48%,
+    rgba(242, 102, 0, 0) 72%);
+  filter: blur(var(--b));
+  will-change: transform, opacity;
+  animation: bokehFloat var(--t, 16s) ease-in-out var(--d, 0s) infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-bokeh i { animation: none; opacity: var(--o); }
+}
+
 /* Welcome: cor base = média das bordas do vídeo (rgb 235,230,233).
    Glow laranja sutil por cima dá vida sem criar contraste justo onde a
    máscara do vídeo dissolve, mantendo a fusão "PNG flutuante". */
