@@ -2,43 +2,48 @@
    Grid base 4: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64
 */
 :root {
-  /* Brand */
-  --cp-orange: #F26600;
-  --cp-orange-600: #D85600;
+  /* Brand · Primary (paleta oficial ClubPetro) */
+  --cp-orange:     #F26600;
+  --cp-orange-50:  #FFF9EC;
+  --cp-orange-100: #FFF0D3;
+  --cp-orange-200: #FFDEA5;
+  --cp-orange-300: #FFC66D;
+  --cp-orange-400: #FFA132;
   --cp-orange-500: #F26600;
-  --cp-orange-400: #FF8A3D;
-  --cp-orange-100: #FFE4CC;
-  --cp-orange-50:  #FFF3E6;
+  --cp-orange-600: #CC4D02;
+  --cp-orange-700: #A13C0B;
+  --cp-orange-800: #82330C;
+  --cp-orange-900: #461704;
+  --cp-orange-950: #2E0F03;
 
-  /* Ink / Charcoal */
-  --ink-900: #0B1218;
-  --ink-800: #142029;
-  --ink-700: #1F2F3D;
-  --ink-600: #2D3F50;
-  --ink-500: #4A5B6D;
-  --ink-400: #6C7C8E;
-  --ink-300: #94A2B2;
-  --ink-200: #BCC6D2;
-  --ink-100: #DDE3EA;
-  --ink-50:  #EEF2F6;
+  /* Neutros · Secondary (paleta oficial ClubPetro, slate) */
+  --ink-900: #1F2028;
+  --ink-800: #353745;
+  --ink-700: #3C3F50;
+  --ink-600: #464A5E;
+  --ink-500: #555A74;
+  --ink-400: #6A718D;
+  --ink-300: #898FA7;
+  --ink-200: #B2B6C7;
+  --ink-100: #D6D8E1;
+  --ink-50:  #EDEDF1;
 
-  /* Paper / Surface */
-  --paper:        #F7F4EE;
-  --paper-warm:   #F1ECE2;
-  --paper-deep:   #E8E1D2;
-  /* Welcome: cor base = média exata das bordas do vídeo.
-     Como o body, o wrap e a base por trás da máscara compartilham essa cor,
-     a junção entre vídeo e página fica invisível (fusão tipo PNG flutuante). */
+  /* Paper / Surface (base clara = Secondary 50, branco limpo CP) */
+  --paper:        #F6F7F9;
+  --paper-warm:   #EDEDF1;
+  --paper-deep:   #D6D8E1;
+  /* Welcome: cor base afinada às bordas do vídeo (fusão invisível tipo PNG
+     flutuante). Mantida quente de propósito para casar com o vídeo. */
   --paper-welcome: rgb(235, 230, 233);
   --surface:      #FFFFFF;
-  --surface-alt:  #FAFAF7;
-  --surface-deep: #0F1A23;
-  --surface-deep-2: #15242F;
+  --surface-alt:  #F6F7F9;
+  --surface-deep: #1F2028;
+  --surface-deep-2: #2A2C38;
 
-  /* Borders */
-  --border-soft:    rgba(11, 18, 24, 0.08);
-  --border-medium:  rgba(11, 18, 24, 0.14);
-  --border-strong:  rgba(11, 18, 24, 0.22);
+  /* Borders (base = Secondary mais escuro) */
+  --border-soft:    rgba(31, 32, 40, 0.08);
+  --border-medium:  rgba(31, 32, 40, 0.14);
+  --border-strong:  rgba(31, 32, 40, 0.22);
   --border-on-dark: rgba(255, 255, 255, 0.10);
 
   /* Status */
@@ -121,10 +126,11 @@
   --header-h:     72px;
   --header-h-active: 96px;
 
-  /* ClubPetro deep blue (gradiente premium nos cards escuros) */
-  --cp-blue-900: #0B1F33;
-  --cp-blue-800: #102A45;
-  --cp-blue-700: #163554;
+  /* Superfícies escuras (Secondary slate, padrão CP) usadas nos cards/hero.
+     Nome mantido (--cp-blue-*) para não quebrar referências existentes. */
+  --cp-blue-900: #1F2028;
+  --cp-blue-800: #2A2C38;
+  --cp-blue-700: #353745;
 
   /* Vertical rhythm. Aplicação da regra 1.2 do RULES.md */
   --stack-tight:   8px;

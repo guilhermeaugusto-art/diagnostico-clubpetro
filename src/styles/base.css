@@ -13,7 +13,7 @@ body {
      o paper fica no centro. A profundidade passa a vir da textura, não do brilho. */
   background:
     radial-gradient(1200px 600px at 80% -10%, rgba(242,102,0,.03), transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, rgba(15,26,35,.02), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(31,32,40,.02), transparent 60%),
     var(--paper);
   overflow-x: hidden;
   min-height: 100vh;
@@ -105,19 +105,24 @@ body:has(.question) .cp-bokeh { opacity: 1; }
   width: var(--s);
   height: var(--s);
   border-radius: 50%;
-  /* Miolo laranja quente (não branco, que sumia no fundo claro). A opacidade
-     por ponto vem do --o via opacity do elemento, sem dupla multiplicação. */
+  /* Poeira dourada/laranja (referência PS5): miolo âmbar quente -> halo laranja.
+     A opacidade por ponto vem do --o, sem dupla multiplicação. */
   background: radial-gradient(circle at 50% 42%,
-    rgba(255, 150, 56, 1) 0%,
-    rgba(242, 102, 0, 0.85) 42%,
+    rgba(255, 184, 102, 1) 0%,
+    rgba(242, 102, 0, 0.82) 45%,
     rgba(242, 102, 0, 0) 72%);
-  opacity: var(--o);
+  opacity: 0;
   filter: blur(var(--b));
   will-change: transform, opacity;
-  animation: bokehFloat var(--t, 16s) ease-in-out var(--d, 0s) infinite alternate;
+  /* Coreografia: cada ponto ENTRA escalonado ao acessar (uma vez) e depois
+     ASSENTA numa deriva muito lenta e coerente (sobe de leve), em vez de
+     jitter aleatório perpétuo. O calm só começa após a entrada. */
+  animation:
+    bokehIn 2.2s var(--ease-out) var(--d, 0s) both,
+    bokehCalm calc(var(--t, 30s) * 1.5) ease-in-out calc(2.4s + var(--d, 0s)) infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .cp-bokeh i { animation: none; opacity: var(--o); }
+  .cp-bokeh i { animation: none; opacity: var(--o); transform: none; }
 }
 
 /* Welcome: cor base = média das bordas do vídeo (rgb 235,230,233).

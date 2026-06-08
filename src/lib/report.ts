@@ -4,11 +4,11 @@
 
 import type { ReportContent } from "./reportContent";
 
-/* Paleta ClubPetro */
+/* Paleta ClubPetro (padrão oficial: Primary laranja + Secondary slate) */
 const ORANGE = "#F26600";
-const INK    = "#0F1A23";
-const INK_MUTED = "#4A5B6D";
-const PAPER  = "#F7F4EE";
+const INK    = "#1F2028";
+const INK_MUTED = "#555A74";
+const PAPER  = "#F6F7F9";
 const RED    = "#D32F1A";
 
 const PAGE_PADDING = 56;       // ~2cm

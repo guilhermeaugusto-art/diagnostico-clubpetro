@@ -16,8 +16,8 @@ function welcomeIllustration(): string {
           <stop offset="100%" stop-color="#F26600" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="cpArc" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stop-color="#FF8A3D"/>
-          <stop offset="100%" stop-color="#D85600"/>
+          <stop offset="0%" stop-color="#FFA132"/>
+          <stop offset="100%" stop-color="#CC4D02"/>
         </linearGradient>
       </defs>
 
@@ -25,11 +25,11 @@ function welcomeIllustration(): string {
 
       <!-- Track do medidor: arco fino em tinta clara -->
       <path d="M 352.74 427.28 A 180 180 0 1 1 607.26 427.28"
-            fill="none" stroke="#0B1F33" stroke-opacity="0.12"
+            fill="none" stroke="#1F2028" stroke-opacity="0.12"
             stroke-width="10" stroke-linecap="round"/>
 
       <!-- Ticks discretos ao longo do arco -->
-      <g stroke="#0B1F33" stroke-opacity="0.16" stroke-width="3" stroke-linecap="round">
+      <g stroke="#1F2028" stroke-opacity="0.16" stroke-width="3" stroke-linecap="round">
         <line x1="352.74" y1="427.28" x2="345.67" y2="434.35"/>
         <line x1="300" y1="300" x2="290" y2="300"/>
         <line x1="352.74" y1="172.72" x2="345.67" y2="165.65"/>
@@ -44,12 +44,12 @@ function welcomeIllustration(): string {
             stroke-width="12" stroke-linecap="round"/>
 
       <!-- Marcador na ponta do valor -->
-      <circle cx="634.94" cy="208.18" r="9" fill="#fff" stroke="#D85600" stroke-width="3"/>
+      <circle cx="634.94" cy="208.18" r="9" fill="#fff" stroke="#CC4D02" stroke-width="3"/>
 
       <!-- Núcleo: rótulo editorial, sem número (não simular uma nota real) -->
       <text x="480" y="296" text-anchor="middle"
             font-family="Fraunces, Georgia, serif"
-            font-size="34" font-weight="600" fill="#1F2F3D" letter-spacing="-0.5">
+            font-size="34" font-weight="600" fill="#353745" letter-spacing="-0.5">
         Saúde
       </text>
       <text x="480" y="330" text-anchor="middle"
