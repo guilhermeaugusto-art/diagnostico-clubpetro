@@ -546,10 +546,31 @@ body:has(.welcome) .cp-header {
   /* Acompanha a altura proporcional do slot 16:9 nos novos tamanhos. */
   min-height: 420px;
 }
+/* Halo laranja que respira atrás do vídeo: as bordas esfumaçadas do vídeo
+   passam a se dissolver neste brilho dinâmico da marca (e deixam o bokeh atrás
+   aparecer), em vez de um tom chapado fixo. */
+.welcome-visual::before {
+  content: "";
+  position: absolute;
+  inset: -4% -2%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 62% at 62% 48%,
+      rgba(242, 102, 0, 0.14) 0%,
+      rgba(255, 161, 50, 0.08) 45%,
+      rgba(242, 102, 0, 0) 76%);
+  filter: blur(20px);
+  animation: welcomeHaloBreath 9s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-visual::before { animation: none; }
+}
 @media (min-width: 1024px) { .welcome-visual { min-height: 500px; } }
 @media (min-width: 1280px) { .welcome-visual { min-height: 540px; } }
 .welcome-video-wrap {
   position: relative;
+  z-index: 1;                 /* acima do halo .welcome-visual::before */
   width: 100%;
   /* Slot equilibrado: maior do que o original, menor do que a versão
      anterior. Aspect 16:9 = mesmo do vídeo → cover não recorta. */
@@ -557,7 +578,9 @@ body:has(.welcome) .cp-header {
   aspect-ratio: 16 / 9;
   border-radius: 0;
   overflow: visible;
-  background: rgb(235, 230, 233);
+  /* Sem cor sólida: as bordas esfumaçadas do vídeo revelam o halo dinâmico e o
+     bokeh atrás, em vez de um retângulo de cor fixa. */
+  background: transparent;
   margin-right: calc(-1 * var(--sp-8));
   margin-left: var(--sp-4);
 }
