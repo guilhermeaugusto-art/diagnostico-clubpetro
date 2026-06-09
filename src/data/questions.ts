@@ -1317,6 +1317,21 @@ export const QUESTIONS: Question[] = [
       { label: "Mais de cinco.",       desc: "Time grande.",  value: "mais5" },
     ],
   },
+  {
+    id: "F_PT_SERVICOS",
+    block: "qualif",
+    type: "segmentation-multi",
+    tracks: ["frentista"],
+    text: "O que o posto oferece <em>além do combustível</em>?",
+    context: "Marque tudo que tem aqui. Assim eu pergunto só do que existe no seu posto.",
+    hint: "Marque todas que se aplicam.",
+    options: [
+      { label: "Loja de conveniência.",        desc: "Tem loja ou conveniência.",  value: "conveniencia" },
+      { label: "Lava jato ou troca de óleo.",   desc: "Serviços automotivos.",      value: "automotivos" },
+      { label: "Carregador de carro elétrico.", desc: "Ponto de recarga elétrica.", value: "eletrica" },
+      { label: "Só combustível, por enquanto.", desc: "Sem serviços extras.",       value: "so_pista" },
+    ],
+  },
 
   /* --- O dia a dia, escala e jornada (pessoas) --- */
   {
@@ -1555,6 +1570,7 @@ export const QUESTIONS: Question[] = [
     tracks: ["frentista"],
     text: "Já apareceu cliente com <em>carro elétrico</em> querendo carregar no posto?",
     context: "Frota elétrica vai aparecer mais. Vale saber se já bateu na pista.",
+    condition: (r) => r.multi("F_PT_SERVICOS").includes("eletrica"),
     options: [
       { label: "Já, e mais de uma vez.",
         desc: "Aconteceu várias vezes.",
@@ -1590,7 +1606,7 @@ export const QUESTIONS: Question[] = [
     block: "qualif",
     type: "qualify",
     tracks: ["frentista"],
-    text: "No fim das contas, como você se <em>sente trabalhando aqui</em>?",
+    text: "Como você se sente trabalhando <em>neste posto</em>?",
     context: "Sem certo nem errado. É só pra entender o seu dia.",
     options: [
       { label: "Gosto, me sinto valorizado.",        desc: "Bom lugar pra trabalhar.", value: "gosto" },
@@ -1608,10 +1624,7 @@ export const QUESTIONS: Question[] = [
     tracks: ["frentista"],
     text: "Você indica a <em>loja de conveniência</em> pro cliente enquanto abastece?",
     context: "Indicar loja na bomba é o gesto que abre venda extra.",
-    condition: (r) => {
-      const area = r.single("F_PT_AREA");
-      return area === "loja" || area === "pista";
-    },
+    condition: (r) => r.multi("F_PT_SERVICOS").includes("conveniencia"),
     options: [
       { label: "Sempre que dá.",
         desc: "Faço questão.",
@@ -1632,7 +1645,7 @@ export const QUESTIONS: Question[] = [
     tracks: ["frentista"],
     text: "O cliente costuma fazer <em>lava jato ou troca de óleo</em> aqui no posto?",
     context: "Lava jato e troca de óleo rendem margem maior que combustível.",
-    condition: (r) => r.single("F_PT_AREA") === "servicos",
+    condition: (r) => r.multi("F_PT_SERVICOS").includes("automotivos"),
     options: [
       { label: "Bastante, é movimentado.",
         desc: "Frente ativa.",
@@ -1663,13 +1676,12 @@ export function getQuestionById(id: string): Question | undefined {
    Condicionais são filtradas em runtime pelo engine. */
 export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
   dono: [
-    "D_PT_POSTOS", "D_PT_MIX", "D_PT_TEMPO", "D_DOR",
+    "D_PT_POSTOS", "D_PT_MIX", "D_R2", "D_PT_TEMPO", "D_DOR",
     "D_C1", "D_F1", "D_DA1", "D_R1", "D_C2",
     "D_P1", "D_P2", "D_P3", "D_P4", "D_P5", "D_P6",
     "D_M1", "D_M2", "D_M3",
     "D_C3", "D_C4", "D_C_SERV", "D_C_LOJA",
     "D_F2", "D_FCHURN", "D_F3",
-    "D_R2",
     "D_PADRAO", "D_EXPANDIR",
     "D_INTENCAO", "D_CONHECE",
   ],
@@ -1684,7 +1696,7 @@ export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
     "G_CONHECE",
   ],
   frentista: [
-    "F_PT_TEMPO", "F_PT_AREA", "F_PT_TURNO",
+    "F_PT_TEMPO", "F_PT_AREA", "F_PT_TURNO", "F_PT_SERVICOS",
     "F_F1", "F_M2", "F_P3", "F_F3", "F_R1",
     "F_P1", "F_P2", "F_P4", "F_P5", "F_P6",
     "F_M1", "F_F2",
@@ -1700,7 +1712,7 @@ export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
 export const SIGNAL_CHECKPOINT_IDS_BY_TRACK: Record<TrackId, string[]> = {
   dono:     ["D_C1", "D_F1", "D_DA1", "D_R1", "D_C2"],
   gerente:  ["G_C1", "G_F1", "G_DA1", "G_M2", "G_C2"],
-  frentista:["F_F1", "F_M2", "F_P3", "F_F3", "F_R1"],
+  frentista:["F_F1", "F_M2", "F_P3", "F_F3", "F_P1"],
 };
 
 /* ID da pergunta de "o que mais incomoda / quer resolver" por trilha.

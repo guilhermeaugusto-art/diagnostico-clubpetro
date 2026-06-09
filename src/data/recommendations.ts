@@ -79,7 +79,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
   /* --- Dados e digital --- */
   { id: "R-D-1", block: "dados", priority: 9,
     title: "Painel diário do posto em 1 tela",
-    desc: "Litros, ticket médio, mix e meta da equipe num lugar só. Três minutos por dia, decisão saindo do achismo.",
+    desc: "Litros, ticket médio, mix e meta da equipe num lugar só. Três minutos por dia, decisão com o número na mão.",
     icon: "asset:dados-analise",
     impact: "Decisão baseada em dado" },
   { id: "R-D-2", block: "dados", priority: 7,

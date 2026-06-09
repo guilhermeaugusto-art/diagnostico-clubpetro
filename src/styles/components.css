@@ -1333,6 +1333,27 @@ body:has(.welcome) .cp-header {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
+/* P8: CTA dominante da tela de score — maior, mais peso e leve pulsar de brilho
+   pra ser o elemento de maior destaque. */
+.btn-hero-xl {
+  padding: 18px 28px;
+  font-size: var(--fs-18);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.22) inset,
+    0 10px 30px rgba(242,102,0,0.48);
+  animation: ctaPulse 2.6s var(--ease) infinite;
+}
+.btn-hero-xl:hover { transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .btn-hero-xl { animation: none; } }
+/* Estado confirmado (Raio-X): vira verde de sucesso. */
+.btn-hero-primary.is-confirmed {
+  background: var(--ok);
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 6px 18px rgba(31,138,92,0.32);
+  animation: none;
+}
+.btn-hero-primary.is-confirmed:hover { background: #1a7a51; transform: none; }
 .btn-hero-secondary {
   background: rgba(255,255,255,0.08);
   color: #fff;

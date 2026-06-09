@@ -22,7 +22,7 @@ export const LEVELS: Level[] = [
     min: 0,
     max: 30,
     name: "Operação em improviso",
-    tagline: "A operação roda no esforço diário e na disputa por preço na esquina.",
+    tagline: "Seu posto roda no esforço diário e na disputa por preço na esquina.",
     reading:
       "Sua operação ainda funciona sem rotina estruturada de gestão, sem dado do cliente e com forte dependência do volume puxado pelo preço. O esforço é grande, a margem é estreita.",
     attention:
@@ -38,9 +38,9 @@ export const LEVELS: Level[] = [
     name: "Em construção",
     tagline: "Algumas frentes estão maduras, mas o conjunto ainda não rende.",
     reading:
-      "Você acerta em pontos importantes, mas a operação ainda perde rendimento por falta de integração entre gestão, fidelização e dado do cliente. O resultado escapa em detalhes.",
+      "Você acerta em pontos importantes, mas o seu posto ainda perde rendimento por falta de integração entre gestão, fidelização e dado do cliente. O resultado escapa em detalhes.",
     attention:
-      "Fidelização informal, dado de cliente incompleto e acompanhamento de margem fragmentado. O posto trabalha mais do que precisaria para entregar o mesmo resultado.",
+      "Fidelização informal, dado de cliente incompleto e acompanhamento de margem fragmentado. Seu posto trabalha mais do que precisaria para entregar o mesmo resultado.",
     path:
       "Amarrar o que já funciona em rotinas semanais, profissionalizar o programa de fidelização e organizar o dado do cliente para virar decisão.",
     clubpetroFit:

@@ -238,7 +238,7 @@ function nextImprovementDescription(b: BlockId | undefined): string {
     marca: "Construir um diferencial além do preço em 1 página, validado no cliente fiel. Sai da disputa só por preço.",
     comercial: "Acompanhar margem por litro toda semana e ativar oferta na pista com script simples. Margem visível, decisão informada.",
     fidelizacao: "Programa de fidelização rodando em 7 dias: cadastro no caixa, acúmulo por litro, oferta direta no WhatsApp.",
-    dados: "Painel diário em 1 tela: litros, ticket médio, mix e meta da equipe. Decisão saindo do achismo.",
+    dados: "Painel diário em 1 tela: litros, ticket médio, mix e meta da equipe. Decisão com o número na mão.",
     resiliencia: "Plano de fôlego de caixa de 90 dias com mapa simples de entradas e saídas e gatilho de proteção.",
   };
   return MAP[b];

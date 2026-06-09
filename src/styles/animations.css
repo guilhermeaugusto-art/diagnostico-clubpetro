@@ -95,6 +95,12 @@
   to   { opacity: 1;   transform: scale(1.05); }
 }
 
+/* Pulsar de brilho do CTA dominante da tela de score (P8). */
+@keyframes ctaPulse {
+  0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 30px rgba(242,102,0,0.42); }
+  50%      { box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 12px 40px rgba(242,102,0,0.64); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

@@ -25,12 +25,12 @@ import { Icons } from "../lib/icons";
    dono: o radar encanta, esta linha explica. Sem travessão, sem emoji,
    no máximo 20 palavras (RULES 3.1, 3.2, 3.5). */
 const WEAK_LINE: Record<BlockId, string> = {
-  pessoas:     "A operação ainda depende de esforço individual, sem rotina que sustente o atendimento.",
-  marca:       "Falta um motivo de escolha além do preço, e isso entrega o cliente ao concorrente.",
-  comercial:   "A margem é acompanhada no instinto, e dinheiro escapa todo mês sem aparecer.",
+  pessoas:     "Seu posto ainda depende de esforço individual, sem rotina que sustente o atendimento.",
+  marca:       "Falta um motivo de escolha além do preço, e isso entrega o seu cliente ao concorrente.",
+  comercial:   "Sua margem é acompanhada no escuro, e dinheiro escapa todo mês sem aparecer.",
   fidelizacao: "Você sabe quem abastece, não sabe quem volta nem por quê.",
-  dados:       "A decisão ainda roda no achismo, sem painel que mostre o que acontece.",
-  resiliencia: "Sobra pouco fôlego de caixa para planejar movimento próprio na praça.",
+  dados:       "Sua decisão ainda corre sem número na mão, sem painel que mostre o que acontece.",
+  resiliencia: "Sobra pouco fôlego de caixa para você planejar movimento próprio na praça.",
 };
 
 /* Uma barra da leitura por pilar: nome, trilha, preenchimento e valor exato.
@@ -170,11 +170,12 @@ export function ResultPage(state: AppState): string {
               <div class="result-next" id="resultNext">
                 <div class="result-next-cta" id="resultNextCta">
                   <p class="result-next-micro">
-                    Você já viu onde está perdendo. Agora veja por onde começar a recuperar margem.
+                    Você já viu onde está perdendo. Veja agora o passo a passo pra subir essa nota.
                   </p>
-                  <button class="btn btn-hero-primary btn-block" type="button" data-action="show-raiox-explainer">
-                    <span>Entenda os próximos passos</span>
+                  <button class="btn btn-hero-primary btn-block btn-hero-xl" type="button" data-action="goto-recs">
+                    <span>Como aumentar minha pontuação</span>
                   </button>
+                  <button class="btn-link-back" type="button" data-action="show-raiox-explainer">Quero participar do Raio-X ao vivo</button>
                 </div>
 
                 <div class="result-raiox is-hidden" id="resultRaiox">
@@ -223,7 +224,7 @@ export function ResultPage(state: AppState): string {
           </p>` : ""}
         </section>
 
-        <section>
+        <section id="recsSection">
           ${SectionHeader({ num: 2, title: "Próxima melhoria recomendada" })}
           <p class="section-intro">
             Recomendações práticas, conectadas às respostas que você acabou de dar.

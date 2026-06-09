@@ -67,6 +67,7 @@ let state: AppState = freshState();
 let hasResumable = false;
 let questionStartTime = 0;
 let transitionTimer: number | null = null;
+let raioxConfirmed = false; // idempotência da confirmação de presença no Raio-X
 
 const root = () => document.getElementById("app")!;
 
@@ -190,9 +191,17 @@ function handleAction(action: string): void {
     case "submit-contact": return goToTransition();
     case "cta-whatsapp":   return ctaWhatsApp();
     case "cta-raiox":      return ctaRaiox();
+    case "goto-recs":      return gotoRecs();
     case "show-raiox-explainer": return toggleRaioxExplainer(true);
     case "hide-raiox-explainer": return toggleRaioxExplainer(false);
   }
+}
+
+/* CTA principal da tela de score: leva à seção de recomendações ("como subir a
+   nota"), com rolagem suave. */
+function gotoRecs(): void {
+  const el = document.getElementById("recsSection");
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 /* Troca, no mesmo lugar do resultado, entre os CTAs e a explicação do Raio-X,
@@ -921,6 +930,16 @@ async function generateAndUploadReport(): Promise<void> {
 
 /* ============== CTAs ============== */
 
+/* Marca a presença como confirmada no botão do Raio-X (idempotente: chamado só
+   na primeira confirmação, evita registro duplicado). */
+function markRaioxConfirmedUI(): void {
+  document.querySelectorAll<HTMLElement>('[data-action="cta-raiox"]').forEach((b) => {
+    const span = b.querySelector("span");
+    if (span) span.textContent = "Presença confirmada";
+    b.classList.add("is-confirmed");
+  });
+}
+
 function ctaWhatsApp(): void {
   const score = totalScore(state);
   track("specialist_cta_clicked", { score_total: score }, state.diagId);
@@ -938,9 +957,17 @@ function ctaRaiox(): void {
   track("rayx_cta_clicked", { score_total: score, diag_id: state.diagId }, state.diagId);
   const start = nextTuesday19h();
   const end = new Date(start.getTime() + 60 * 60 * 1000);
-  // Persiste agendamento direto na linha da sessão (colunas rayx_*).
-  if (state.diagId) {
-    persistRayxRequest(state.diagId, start.toISOString(), CONFIG.RAIOX_MEET_LINK);
+  // Idempotência: registra o agendamento na sessão UMA vez (não duplica) e marca
+  // o botão como confirmado. O convite abaixo aponta sempre para a MESMA terça
+  // recorrente (RRULE semanal). Observação: a inscrição definitiva no evento
+  // ÚNICO do organizador exige passo de backend (Google Calendar API); o link
+  // abaixo abre o convite recorrente pré-preenchido, não cria evento por usuário.
+  if (!raioxConfirmed) {
+    raioxConfirmed = true;
+    if (state.diagId) {
+      persistRayxRequest(state.diagId, start.toISOString(), CONFIG.RAIOX_MEET_LINK);
+    }
+    markRaioxConfirmedUI();
   }
   const firstName = state.name.trim().split(/\s+/)[0] || "";
   const details =
