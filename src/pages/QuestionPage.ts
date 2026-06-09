@@ -20,151 +20,159 @@ interface QuestionPageProps {
 const ICONS_BY_BLOCK: Record<string, AnyIcon> = {
   pessoas:     "asset:frentista",
   marca:       "asset:marca",
-  comercial:   "asset:real",
-  fidelizacao: "asset:qualidade",
-  dados:       "asset:dados-base",
-  resiliencia: "asset:equipe-mercado",
+  comercial:   "asset:margem",
+  fidelizacao: "asset:coracao",
+  dados:       "asset:dados-analise",
+  resiliencia: "asset:escudo",
   qualif:      "asset:alvo",
 };
 
-/* Mapa direto por VALUE específico das opções. PNG flat colorido onde
-   existir ícone temático; SVG monoline como fallback consistente. */
+/* Mapa direto por VALUE de cada opção, escolhido pelo SIGNIFICADO da resposta
+   (não pelo bloco). Usa só os PNGs disponíveis em /public/icons. As opções de
+   uma mesma pergunta caem em ícones distintos (bom / meio / ruim), e o
+   diversifyIcons resolve eventuais empates. */
 const VALUE_ICON: Record<string, AnyIcon> = {
-  // === Quem responde / quem opera (S1) ===
-  // dono: empresário estrategista → apresentação (2 pessoas com gráfico, sugere liderança)
-  // gerente: gestor formal → executivo (homem de terno barbado)
-  // equipe: frentista de pista
-  // outro: lâmpada (perfil livre)
-  dono:       "asset:apresentacao",
-  gerente:    "asset:executivo",
-  equipe:     "asset:frentista",
-  outro:      "asset:lampada",
+  // === S1 · quem responde ===
+  dono:       "asset:apresentacao",   // dono estrategista (liderança)
+  gerente:    "asset:executivo",      // gestor formal
+  outro:      "asset:lampada",        // outro papel
 
-  // === Mix além do combustível ===
-  loja:            "asset:cesta",
-  servicos:        "asset:lavagem",
-  outros_servicos: "asset:lavagem",
-  so_pista:        "asset:bomba",
+  // === Porte da rede / nº de postos ===
+  "1":        "asset:bomba",          // um posto
+  "2a4":      "asset:posto",          // rede pequena
+  "5mais":    "asset:crescimento",    // rede maior
+  varios:     "asset:posto",          // responde por vários
 
-  // === Combustível / bandeira ===
-  bandeira:    "asset:posto",
+  // === Mix além do combustível (multi) ===
+  automotivos: "asset:lavagem",       // lava jato / troca de óleo / oficina
+  alimenticia: "asset:cesta",         // conveniência / restaurante
+  outros:      "asset:engrenagens",   // serviços diversos
+  so_pista:    "asset:bomba",         // só a pista
 
-  // === Canal e perfil de cliente ===
-  // varejo: cliente que vai à loja → lojista (pessoa com carrinho)
-  // prazo: vende com prazo de pagamento → cronômetro
-  // misto: equilíbrio entre canais → balança
-  varejo:      "asset:lojista",
-  misto:       "asset:balanca",
-  prazo:       "asset:cronometro",
-  diluido:     "asset:repetir",
-  concentrado: "asset:aviso-triangulo",
-  refem:       "asset:concorrencia",
+  // === Área do frentista ===
+  pista:    "asset:bomba",
+  loja:     "asset:cesta",
+  servicos: "asset:lavagem",
 
-  // === Fidelização ===
-  digital:     "asset:qualidade",
-  informal:    "asset:repetir",
-  nada:        "asset:atencao-circulo",
+  // === Tempo de casa ===
+  ate2:    "asset:lampada", menos1:  "asset:lampada", menos6m: "asset:lampada",   // chegou agora
+  "2a10":  "asset:calendario", "1a3":   "asset:calendario", "6ma2a": "asset:calendario", // consolidado
+  mais10:  "asset:visao", mais3:   "asset:visao", mais2a:  "asset:visao",         // veterano
 
-  // === Dados ===
-  base:        "asset:dados-base",
-  vista:       "asset:dados-analise",
-  somem:       "asset:atencao-circulo",
-  manual:      "asset:aviso-triangulo",
-  usa:         "asset:gestao",
-  subusa:      "asset:engrenagens",
+  // === Tamanho de equipe ===
+  ate5:  "asset:frentista", "1a2": "asset:frentista",   // time pequeno
+  "3a5": "asset:grupo",     "6a12": "asset:grupo",      // time médio
+  mais5: "asset:equipe-mercado", mais12: "asset:equipe-mercado", // time grande
 
-  // === Resiliência / capital ===
-  folego:      "asset:escudo",
-  aperto:      "asset:gangorra",
-  curto:       "asset:atencao-circulo",
-  pronto:      "asset:escudo",
-  dificil:     "asset:aviso-triangulo",
-  nao_pensei:  "asset:lampada",
+  // === Escala / preparo da equipe ===
+  ok:        "asset:check",            // escala estável / saudável
+  aperto:    "asset:aviso-triangulo",  // no aperto
+  improviso: "asset:atencao-circulo",  // improviso
+  pronto:    "asset:escudo",           // preparado
+  dificil:   "asset:atencao-circulo",  // não cobriria
+  nao_pensei:"asset:lampada",          // não calculou
 
-  // === Marca / comunicação ===
-  preco:       "priceWar",
-  diferencial: "asset:marca",
-  detalhes:    "asset:engrenagens",
+  // === Rotatividade ===
+  estavel:  "asset:grupo",             // time estável
+  moderado: "asset:balanca",           // rotatividade normal
+  trocando: "asset:aviso-triangulo",   // alta rotatividade
 
-  // === Recarga elétrica ===
-  ativo:       "asset:carregador-ev",
-  radar:       "asset:visao",
-  fora:        "asset:aviso-triangulo",
+  // === Treinamento ===
+  processo: "asset:engrenagens",       // processo estruturado
+  basico:   "asset:lampada",           // básico
+  fazendo:  "asset:aviso-triangulo",   // aprende fazendo
+
+  // === Comissão / meta ===
+  claro:    "asset:crescimento",       // comissão clara (ganha mais)
+  informal: "asset:aviso-triangulo",   // informal
+  nao:      "asset:atencao-circulo",   // sem comissão / não
+
+  // === Clima ===
+  bom:     "asset:coracao",            // gostam de estar ali
+  oscila:  "asset:gangorra",           // altos e baixos
+  ruim:    "asset:atencao-circulo",    // pesado
+  gosto:   "asset:coracao",            // frentista gosta
+  cansado: "asset:aviso-triangulo",    // cansado
+
+  // === Marca / experiência ===
+  convida:     "asset:estrela",        // posto que convida
+  comum:       "asset:balanca",        // comum
+  afasta:      "asset:aviso-triangulo",// afasta
+  diferencial: "asset:marca",          // diferencial claro
+  detalhes:    "asset:engrenagens",    // uns detalhes
+  preco:       "asset:concorrencia",   // segura só pelo preço
+  nos:         "asset:atendimento",    // escolhem pelo atendimento
+  ambos:       "asset:balanca",        // bandeira + atendimento
+  bandeira:    "asset:posto",          // pela bandeira
+  sabe:        "asset:check",          // sabe o motivo / argumento
+  palpite:     "asset:lampada",        // tem palpite
+  nao_sabe:    "asset:atencao-circulo",// não sabe
 
   // === Comercial / margem ===
-  controla:    "asset:check",
-  metodo:      "asset:margem",
-  feeling:     "asset:atencao-circulo",
-  margem:      "asset:real",
-  alta:        "asset:crescimento",
-  media:       "asset:balanca",
-  baixa:       "asset:aviso-triangulo",
-  nao_mede:    "asset:atencao-circulo",
+  controla: "asset:margem",            // acompanha margem
+  "noção":  "asset:lampada",           // tem uma noção
+  nao_mede: "asset:atencao-circulo",   // não mede
+  metodo:   "asset:gestao",            // tem método de preço
+  concorrente: "asset:concorrente",    // segue o concorrente
+  feeling:  "asset:aviso-triangulo",   // vai no olho (chave interna)
+  alta:     "asset:crescimento",       // alta participação / movimento
+  media:    "asset:balanca",           // média
+  baixa:    "asset:aviso-triangulo",   // baixa
+  varejo:   "asset:real",              // à vista (Pix/cartão/dinheiro)
+  misto:    "asset:balanca",           // mix à vista/prazo
+  prazo:    "asset:calendario",        // a prazo / faturado
 
-  // === Comunidade / praça ===
-  comum:       "asset:atendimento",
-  afasta:      "asset:aviso-triangulo",
-  convida:     "asset:estrela",
+  // === Fidelização ===
+  digital:  "asset:coracao",           // programa de verdade
+  nada:     "asset:atencao-circulo",   // não faz nada
+  base:     "asset:dados-base",        // tem base de clientes
+  vista:    "asset:visao",             // conhece de vista
+  somem:    "asset:atencao-circulo",   // abastecem e somem
+  maioria:  "asset:grupo",             // muito cliente fiel
+  parte:    "asset:balanca",           // fiéis + passagem
+  ninguem:  "asset:atencao-circulo",   // tudo passagem
 
-  // === Qualidade ANP ===
-  ok:          "asset:qualidade",
-  atencao:     "asset:aviso-triangulo",
-  preocupa:    "asset:atencao-circulo",
+  // === Dados / sistema ===
+  usa:    "asset:dados-analise",       // usa o sistema
+  subusa: "asset:engrenagens",         // subutiliza
+  manual: "asset:aviso-triangulo",     // tudo manual
 
-  // === Equipe estável / atendimento ===
-  estavel:     "asset:frentista",
-  moderado:    "asset:repetir",
-  trocando:    "asset:aviso-triangulo",
-  processo:    "asset:engrenagens",
-  basico:      "asset:lampada",
-  fazendo:     "asset:aviso-triangulo",
-  claro:       "asset:check",
+  // === Resiliência / mercado ===
+  segura: "asset:balanca",             // de vez em quando entra na guerra
+  aperta: "asset:concorrencia",        // vive na guerra de preço
+  ativo:  "asset:carregador-ev",       // recarga ativa / no plano
+  radar:  "asset:visao",               // no radar
+  fora:   "asset:aviso-triangulo",     // fora da realidade hoje
+  boa:    "asset:crescimento",         // serviços/loja rendem bem
+  apoio:  "asset:balanca",             // ajudam um pouco
+  fraco:  "asset:gangorra",            // sobra pouco
+  empata: "asset:balanca",             // empata
 
-  // === Posicionamento ao cliente local ===
-  sabe:        "asset:marca",
-  palpite:     "asset:lampada",
-  nao_sabe:    "asset:atencao-circulo",
+  // === Padrão multi-posto ===
+  padrao:    "asset:qualidade",        // padrão único
+  parecidos: "asset:balanca",          // base comum, varia
+  solo:      "asset:aviso-triangulo",  // cada um do seu jeito
 
-  // === Padrão de identidade ===
-  padrao:      "asset:atendimento",
-  parecidos:   "asset:lampada",
-  solo:        "asset:aviso-triangulo",
+  // === Intenção / dores / qualificação ===
+  sim:    "asset:check",
+  talvez: "asset:lampada",
+  margem: "asset:margem",              // dor: a margem
+  fidelizar: "asset:repetir",          // dor: cliente não volta
+  equipe: "asset:grupo",               // dor: falta de gente
+  concorrencia: "asset:concorrencia",  // dor: concorrência
+  padrao_dor: "asset:qualidade",       // (reservado)
 
-  // === Qualificações Z ===
-  sim:         "asset:check",
-  talvez:      "asset:lampada",
-  nao:         "asset:aviso-triangulo",
-  conhece:     "asset:check",
-  primeira:    "asset:lampada",
+  // === Conhece ClubPetro ===
+  cliente:  "asset:check",             // já é cliente
+  conhece:  "asset:lampada",           // conhece de nome
+  primeira: "asset:estrela",           // primeira vez
 
-  // === Maturidade / status ===
-  // apoio: tem rede de apoio → grupo (3 pessoas diversas)
-  alto:        "asset:crescimento",
-  apoio:       "asset:apresentacao",
-  cliente:     "asset:coracao",
-  estrutura:   "asset:engrenagens",
-  fraco:       "asset:atencao-circulo",
-  ruim:        "asset:atencao-circulo",
-  bom:         "asset:check",
-  boa:         "asset:check",
-  oscila:      "asset:gangorra",
-  empata:      "asset:balanca",
-  segura:      "asset:balanca",
-
-  // === S3 multi-select ===
-  // ambos: 2 lados conectados → balança (mais visual que setas)
-  ninguem:     "asset:atencao-circulo",
-  parte:       "asset:balanca",
-  maioria:     "asset:check",
-  ambos:       "asset:balanca",
-  nos:         "asset:grupo",
+  // === Cadastro / frequência / S3 ===
+  sempre:      "asset:check",
+  as_vezes:    "asset:balanca",
+  quase_nunca: "asset:aviso-triangulo",
   nao_olhei:   "asset:aviso-triangulo",
   nao_olhou:   "asset:aviso-triangulo",
-
-  // === Concorrência ===
-  concorrente: "asset:concorrente",
-  concorrencia: "asset:concorrencia",
-  improviso:   "asset:aviso-triangulo",
 };
 
 /* Fallback por palavra-chave no texto da opção (PNG flat onde disponível). */
