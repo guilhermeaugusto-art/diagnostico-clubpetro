@@ -13,7 +13,7 @@ import { SectionHeader } from "../components/SectionHeader";
 import { RadarChart } from "../components/RadarChart";
 import { rankedBlocks, totalScore } from "../lib/scoring";
 import { currentTrack } from "../lib/engine";
-import { dataProximaSessao, meetLabel } from "../lib/raiox";
+import { dataProximaSessao, meetLabel, linkAgendaRaioX } from "../lib/raiox";
 import { CONFIG } from "../lib/config";
 import type { AppState } from "../lib/state";
 import { escHtml } from "../lib/format";
@@ -204,6 +204,10 @@ function raioxBlock(): string {
       <button class="btn btn-primary btn-lg btn-block" type="button" data-action="cta-raiox" id="btnRaioxMain">
         <span>Garantir minha vaga no Raio X</span>
       </button>
+      <p class="raiox-add">
+        Prefere marcar você mesmo?
+        <a href="${linkAgendaRaioX()}" target="_blank" rel="noopener noreferrer">Adicionar à minha agenda</a>
+      </p>
       <p class="raiox-meet">
         Prefere entrar como convidado?
         <a href="${CONFIG.RAIOX_MEET_URL}" target="_blank" rel="noopener noreferrer">Sala do Raio X no Meet (${escHtml(meet)})</a>
