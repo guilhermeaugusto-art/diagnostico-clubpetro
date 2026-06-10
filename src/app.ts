@@ -30,7 +30,6 @@ import {
   isPluralPosto,
 } from "./lib/engine";
 import { buildRoutingPayload } from "./lib/routing";
-import { linkAgendaRaioX } from "./lib/raiox";
 import { track } from "./lib/tracking";
 import { uuid, maskPhone, phoneDigitsOnly } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
@@ -997,14 +996,18 @@ function openInNewTab(url: string): void {
   a.remove();
 }
 
-/* "Garantir minha vaga no Raio X": abre o link "Adicionar a agenda" do Google
-   (TEMPLATE), pre-preenchido com a proxima terca 19h e a sala fixa do Meet. O
-   lead salva na propria agenda com um clique, em QUALQUER conta. Todos caem na
-   mesma sala. Grava agendou_raiox no Supabase (intencao). */
+/* "Garantir minha vaga no Raio X": adiciona o lead como convidado do MESMO
+   evento compartilhado, via Edge Function `confirmar-raiox?email=`, e o leva
+   para a tela do evento no Google (onde ele da "Sim"). Mesma sala para todos.
+   Grava agendou_raiox no Supabase (intencao). */
 function ctaRaiox(): void {
   track("rayx_cta_clicked", { diag_id: state.diagId }, state.diagId);
+  const email = state.email.trim();
+  const url = email && email.includes("@")
+    ? CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email)
+    : CONFIG.RAIOX_MEET_URL;
   // Abre a aba primeiro, dentro do gesto do clique, antes de qualquer await.
-  openInNewTab(linkAgendaRaioX());
+  openInNewTab(url);
   // Depois grava a intenção (fetch keepalive, não depende da aba nova).
   if (!raioxConfirmed) {
     raioxConfirmed = true;
