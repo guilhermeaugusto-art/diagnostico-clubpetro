@@ -30,3 +30,31 @@ export function dataProximaSessao(): string {
 export function meetLabel(): string {
   return CONFIG.RAIOX_MEET_URL.replace(/^https?:\/\//, "");
 }
+
+/* Formato de data do Google Calendar (hora local, sem Z): YYYYMMDDTHHMMSS.
+   Combinado com ctz=America/Sao_Paulo, fixa a sessao em 19h de Brasilia. */
+function fmt(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) +
+    "T" + p(d.getHours()) + p(d.getMinutes()) + "00";
+}
+
+/* Link "Adicionar a agenda" do Google (TEMPLATE). Abre a agenda do proprio
+   lead, ja preenchida (titulo, proxima terca 19h, Meet fixo), para ele salvar
+   com um clique. Funciona em QUALQUER conta, sem depender de convite por e-mail
+   nem de permissao no evento compartilhado. Todos caem na mesma sala do Meet. */
+export function linkAgendaRaioX(): string {
+  const ini = proximaTercaAs19();
+  const fim = new Date(ini.getTime() + 3600000);
+  const detalhes =
+    "Sessao ao vivo do Raio X do Posto, do ClubPetro." +
+    "\n\nEntre pelo link: " + CONFIG.RAIOX_MEET_URL;
+  const u = new URL("https://calendar.google.com/calendar/render");
+  u.searchParams.set("action", "TEMPLATE");
+  u.searchParams.set("text", "Raio X do Posto, ClubPetro");
+  u.searchParams.set("dates", fmt(ini) + "/" + fmt(fim));
+  u.searchParams.set("ctz", "America/Sao_Paulo");
+  u.searchParams.set("details", detalhes);
+  u.searchParams.set("location", CONFIG.RAIOX_MEET_URL);
+  return u.toString();
+}

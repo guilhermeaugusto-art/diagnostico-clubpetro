@@ -205,8 +205,8 @@ function raioxBlock(): string {
         <span>Garantir minha vaga no Raio X</span>
       </button>
       <p class="raiox-meet">
-        Sala do Raio X:
-        <a href="${CONFIG.RAIOX_MEET_URL}" target="_blank" rel="noopener noreferrer">${escHtml(meet)}</a>
+        Prefere entrar como convidado?
+        <a href="${CONFIG.RAIOX_MEET_URL}" target="_blank" rel="noopener noreferrer">Sala do Raio X no Meet (${escHtml(meet)})</a>
       </p>
     </section>
   `;
