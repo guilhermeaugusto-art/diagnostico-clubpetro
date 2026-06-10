@@ -2032,20 +2032,16 @@ body:has(.welcome) .cp-header {
   margin-top: var(--sp-1);
 }
 .raiox-block .btn-primary { margin-top: var(--sp-2); }
-.raiox-add,
 .raiox-meet {
   font-size: var(--fs-13);
   color: rgba(255, 255, 255, 0.62);
 }
-.raiox-add { margin-top: calc(-1 * var(--sp-1)); }
-.raiox-add a,
 .raiox-meet a {
   color: var(--cp-orange-300);
   text-decoration: underline;
   text-underline-offset: 2px;
   word-break: break-all;
 }
-.raiox-add a:hover,
 .raiox-meet a:hover { color: #fff; }
 
 /* ============================================================
