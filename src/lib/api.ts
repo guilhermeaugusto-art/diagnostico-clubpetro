@@ -101,6 +101,7 @@ export async function setSessionContact(id: string, name: string, email: string,
    (dono ou gerente que deixou contato). created_at já marca o início. */
 export async function completeSession(id: string, mql: boolean): Promise<void> {
   await updateRow(id, {
+    concluiu: true,
     concluido_em: new Date().toISOString(),
     mql,
   });
