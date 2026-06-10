@@ -592,29 +592,6 @@ export const QUESTIONS: Question[] = [
         pts: 0, value: "aperta" },
     ],
   },
-  {
-    id: "D_R2",
-    block: "resiliencia",
-    type: "score",
-    max: 3,
-    tracks: ["dono"],
-    text: "Como está hoje a <em>recarga de carro elétrico</em> no seu posto?",
-    context:
-      "Você marcou que já tem carregador. Vale entender o quanto ele já trabalha para você.",
-    condition: (r) => r.multi("D_PT_MIX").includes("eletrica"),
-    options: [
-      { label: "Já trabalho como serviço de verdade.",
-        desc: "Divulgo e acompanho o uso.",
-        pts: 3, value: "ativo" },
-      { label: "Tenho, mas ainda uso pouco.",
-        desc: "Está ali, sem foco.",
-        pts: 2, value: "radar" },
-      { label: "Está parado, quase ninguém usa.",
-        desc: "Não virou serviço ainda.",
-        pts: 0, value: "fora" },
-    ],
-  },
-
   /* --- Condicionais Dono --- */
   {
     id: "D_C_SERV",
@@ -1689,7 +1666,7 @@ export function getQuestionById(id: string): Question | undefined {
    Condicionais são filtradas em runtime pelo engine. */
 export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
   dono: [
-    "D_PT_POSTOS", "D_PT_MIX", "D_R2", "D_PT_TEMPO", "D_DOR",
+    "D_PT_POSTOS", "D_PT_MIX", "D_PT_TEMPO", "D_DOR",
     "D_C1", "D_F1", "D_DA1", "D_R1", "D_C2",
     "D_P1", "D_P2", "D_P3", "D_P4", "D_P5", "D_P6",
     "D_M1", "D_M2", "D_M3",
