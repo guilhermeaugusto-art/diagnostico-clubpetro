@@ -149,15 +149,17 @@ export const QUESTIONS: Question[] = [
     block: "qualif",
     type: "segmentation-multi",
     tracks: ["dono"],
-    text: "Além da pista, o que {{o seu posto tem|os seus postos têm}}?",
+    text: "O que {{o seu posto oferece|os seus postos oferecem}} <em>além do combustível</em>?",
     context:
-      "Marque o que {{o seu posto já oferece|os seus postos já oferecem}}, para a gente medir só o que existe.",
+      "Marque tudo que {{o seu posto já tem|os seus postos já têm}}, para a gente medir só o que existe.",
     hint: "Marque todas que se aplicam.",
     options: [
-      { label: "Serviços automotivos.",  desc: "Lava jato, troca de óleo, borracharia ou oficina.",          value: "automotivos" },
-      { label: "Área alimentícia.",      desc: "Loja de conveniência, restaurante ou lanchonete.",           value: "alimenticia" },
-      { label: "Outros serviços.",       desc: "Máquina de gelo, caixa eletrônico, farmácia, e por aí.",     value: "outros" },
-      { label: "Só a pista, por enquanto.", desc: "Por enquanto só a pista.",                                value: "so_pista" },
+      { label: "Loja de conveniência.",            desc: "Loja, conveniência ou lanchonete.",        value: "conveniencia" },
+      { label: "Troca de óleo.",                    desc: "Serviço de troca de óleo e filtros.",       value: "troca_oleo" },
+      { label: "Lava rápido.",                      desc: "Lavagem de veículos.",                      value: "lava_rapido" },
+      { label: "Carregador para carro elétrico.",   desc: "Ponto de recarga elétrica.",                value: "eletrica" },
+      { label: "Calibragem e serviços de pista.",   desc: "Calibrador, água, ar e apoio na pista.",    value: "calibragem" },
+      { label: "Só combustível por enquanto.",      desc: "Por enquanto só a pista.",                  value: "so_pista" },
     ],
   },
   {
@@ -596,18 +598,19 @@ export const QUESTIONS: Question[] = [
     type: "score",
     max: 3,
     tracks: ["dono"],
-    text: "Recarga de <em>carro elétrico</em> já passou pela sua cabeça como serviço?",
+    text: "Como está hoje a <em>recarga de carro elétrico</em> no seu posto?",
     context:
-      "A frota elétrica cresce. Recarga pode virar serviço e atrair um cliente novo para o ponto.",
+      "Você marcou que já tem carregador. Vale entender o quanto ele já trabalha para você.",
+    condition: (r) => r.multi("D_PT_MIX").includes("eletrica"),
     options: [
-      { label: "Já estudo ou já tenho recarga.",
-        desc: "Está no meu planejamento.",
+      { label: "Já trabalho como serviço de verdade.",
+        desc: "Divulgo e acompanho o uso.",
         pts: 3, value: "ativo" },
-      { label: "Está no meu radar.",
-        desc: "Para os próximos anos.",
+      { label: "Tenho, mas ainda uso pouco.",
+        desc: "Está ali, sem foco.",
         pts: 2, value: "radar" },
-      { label: "Não é a minha realidade hoje.",
-        desc: "Não vejo encaixe agora.",
+      { label: "Está parado, quase ninguém usa.",
+        desc: "Não virou serviço ainda.",
         pts: 0, value: "fora" },
     ],
   },
@@ -619,10 +622,12 @@ export const QUESTIONS: Question[] = [
     type: "score",
     max: 4,
     tracks: ["dono"],
-    text: "O <em>lava jato</em> e a troca de óleo deixam margem de verdade no seu resultado?",
+    text: "O <em>lava rápido</em> e a troca de óleo deixam margem de verdade no seu resultado?",
     context:
-      "Lava jato e troca de óleo têm margem muito maior que o combustível. Importa quanto deixa de lucro, não quanto fatura.",
-    condition: (r) => r.multi("D_PT_MIX").includes("automotivos"),
+      "Lava rápido e troca de óleo têm margem muito maior que o combustível. Importa quanto deixa de lucro, não quanto fatura.",
+    condition: (r) =>
+      r.multi("D_PT_MIX").includes("troca_oleo") ||
+      r.multi("D_PT_MIX").includes("lava_rapido"),
     options: [
       { label: "Deixam margem boa.",
         desc: "Acompanho de perto.",
@@ -644,7 +649,7 @@ export const QUESTIONS: Question[] = [
     text: "A sua <em>loja de conveniência</em> deixa margem de verdade?",
     context:
       "Loja cheia de gente não é o mesmo que loja que dá lucro. O que importa é a margem que ela deixa.",
-    condition: (r) => r.multi("D_PT_MIX").includes("alimenticia"),
+    condition: (r) => r.multi("D_PT_MIX").includes("conveniencia"),
     options: [
       { label: "Deixa margem boa.",
         desc: "Puxa o resultado do posto.",
@@ -719,11 +724,11 @@ export const QUESTIONS: Question[] = [
     block: "qualif",
     type: "qualify",
     tracks: ["dono"],
-    text: "Se existisse um caminho claro para resolver isso, você toparia <em>testar nos próximos 30 dias</em>?",
-    context: "Se houver um caminho claro para resolver, vale saber o seu apetite.",
+    text: "Se existisse um caminho claro para melhorar os <em>resultados do seu posto</em>, você gostaria de conhecer?",
+    context: "Sem compromisso. É só para eu saber se faz sentido seguir com você.",
     options: [
-      { label: "Sim, quero resolver logo.",      desc: "Estou pronto para começar.",  value: "sim" },
-      { label: "Talvez, dependeria do caminho.", desc: "Quero ver a proposta antes.", value: "talvez" },
+      { label: "Sim, quero conhecer.",           desc: "Estou pronto para começar.",  value: "sim" },
+      { label: "Talvez, dependeria do caminho.", desc: "Quero ver antes de decidir.", value: "talvez" },
       { label: "Agora não é o momento.",         desc: "Vou deixar para depois.",     value: "nao" },
     ],
   },
@@ -789,14 +794,16 @@ export const QUESTIONS: Question[] = [
     block: "qualif",
     type: "segmentation-multi",
     tracks: ["gerente"],
-    text: "Além da pista, o que {{esse posto opera|esses postos operam}}?",
-    context: "Marque o que o posto já oferece, para a gente medir só o que existe.",
+    text: "O que {{esse posto oferece|esses postos oferecem}} <em>além do combustível</em>?",
+    context: "Marque tudo que o posto já tem, para a gente medir só o que existe.",
     hint: "Marque todas que se aplicam.",
     options: [
-      { label: "Serviços automotivos.",  desc: "Lava jato, troca de óleo, borracharia ou oficina.",      value: "automotivos" },
-      { label: "Área alimentícia.",      desc: "Loja de conveniência, restaurante ou lanchonete.",       value: "alimenticia" },
-      { label: "Outros serviços.",       desc: "Máquina de gelo, caixa eletrônico, farmácia, e por aí.", value: "outros" },
-      { label: "Só a pista.",            desc: "Por enquanto só pista.",                                 value: "so_pista" },
+      { label: "Loja de conveniência.",            desc: "Loja, conveniência ou lanchonete.",        value: "conveniencia" },
+      { label: "Troca de óleo.",                    desc: "Serviço de troca de óleo e filtros.",       value: "troca_oleo" },
+      { label: "Lava rápido.",                      desc: "Lavagem de veículos.",                      value: "lava_rapido" },
+      { label: "Carregador para carro elétrico.",   desc: "Ponto de recarga elétrica.",                value: "eletrica" },
+      { label: "Calibragem e serviços de pista.",   desc: "Calibrador, água, ar e apoio na pista.",    value: "calibragem" },
+      { label: "Só combustível por enquanto.",      desc: "Por enquanto só pista.",                    value: "so_pista" },
     ],
   },
 
@@ -1178,10 +1185,12 @@ export const QUESTIONS: Question[] = [
     type: "score",
     max: 4,
     tracks: ["gerente"],
-    text: "O <em>lava jato</em> e a troca de óleo rendem de verdade aqui?",
+    text: "O <em>lava rápido</em> e a troca de óleo rendem de verdade aqui?",
     context:
-      "Lava jato e troca de óleo têm margem maior que o combustível. Importa o quanto deixa de resultado.",
-    condition: (r) => r.multi("G_PT_MIX").includes("automotivos"),
+      "Lava rápido e troca de óleo têm margem maior que o combustível. Importa o quanto deixa de resultado.",
+    condition: (r) =>
+      r.multi("G_PT_MIX").includes("troca_oleo") ||
+      r.multi("G_PT_MIX").includes("lava_rapido"),
     options: [
       { label: "Rendem bem.",
         desc: "É uma frente que a equipe trabalha.",
@@ -1205,7 +1214,7 @@ export const QUESTIONS: Question[] = [
     tracks: ["gerente"],
     text: "A <em>loja de conveniência</em> puxa resultado?",
     context: "Loja cheia não é loja lucrativa. O que importa é margem.",
-    condition: (r) => r.multi("G_PT_MIX").includes("alimenticia"),
+    condition: (r) => r.multi("G_PT_MIX").includes("conveniencia"),
     options: [
       { label: "Sim, deixa margem boa.",
         desc: "Puxa o resultado.",
@@ -1326,10 +1335,12 @@ export const QUESTIONS: Question[] = [
     context: "Marque tudo que tem aqui. Assim eu pergunto só do que existe no seu posto.",
     hint: "Marque todas que se aplicam.",
     options: [
-      { label: "Loja de conveniência.",        desc: "Tem loja ou conveniência.",  value: "conveniencia" },
-      { label: "Lava jato ou troca de óleo.",   desc: "Serviços automotivos.",      value: "automotivos" },
-      { label: "Carregador de carro elétrico.", desc: "Ponto de recarga elétrica.", value: "eletrica" },
-      { label: "Só combustível, por enquanto.", desc: "Sem serviços extras.",       value: "so_pista" },
+      { label: "Loja de conveniência.",            desc: "Loja, conveniência ou lanchonete.",     value: "conveniencia" },
+      { label: "Troca de óleo.",                    desc: "Serviço de troca de óleo e filtros.",    value: "troca_oleo" },
+      { label: "Lava rápido.",                      desc: "Lavagem de veículos.",                   value: "lava_rapido" },
+      { label: "Carregador para carro elétrico.",   desc: "Ponto de recarga elétrica.",             value: "eletrica" },
+      { label: "Calibragem e serviços de pista.",   desc: "Calibrador, água, ar e apoio na pista.", value: "calibragem" },
+      { label: "Só combustível por enquanto.",      desc: "Sem serviços extras.",                   value: "so_pista" },
     ],
   },
 
@@ -1643,9 +1654,11 @@ export const QUESTIONS: Question[] = [
     type: "score",
     max: 3,
     tracks: ["frentista"],
-    text: "O cliente costuma fazer <em>lava jato ou troca de óleo</em> aqui no posto?",
-    context: "Lava jato e troca de óleo rendem margem maior que combustível.",
-    condition: (r) => r.multi("F_PT_SERVICOS").includes("automotivos"),
+    text: "O cliente costuma fazer <em>lava rápido ou troca de óleo</em> aqui no posto?",
+    context: "Lava rápido e troca de óleo rendem margem maior que combustível.",
+    condition: (r) =>
+      r.multi("F_PT_SERVICOS").includes("troca_oleo") ||
+      r.multi("F_PT_SERVICOS").includes("lava_rapido"),
     options: [
       { label: "Bastante, é movimentado.",
         desc: "Frente ativa.",
@@ -1683,7 +1696,7 @@ export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
     "D_C3", "D_C4", "D_C_SERV", "D_C_LOJA",
     "D_F2", "D_FCHURN", "D_F3",
     "D_PADRAO", "D_EXPANDIR",
-    "D_INTENCAO", "D_CONHECE",
+    "D_CONHECE", "D_INTENCAO",
   ],
   gerente: [
     "G_PT_TEMPO", "G_PT_EQUIPE", "G_PT_REDE", "G_PT_MIX", "G_DOR",

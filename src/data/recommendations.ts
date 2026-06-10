@@ -20,8 +20,8 @@ export interface Recommendation {
 export const RECOMMENDATIONS: Recommendation[] = [
   /* --- Pessoas e operação --- */
   { id: "R-P-1", block: "pessoas", priority: 9,
-    title: "Escala da pista em 1 página, com folga prevista",
-    desc: "Modelo de escala semanal com cobertura mínima por turno, folga programada e gatilho para hora extra. Reduz incêndio e prepara o posto para a mudança de jornada.",
+    title: "Escala da semana num quadro simples, com folga prevista",
+    desc: "Monte a escala da semana num quadro ou planilha simples, prevendo folgas e horários de pico, e deixe visível para a equipe. Reduz incêndio e prepara o posto para a mudança de jornada.",
     icon: "asset:projetos",
     impact: "Operação mais previsível no dia a dia" },
   { id: "R-P-2", block: "pessoas", priority: 8,
@@ -37,7 +37,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     icon: "asset:posto",
     impact: "Imagem que convida o cliente novo" },
   { id: "R-M-2", block: "marca", priority: 6,
-    title: "Diferencial além do preço em 1 página",
+    title: "Diferencial além do preço, mapeado com a equipe",
     desc: "Mapa do que o seu posto entrega que o concorrente não entrega. Construído na pista, validado no cliente fiel.",
     icon: "asset:marca",
     impact: "Sai da disputa só por preço" },
@@ -49,7 +49,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     icon: "asset:margem",
     impact: "Margem visível, decisão informada" },
   { id: "R-C-2", block: "comercial", priority: 8,
-    title: "Comissão da pista em 1 página",
+    title: "Comissão da pista numa tabela clara",
     desc: "Tabela pronta para aditivado, lubrificante e itens da loja. Equipe vê o quanto ganha a mais e passa a oferecer.",
     icon: "asset:real",
     impact: "Mais margem na pista por venda de aditivado" },
@@ -78,7 +78,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
 
   /* --- Dados e digital --- */
   { id: "R-D-1", block: "dados", priority: 9,
-    title: "Painel diário do posto em 1 tela",
+    title: "Painel diário do posto num lugar só",
     desc: "Litros, ticket médio, mix e meta da equipe num lugar só. Três minutos por dia, decisão com o número na mão.",
     icon: "asset:dados-analise",
     impact: "Decisão baseada em dado" },
@@ -138,4 +138,62 @@ export function buildResultRecommendations(weakBlocks: BlockId[]): {
     .slice(0, 8);
 
   return { open, locked };
+}
+
+/* ============================================================
+   PLANO POR FRENTE (tela de resultado, dono e gerente)
+   Cada frente fraca traz dois itens, conforme Bloco 2.1c:
+   - estaSemana: ação executável sem comprar nada, com primeiro passo
+     físico claro (quem faz, onde, quando).
+   - comApoio: frase que conecta com o Raio X, sem citar produto nem módulo.
+   Critério: o lead começa hoje sozinho, ou o texto deixa claro que esse
+   ponto é tratado no Raio X. Tudo em segunda pessoa.
+   ============================================================ */
+
+export interface FrentePlan {
+  estaSemana: string;
+  comApoio: string;
+}
+
+export const FRENTE_PLAN: Record<BlockId, FrentePlan> = {
+  pessoas: {
+    estaSemana:
+      "Monte a escala da semana num quadro ou planilha simples, prevendo folgas e horários de pico, e deixe visível para a equipe na troca de turno.",
+    comApoio:
+      "Estruture metas e incentivo por desempenho na pista, para o atendimento parar de depender de esforço individual. É um dos pontos que mostramos ao vivo no Raio X.",
+  },
+  marca: {
+    estaSemana:
+      "Pare o carro a 200 metros do seu posto, olhe como um cliente novo olharia e anote os três primeiros pontos da fachada que pedem ajuste. Resolva o mais simples ainda esta semana.",
+    comApoio:
+      "Construa um motivo de escolha além do preço, que o seu cliente reconheça. É um dos caminhos que abrimos ao vivo no Raio X.",
+  },
+  comercial: {
+    estaSemana:
+      "Abra uma planilha simples e, por uma semana, anote o custo e o preço de venda por litro. No fim da semana você já enxerga a margem que está deixando passar.",
+    comApoio:
+      "Estruture o acompanhamento de margem e a oferta de aditivado na pista, para parar de decidir preço no escuro. É um dos pontos que tratamos no Raio X.",
+  },
+  fidelizacao: {
+    estaSemana:
+      "Combine com a equipe de pedir o WhatsApp de todo cliente fiel no caixa, a partir de amanhã, e anote num caderno ou planilha quem já volta sempre.",
+    comApoio:
+      "Estruture a fidelização, integre a gestão com a pista e ative estratégias de relacionamento com a sua base de clientes. É um dos pontos que mostramos no Raio X.",
+  },
+  dados: {
+    estaSemana:
+      "Escolha três números do seu posto (litros do dia, ticket médio e venda de aditivado) e anote todo dia, no mesmo horário, num quadro à vista da equipe.",
+    comApoio:
+      "Organize os dados da operação para a rotina virar decisão, sem depender de planilha solta. É um dos caminhos que abrimos no Raio X.",
+  },
+  resiliencia: {
+    estaSemana:
+      "Liste numa folha as entradas e saídas de caixa das próximas quatro semanas, e marque o primeiro ponto onde o dinheiro aperta.",
+    comApoio:
+      "Construa fôlego de caixa e reduza a exposição à guerra de preço da praça. É um dos pontos que mostramos no Raio X.",
+  },
+};
+
+export function planFor(blockId: BlockId): FrentePlan {
+  return FRENTE_PLAN[blockId];
 }

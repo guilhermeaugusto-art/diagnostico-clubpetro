@@ -234,7 +234,7 @@ function riskFor(b: BlockId | undefined): string {
 function nextImprovementDescription(b: BlockId | undefined): string {
   if (!b) return "Estruturar a próxima camada da operação com método e dado.";
   const MAP: Record<BlockId, string> = {
-    pessoas: "Implementar escala de pista em 1 página, com folga prevista e gatilho para hora extra. Acelera a estabilidade da equipe.",
+    pessoas: "Montar a escala da semana num quadro simples, com folga prevista e horários de pico mapeados. Acelera a estabilidade da equipe.",
     marca: "Construir um diferencial além do preço em 1 página, validado no cliente fiel. Sai da disputa só por preço.",
     comercial: "Acompanhar margem por litro toda semana e ativar oferta na pista com script simples. Margem visível, decisão informada.",
     fidelizacao: "Programa de fidelização rodando em 7 dias: cadastro no caixa, acúmulo por litro, oferta direta no WhatsApp.",
@@ -317,8 +317,8 @@ function buildCommercialReading(state: AppState, weakest: BlockId[]): ReportCont
   ];
 
   const proximosPassos = [
-    "Confirmar participação no Raio-X (próxima terça, ao vivo).",
-    "Enviar PDF completo do diagnóstico por e-mail após confirmação do Raio-X.",
+    "Confirmar participação no Raio X (próxima terça, ao vivo).",
+    "Enviar PDF completo do diagnóstico por e-mail após confirmação do Raio X.",
     "Agendar follow-up em 7 dias caso não compareça.",
   ];
 

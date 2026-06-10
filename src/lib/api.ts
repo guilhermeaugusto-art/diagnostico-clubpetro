@@ -174,6 +174,15 @@ export async function persistAnswer(
     patch.interesse = answer.value;
   }
 
+  // Servicos alem do combustivel (multi) em coluna dedicada `servicos_extras`
+  // (array de slugs). Mesma pergunta padronizada nas tres trilhas.
+  if (
+    (questionId === "D_PT_MIX" || questionId === "G_PT_MIX" || questionId === "F_PT_SERVICOS") &&
+    answer.kind === "multi"
+  ) {
+    patch.servicos_extras = answer.values;
+  }
+
   bufferEvent("answer_selected", "answer", {
     question_id: questionId,
     dimension: dim,
@@ -312,19 +321,18 @@ export async function markReportFailed(sessionId: string, _error: string): Promi
   });
 }
 
-/* ============== Raio-X ============== */
+/* ============== Raio X ============== */
 
-export async function persistRayxRequest(
-  sessionId: string,
-  scheduledFor: string,
-  meetUrl: string,
-): Promise<void> {
-  bufferEvent("rayx_scheduled", "rayx", { scheduled_for: scheduledFor, meet_url: meetUrl });
+/* Lead clicou em "Garantir minha vaga no Raio X" no app.
+   Grava SO a intencao (agendou_raiox) e libera o PDF do cliente.
+   raiox_status e raiox_data ficam por conta da Edge Function `confirmar-raiox`
+   e do cron diario (aceite real no Google Calendar), para nao colidir com a
+   semantica de "confirmado". */
+export async function persistAgendouRaiox(sessionId: string): Promise<void> {
+  bufferEvent("rayx_agendou", "rayx", {});
   await updateRow(sessionId, {
-    raiox_data: scheduledFor,
-    raiox_status: "agendado",
-    raiox_observacao: `Meet: ${meetUrl}`,
-    // Ao agendar o Raio-X, o PDF do cliente fica liberado para ser enviado.
+    agendou_raiox: true,
+    // Ao garantir a vaga no Raio X, o PDF do cliente fica liberado para envio.
     pdf_liberado: true,
   });
 }

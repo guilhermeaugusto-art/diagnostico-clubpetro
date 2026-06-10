@@ -41,7 +41,7 @@ import {
   markRdSent,
   persistAnswer,
   persistResult,
-  persistRayxRequest,
+  persistAgendouRaiox,
   persistSpecialistCta,
   uploadReports,
   markReportFailed,
@@ -189,35 +189,60 @@ function handleAction(action: string): void {
     case "advance-multi":  return advanceFromMulti();
     case "advance-open":   return advanceFromOpen();
     case "submit-contact": return goToTransition();
-    case "cta-whatsapp":   return ctaWhatsApp();
+    case "cta-whatsapp":   return ctaEspecialista();
+    case "cta-especialista": return ctaEspecialista();
     case "cta-raiox":      return ctaRaiox();
-    case "goto-recs":      return gotoRecs();
-    case "show-raiox-explainer": return toggleRaioxExplainer(true);
-    case "hide-raiox-explainer": return toggleRaioxExplainer(false);
+    case "reveal-plan":    return revealPlan();
+    case "share-diagnostico": return trackShareFrentista();
   }
 }
 
-/* CTA principal da tela de score: leva à seção de recomendações ("como subir a
-   nota"), com rolagem suave. */
-function gotoRecs(): void {
-  const el = document.getElementById("recsSection");
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+/* Botao "Quero aumentar meu resultado": revela o plano por frente, o bloco do
+   Raio X e o rodape do especialista. O proprio botao some (a acao foi feita),
+   mantendo um unico accent por estado de tela. Liga a barra fixa do Raio X. */
+function revealPlan(): void {
+  const ids = ["planSection", "raioxBlock", "resultFoot"];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove("is-hidden");
+      el.setAttribute("aria-hidden", "false");
+    }
+  });
+  const reveal = document.getElementById("resultNext");
+  if (reveal) reveal.classList.add("is-hidden");
+  setupRaioxSticky();
+  const plan = document.getElementById("planSection");
+  if (plan) plan.scrollIntoView({ behavior: "smooth", block: "start" });
+  track("result_plan_revealed", { diag_id: state.diagId }, state.diagId);
 }
 
-/* Troca, no mesmo lugar do resultado, entre os CTAs e a explicação do Raio-X,
-   com um fade suave. Sem trocar de página. */
-function toggleRaioxExplainer(show: boolean): void {
-  const cta = document.getElementById("resultNextCta");
-  const raiox = document.getElementById("resultRaiox");
-  if (!cta || !raiox) return;
-  const enter = show ? raiox : cta;
-  const leave = show ? cta : raiox;
-  leave.classList.add("is-hidden");
-  enter.classList.remove("is-hidden");
-  enter.classList.remove("anim-fade");
-  void enter.offsetWidth; // reinicia a animação
-  enter.classList.add("anim-fade");
-  if (show) enter.scrollIntoView({ behavior: "smooth", block: "nearest" });
+/* Barra fixa do rodape com o CTA do Raio X (dono e gerente). Some quando o
+   bloco do Raio X esta visivel na tela; reaparece quando ele sai. */
+function setupRaioxSticky(): void {
+  const sticky = document.getElementById("raioxSticky");
+  const block = document.getElementById("raioxBlock");
+  if (!sticky || !block) return;
+  sticky.classList.remove("is-hidden");
+  sticky.setAttribute("aria-hidden", "false");
+  if (!("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        const hide = e.isIntersecting;
+        sticky.classList.toggle("is-hidden", hide);
+        sticky.setAttribute("aria-hidden", hide ? "true" : "false");
+      }
+    },
+    { threshold: 0.2 },
+  );
+  io.observe(block);
+}
+
+/* Compartilhamento do frentista: o link abre nativamente (target _blank).
+   Aqui so registramos o clique. */
+function trackShareFrentista(): void {
+  track("frentista_share_clicked", { diag_id: state.diagId }, state.diagId);
 }
 
 
@@ -930,109 +955,65 @@ async function generateAndUploadReport(): Promise<void> {
 
 /* ============== CTAs ============== */
 
-/* Marca a presença como confirmada no botão do Raio-X (idempotente: chamado só
-   na primeira confirmação, evita registro duplicado). */
+/* Marca a vaga como garantida nos botões do Raio X (idempotente: chamado só
+   na primeira vez, evita registro duplicado). Cobre o botão principal e o da
+   barra fixa. */
 function markRaioxConfirmedUI(): void {
   document.querySelectorAll<HTMLElement>('[data-action="cta-raiox"]').forEach((b) => {
     const span = b.querySelector("span");
-    if (span) span.textContent = "Presença confirmada";
+    if (span) span.textContent = "Vaga garantida";
     b.classList.add("is-confirmed");
   });
 }
 
-function ctaWhatsApp(): void {
+/* CTA secundário (ghost) do resultado: falar agora com um Especialista
+   ClubPetro pelo WhatsApp. Número da Camila entra via WHATSAPP_ESPECIALISTA. */
+function ctaEspecialista(): void {
   const score = totalScore(state);
   track("specialist_cta_clicked", { score_total: score }, state.diagId);
   if (state.diagId) persistSpecialistCta(state.diagId, score);
   const firstName = state.name.trim().split(/\s+/)[0] || "tudo bem";
   const msg =
-    `Olá, aqui é ${firstName}. Acabei de fazer o diagnóstico do ClubPetro e tirei nota ${score} de 100. ` +
-    `Quero falar com um Especialista ClubPetro sobre o meu posto.`;
-  const url = "https://wa.me/" + CONFIG.CLUBPETRO_WHATSAPP + "?text=" + encodeURIComponent(msg);
+    `Olá, aqui é ${firstName}. Acabei de concluir o diagnóstico do meu posto ` +
+    `e quero falar com um Especialista ClubPetro sobre como melhorar o resultado.`;
+  const url = "https://wa.me/" + CONFIG.WHATSAPP_ESPECIALISTA + "?text=" + encodeURIComponent(msg);
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function ctaRaiox(): void {
-  const score = totalScore(state);
-  track("rayx_cta_clicked", { score_total: score, diag_id: state.diagId }, state.diagId);
-  const start = nextTuesday19h();
-  const end = new Date(start.getTime() + 60 * 60 * 1000);
-  // Idempotência: registra o agendamento na sessão UMA vez (não duplica) e marca
-  // o botão como confirmado. O convite abaixo aponta sempre para a MESMA terça
-  // recorrente (RRULE semanal). Observação: a inscrição definitiva no evento
-  // ÚNICO do organizador exige passo de backend (Google Calendar API); o link
-  // abaixo abre o convite recorrente pré-preenchido, não cria evento por usuário.
-  if (!raioxConfirmed) {
-    raioxConfirmed = true;
-    if (state.diagId) {
-      persistRayxRequest(state.diagId, start.toISOString(), CONFIG.RAIOX_MEET_LINK);
-    }
-    markRaioxConfirmedUI();
-  }
-  const firstName = state.name.trim().split(/\s+/)[0] || "";
-  const details =
-    `Conversa aberta no Google Meet sobre o seu diagnóstico${firstName ? `, ${firstName}` : ""}. ` +
-    `Discutimos os pontos de atenção que apareceram e o caminho prático pra evoluir a operação do seu posto.\\n\\n` +
-    `Sua nota: ${score}/100. ` +
-    `Você receberá o link do Meet no convite após confirmar o horário.`;
-  const params = new URLSearchParams();
-  params.append("action", "TEMPLATE");
-  params.append("text", "RaioX do Posto, ClubPetro");
-  params.append("details", details);
-  params.append("location", CONFIG.RAIOX_MEET_LINK);
-  params.append("dates", gcalDate(start) + "/" + gcalDate(end));
-  /* Recorrência semanal toda terça. `dates` define a 1ª ocorrência,
-     `recur` cuida da repetição. URLSearchParams faz o encode do ":" e "=". */
-  params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY=TU");
-  /* Sinaliza ao Calendar pra anexar Google Meet automaticamente. */
-  params.append("add", "Hangouts");
-  /* Se o usuário forneceu e-mail, já adiciona como convidado, gerando convite real. */
-  if (state.email && state.email.includes("@")) {
-    params.append("add", state.email);
-  }
-  window.open(
-    "https://calendar.google.com/calendar/render?" + params.toString(),
-    "_blank",
-    "noopener,noreferrer",
-  );
+/* Abre uma URL em nova aba via navegação real (clique num <a target="_blank">).
+   Mais confiável que window.open com string de features, que alguns navegadores
+   tratam como popup programático e bloqueiam (sintoma: o clique não abre nada).
+   A aba nova carrega a URL; o app continua vivo na aba original para o PATCH
+   de agendou_raiox concluir. */
+function openInNewTab(url: string): void {
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
-/* Próxima terça-feira útil para o RaioX, calculada toda vez que o usuário
-   clica em "Agendar raio-x".
-   Regra:
-   - Se hoje for terça antes das 19h, sugere ainda a terça de hoje.
-   - Se hoje for terça mas já passou das 19h, pula para a próxima terça.
-   - Em qualquer outro dia, pula para a terça mais próxima no futuro. */
-function nextTuesday19h(): Date {
-  const now = new Date();
-  const day = now.getDay(); // 0 dom, 2 ter
-  const isTuesday = day === 2;
-  const beforeCutoff = now.getHours() < 19;
-  let offset: number;
-  if (isTuesday && beforeCutoff) {
-    offset = 0;
-  } else if (isTuesday) {
-    offset = 7;
-  } else {
-    offset = (2 - day + 7) % 7;
-    if (offset === 0) offset = 7;
+/* "Garantir minha vaga no Raio X": entra no MESMO evento compartilhado.
+   Chama a Edge Function `confirmar-raiox?email=`, que adiciona o lead como
+   convidado do evento único e o redireciona para o RSVP no Google Calendar.
+   Grava agendou_raiox no Supabase (intenção). Sem gerar Meet dinâmico. */
+function ctaRaiox(): void {
+  track("rayx_cta_clicked", { diag_id: state.diagId }, state.diagId);
+  const email = state.email.trim();
+  const url = email && email.includes("@")
+    ? CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email)
+    : CONFIG.RAIOX_MEET_URL;
+  // Abre a aba primeiro, dentro do gesto do clique, antes de qualquer await.
+  openInNewTab(url);
+  // Depois grava a intenção (fetch keepalive, não depende da aba nova).
+  if (!raioxConfirmed) {
+    raioxConfirmed = true;
+    if (state.diagId) persistAgendouRaiox(state.diagId);
+    markRaioxConfirmedUI();
   }
-  const target = new Date(now);
-  target.setDate(now.getDate() + offset);
-  target.setHours(19, 0, 0, 0);
-  return target;
-}
-function gcalDate(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return (
-    d.getUTCFullYear() +
-    pad(d.getUTCMonth() + 1) +
-    pad(d.getUTCDate()) +
-    "T" +
-    pad(d.getUTCHours()) +
-    pad(d.getUTCMinutes()) +
-    "00Z"
-  );
 }
 
 /* ============== Boot ============== */

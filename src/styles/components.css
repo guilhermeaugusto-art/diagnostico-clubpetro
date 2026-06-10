@@ -1915,3 +1915,190 @@ body:has(.welcome) .cp-header {
   .answer-icon .icon-png { width: 28px; height: 28px; }
   .result-hero { padding: var(--sp-4); }
 }
+
+/* ============================================================
+   PLANO POR FRENTE (resultado dono e gerente, Bloco 2.1c)
+   ============================================================ */
+.plan-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+@media (min-width: 720px) {
+  .plan-grid { grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+}
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-left: 4px solid var(--cp-orange-500);
+  border-radius: var(--rd-lg);
+  box-shadow: var(--sh-1);
+}
+@media (min-width: 720px) { .plan-card { padding: var(--sp-6); } }
+.plan-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.plan-card-name {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-16);
+  color: var(--ink-900);
+  letter-spacing: -0.01em;
+}
+.plan-card-score {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: var(--fs-20);
+  color: var(--ink-700);
+  flex-shrink: 0;
+}
+.plan-card-score small { font-size: var(--fs-12); color: var(--ink-400); font-weight: 500; }
+.plan-item { display: flex; flex-direction: column; gap: var(--sp-2); }
+.plan-item-tag {
+  align-self: flex-start;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--rd-full);
+}
+.plan-item-now .plan-item-tag {
+  color: var(--ok);
+  background: rgba(31, 138, 92, 0.10);
+}
+.plan-item-apoio .plan-item-tag {
+  color: var(--cp-orange-600);
+  background: var(--cp-orange-50);
+}
+.plan-item-text {
+  font-size: var(--fs-14);
+  line-height: 1.6;
+  color: var(--ink-700);
+  max-width: var(--measure);
+}
+
+/* ============================================================
+   BLOCO DO RAIO X (proximo passo principal, Bloco 2.1d)
+   ============================================================ */
+.raiox-block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-8);
+  border-radius: var(--rd-2xl);
+  background:
+    radial-gradient(60% 70% at 90% 0%, rgba(242,102,0,0.26), transparent 70%),
+    linear-gradient(160deg, var(--cp-blue-800) 0%, var(--cp-blue-900) 100%);
+  color: #fff;
+  box-shadow: 0 20px 44px rgba(11,31,51,0.24);
+  overflow: hidden;
+  isolation: isolate;
+}
+@media (min-width: 720px) { .raiox-block { padding: var(--sp-12); } }
+.raiox-eyebrow {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cp-orange-400);
+}
+.raiox-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #fff;
+}
+.raiox-text {
+  font-size: var(--fs-15);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 56ch;
+}
+.raiox-date {
+  font-size: var(--fs-15);
+  font-weight: 600;
+  color: #fff;
+  margin-top: var(--sp-1);
+}
+.raiox-block .btn-primary { margin-top: var(--sp-2); }
+.raiox-meet {
+  font-size: var(--fs-13);
+  color: rgba(255, 255, 255, 0.62);
+}
+.raiox-meet a {
+  color: var(--cp-orange-300);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+.raiox-meet a:hover { color: #fff; }
+
+/* ============================================================
+   RODAPE GHOST DO ESPECIALISTA (Bloco 2.1e)
+   ============================================================ */
+.result-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+}
+.result-foot .btn-ghost { color: var(--ink-500); }
+.result-foot-save {
+  font-size: var(--fs-12);
+  color: var(--ink-400);
+}
+
+/* ============================================================
+   BARRA FIXA DO RAIO X (Bloco 2.3)
+   ============================================================ */
+.raiox-sticky {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-overlay);
+  padding: var(--sp-3) var(--sp-5);
+  padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--border-medium);
+  box-shadow: 0 -8px 24px rgba(11,18,24,0.12);
+}
+.raiox-sticky .btn {
+  max-width: var(--shell-narrow);
+  margin-inline: auto;
+}
+
+/* ============================================================
+   TELA FINAL DO FRENTISTA (Bloco 2.4)
+   ============================================================ */
+.frentista-final {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-8);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-left: 4px solid var(--cp-orange-500);
+  border-radius: var(--rd-lg);
+  box-shadow: var(--sh-1);
+}
+.frentista-recognition {
+  font-size: var(--fs-16);
+  line-height: 1.7;
+  color: var(--ink-800);
+  max-width: var(--measure);
+}
+/* Link estilizado como botao (CTA de compartilhar do frentista). */
+a.btn { text-decoration: none; }

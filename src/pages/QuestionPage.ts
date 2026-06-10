@@ -44,9 +44,14 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   varios:     "asset:posto",          // responde por vários
 
   // === Mix além do combustível (multi) ===
-  automotivos: "asset:lavagem",       // lava jato / troca de óleo / oficina
-  alimenticia: "asset:cesta",         // conveniência / restaurante
-  outros:      "asset:engrenagens",   // serviços diversos
+  conveniencia: "asset:cesta",        // loja de conveniência
+  troca_oleo:  "asset:lavagem",       // troca de óleo
+  lava_rapido: "asset:lavagem",       // lava rápido
+  calibragem:  "asset:engrenagens",   // calibragem e serviços de pista
+  eletrica:    "asset:carregador-ev", // carregador de carro elétrico
+  automotivos: "asset:lavagem",       // (legado) lava jato / troca de óleo
+  alimenticia: "asset:cesta",         // (legado) conveniência / restaurante
+  outros:      "asset:engrenagens",   // (legado) serviços diversos
   so_pista:    "asset:bomba",         // só a pista
 
   // === Área do frentista ===
