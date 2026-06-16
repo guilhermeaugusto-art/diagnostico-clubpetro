@@ -14,6 +14,30 @@ interface QuestionPageProps {
   openText?: string;            // para perguntas type: "open"
   plural?: boolean;             // dois ou mais postos: liga o plural no texto
   barsHtml?: string;            // gráfico de barras por pilar (durante as respostas)
+  videoSide?: "left" | "right";        // trilha com vídeo: lado do painel (desktop)
+  videoBlock?: number;                 // índice do bloco de vídeo, para a máscara por cena
+  videoTrack?: "frentista" | "gerente"; // trilha do vídeo, para casar o creme do fundo
+}
+
+/* Envolve o conteúdo da pergunta no palco. Na trilha do frentista, monta o
+   layout em duas colunas com o slot do vídeo (preenchido pelo controlador, que
+   re-anexa o vídeo persistente). Sem vídeo, mantém o palco simples de sempre. */
+function frameStage(inner: string, p: QuestionPageProps): string {
+  if (p.videoSide) {
+    return `
+    <div class="shell stage">
+      <div class="q-stage q-stage-${p.videoSide}">
+        <div class="fvideo-panel" id="fvideoMount" data-fb="${p.videoBlock ?? 0}" data-track="${p.videoTrack ?? "frentista"}" aria-hidden="true"></div>
+        ${inner}
+      </div>
+    </div>
+  `;
+  }
+  return `
+    <div class="shell stage">
+      ${inner}
+    </div>
+  `;
 }
 
 /* Ícone padrão por bloco como fallback final. Usa PNG flat colorido. */
@@ -49,9 +73,6 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   lava_rapido: "asset:lavagem",       // lava rápido
   calibragem:  "asset:engrenagens",   // calibragem e serviços de pista
   eletrica:    "asset:carregador-ev", // carregador de carro elétrico
-  automotivos: "asset:lavagem",       // (legado) lava jato / troca de óleo
-  alimenticia: "asset:cesta",         // (legado) conveniência / restaurante
-  outros:      "asset:engrenagens",   // (legado) serviços diversos
   so_pista:    "asset:bomba",         // só a pista
 
   // === Área do frentista ===
@@ -446,8 +467,7 @@ export function QuestionPage(p: QuestionPageProps): string {
 
   const grouping = q.type === "segmentation-multi" ? "checkbox" : "radio";
 
-  return `
-    <div class="shell stage">
+  const inner = `
       <section class="question">
         <div class="q-meta anim-fade">
           <span class="q-step-tag">
@@ -473,8 +493,8 @@ export function QuestionPage(p: QuestionPageProps): string {
           ${continueBtn}
         </div>
       </section>
-    </div>
   `;
+  return frameStage(inner, p);
 }
 
 /* Pergunta de texto aberto: enunciado + textarea + Continuar.
@@ -486,8 +506,7 @@ function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
   const context = q.context
     ? `<p class="q-context anim-fade delay-2">${applyForms(escHtml(q.context), pl)}</p>`
     : "";
-  return `
-    <div class="shell stage">
+  const inner = `
       <section class="question">
         <div class="q-meta anim-fade">
           <span class="q-step-tag">
@@ -524,6 +543,6 @@ function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
           })}
         </div>
       </section>
-    </div>
   `;
+  return frameStage(inner, p);
 }

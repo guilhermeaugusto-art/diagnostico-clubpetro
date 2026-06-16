@@ -30,6 +30,13 @@ import {
   isPluralPosto,
 } from "./lib/engine";
 import { buildRoutingPayload } from "./lib/routing";
+import {
+  showTrackVideo,
+  hideTrackVideo,
+  videoBlockFor,
+  TRACK_VIDEO_BLOCKS,
+  type VideoTrack,
+} from "./lib/trackVideo";
 import { track } from "./lib/tracking";
 import { uuid, maskPhone, phoneDigitsOnly } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
@@ -94,6 +101,21 @@ function renderHeader(): string {
   });
 }
 
+/* Estado do vídeo da trilha (frentista ou gerente) para a pergunta atual:
+   trilha, bloco e lado. Retorna null quando a trilha não tem vídeo (dono),
+   é o S1 de roteamento, ou não é tela de pergunta: a camada fica escondida. */
+function currentTrackVideo(): { track: VideoTrack; block: number; side: "left" | "right" } | null {
+  if (state.screen !== "question") return null;
+  const track = currentTrack(state);
+  if (track !== "frentista" && track !== "gerente") return null;
+  const q = currentQuestion(state);
+  if (!q || q.id === "S1") return null;
+  const blocks = TRACK_VIDEO_BLOCKS[track];
+  const total = Math.max(1, visibleQuestions(state).length - 1); // exclui o S1
+  const block = videoBlockFor(blocks, state.cursor - 1, total);  // cursor 0 = S1
+  return { track, block, side: blocks[block].side };
+}
+
 /* ============== Body ============== */
 
 function renderBody(): string {
@@ -126,6 +148,7 @@ function renderBody(): string {
       const selectedIndexes =
         a && a.kind === "multi" ? a.selectedIndexes : [];
       const openText = a && a.kind === "text" ? a.text : "";
+      const fv = currentTrackVideo();
       return QuestionPage({
         question: q,
         currentIndex: state.cursor,
@@ -134,6 +157,9 @@ function renderBody(): string {
         selectedIndexes,
         openText,
         plural: isPluralPosto(state),
+        videoSide: fv?.side,
+        videoBlock: fv?.block,
+        videoTrack: fv?.track,
       });
     }
     case "contact":
@@ -159,6 +185,8 @@ function render(): void {
   if (state.screen === "contact") onContactRendered();
   if (state.screen === "transition") onTransitionRendered();
   if (state.screen === "result") onResultRendered();
+  // Fora das perguntas, a camada de vídeo da trilha fica escondida.
+  if (state.screen !== "question") hideTrackVideo();
 }
 
 /* ============== Eventos globais ============== */
@@ -616,6 +644,14 @@ function onQuestionRendered(): void {
       saveState(state);
     });
   }
+
+  // Camada de vídeo da trilha (frentista/gerente): re-anexa o vídeo persistente
+  // no slot (sem reiniciar) e faz crossfade só quando muda de bloco. Fora dessas
+  // trilhas, some.
+  const tv = currentTrackVideo();
+  const mount = document.getElementById("fvideoMount");
+  if (tv && mount) showTrackVideo(mount, TRACK_VIDEO_BLOCKS[tv.track], tv.block);
+  else hideTrackVideo();
 }
 
 /* Crossfade loop entre dois vídeos.

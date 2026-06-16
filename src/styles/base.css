@@ -51,8 +51,9 @@ body::before {
   opacity: 0;
   transition: opacity 700ms var(--ease);
 }
-body:has(.welcome) .cp-orbs,
-body:has(.question) .cp-orbs { opacity: 1; }
+body:has(.welcome) .cp-orbs { opacity: 1; }
+/* Na tela do diagnóstico (perguntas), reduz para não competir com o vídeo. */
+body:has(.question) .cp-orbs { opacity: 0.55; }
 
 .cp-orb {
   position: absolute;
@@ -95,8 +96,9 @@ body:has(.question) .cp-orbs { opacity: 1; }
   opacity: 0;
   transition: opacity 700ms var(--ease);
 }
-body:has(.welcome) .cp-bokeh,
-body:has(.question) .cp-bokeh { opacity: 1; }
+body:has(.welcome) .cp-bokeh { opacity: 1; }
+/* Na tela do diagnóstico (perguntas), bem mais discreto para limpar a tela. */
+body:has(.question) .cp-bokeh { opacity: 0.3; }
 
 .cp-bokeh i {
   position: absolute;
