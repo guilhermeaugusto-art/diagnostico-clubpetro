@@ -20,22 +20,22 @@ export interface VideoBlock {
 
 export type VideoTrack = "frentista" | "gerente";
 
-/* Atribuicao video -> bloco e lado (desktop). No mobile o video vai sempre acima.
-   Frentista: espera (calmo) -> abastece -> limpa -> acena (fechamento).
-   Gerente: apresenta -> loja/margem -> equipe na pista -> cliente -> aprova. */
+/* Atribuicao video -> bloco e lado (desktop). O fundo de cada video ja vem
+   recolorido EXATAMENTE em #FAF8F4 (igual a pagina), entao o video funde no
+   fundo sem retangulo nem mascara, sem precisar medir cor por bloco. */
 export const TRACK_VIDEO_BLOCKS: Record<VideoTrack, VideoBlock[]> = {
   frentista: [
-    { src: "/videos/frentista-1-espera.mp4",   side: "left" },
+    { src: "/videos/frentista-1-espera.mp4",   side: "left"  },
     { src: "/videos/frentista-2-abastece.mp4", side: "right" },
-    { src: "/videos/frentista-3-limpa.mp4",    side: "left" },
+    { src: "/videos/frentista-3-limpa.mp4",    side: "left"  },
     { src: "/videos/frentista-4-acena.mp4",    side: "right" },
   ],
   gerente: [
-    { src: "/videos/gerente-1-apresenta.mp4", side: "left" },
+    { src: "/videos/gerente-1-apresenta.mp4", side: "left"  },
     { src: "/videos/gerente-2-loja.mp4",      side: "right" },
-    { src: "/videos/gerente-3-equipe.mp4",    side: "left" },
+    { src: "/videos/gerente-3-equipe.mp4",    side: "left"  },
     { src: "/videos/gerente-4-cliente.mp4",   side: "right" },
-    { src: "/videos/gerente-5-aprova.mp4",    side: "left" },
+    { src: "/videos/gerente-5-aprova.mp4",    side: "left"  },
   ],
 };
 
@@ -66,6 +66,9 @@ function makeBaseVideo(src: string): HTMLVideoElement {
   const v = document.createElement("video");
   v.className = "fvideo";
   v.src = src;
+  // Poster (1o frame extraido) aparece na hora enquanto o video carrega: sem
+  // tela em branco ao entrar na trilha.
+  v.poster = src.replace(/\.mp4$/, "-poster.jpg");
   v.muted = true;
   v.playsInline = true;
   v.preload = "auto";
@@ -160,6 +163,13 @@ function preload(src: string): void {
   try { preloader.load(); } catch { /* ignore */ }
 }
 
+/* Pre-carrega o video do 1o bloco da trilha assim que o papel e escolhido (S1),
+   para o video ja estar em cache quando a 1a pergunta da trilha aparecer. */
+export function preloadTrackStart(track: VideoTrack): void {
+  const blocks = TRACK_VIDEO_BLOCKS[track];
+  if (blocks && blocks.length) preload(blocks[0].src);
+}
+
 /* Mostra o video do bloco no slot. Re-anexa o host (sem reiniciar) e, se a cena
    mudou, faz crossfade longo para o player do novo bloco. */
 export function showTrackVideo(mount: HTMLElement, blocks: VideoBlock[], block: number): void {
@@ -167,16 +177,22 @@ export function showTrackVideo(mount: HTMLElement, blocks: VideoBlock[], block: 
   if (h.parentElement !== mount) mount.appendChild(h);
 
   const idx = Math.max(0, Math.min(blocks.length - 1, block));
-  const src = blocks[idx].src;
+  const blk = blocks[idx];
+  const src = blk.src;
 
   if (src === currentSrc && players.length) {
-    // Mesma cena: re-anexar nao reinicia; garante visibilidade e play.
+    // Mesma cena: re-anexar nao reinicia; garante visibilidade e play. NAO mexe
+    // no --fv-bg (ja foi amostrado uma vez na troca do bloco e fica fixo, sem
+    // re-amostrar frame a frame, que causaria leve wobble de cor).
     const cur = players[players.length - 1];
     cur.el.classList.add("is-shown");
     cur.play();
     return;
   }
 
+  // Fundo dos videos ja vem recolorido EXATAMENTE em #FAF8F4 (igual a pagina),
+  // entao nao ha cor por bloco nem amostragem de pixel: a camada usa o #faf8f4
+  // fixo do CSS e o video funde no fundo sem caixa, em qualquer device.
   const player = makePlayer(src);
   h.appendChild(player.el);
   player.play();

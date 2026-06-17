@@ -18,6 +18,7 @@ export const ICON_ASSETS = {
   "asset:grupo":          "/icons/grupo.png",           // 3 pessoas diversas
   "asset:apresentacao":   "/icons/apresentacao.png",    // 2 apresentando gráfico (reunião / consultoria)
   "asset:conversa":       "/icons/conversa.png",        // 2 pessoas + balão de fala
+  "asset:outro":          "/icons/outro.png",           // frentista/atendente generico (opcao "Outro papel")
 
   // === Comercial / margem / dinheiro ===
   "asset:real":      "/icons/real.png",

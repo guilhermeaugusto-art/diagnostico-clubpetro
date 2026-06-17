@@ -34,6 +34,7 @@ import {
   showTrackVideo,
   hideTrackVideo,
   videoBlockFor,
+  preloadTrackStart,
   TRACK_VIDEO_BLOCKS,
   type VideoTrack,
 } from "./lib/trackVideo";
@@ -486,6 +487,13 @@ function afterAnswer(q: Question): void {
   const a = state.answers[q.id];
   if (a && state.diagId) {
     persistAnswer(state.diagId, q.id, a);
+  }
+
+  // Ao escolher o papel (S1), já pré-carrega o 1o vídeo da trilha, para ele
+  // estar pronto quando a primeira pergunta da trilha aparecer.
+  if (q.id === "S1") {
+    const t = currentTrack(state);
+    if (t === "frentista" || t === "gerente") preloadTrackStart(t);
   }
 
   // Sinal de checkpoint

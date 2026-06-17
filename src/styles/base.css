@@ -14,12 +14,21 @@ body {
   background:
     radial-gradient(1200px 600px at 80% -10%, rgba(242,102,0,.03), transparent 60%),
     radial-gradient(900px 500px at -10% 10%, rgba(31,32,40,.02), transparent 60%),
-    var(--paper);
+    #faf8f4;
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
   transition: background-color var(--dur-3) var(--ease);
 }
+
+/* Fundo do diagnostico (telas de pergunta): creme #FAF8F4 uniforme.
+   Os videos das trilhas ja vem com o fundo recolorido nesse mesmo #FAF8F4,
+   entao fundem na pagina sem caixa (regra body:has(.fvideo-panel) em
+   components.css). */
+body:has(.question) { background: #faf8f4; }
+/* Sem grão de papel nas perguntas: fundo 100% liso #FAF8F4 para o vídeo (mp4
+   opaco com fundo #FAF8F4) fundir sem revelar retângulo. */
+body:has(.question)::before { opacity: 0; }
 
 /* Grão de papel: textura analógica sutil que tira a cara de "plástico de IA".
    Fractal noise em SVG, fixo, atrás do conteúdo (#app cria seu próprio
@@ -52,8 +61,9 @@ body::before {
   transition: opacity 700ms var(--ease);
 }
 body:has(.welcome) .cp-orbs { opacity: 1; }
-/* Na tela do diagnóstico (perguntas), reduz para não competir com o vídeo. */
-body:has(.question) .cp-orbs { opacity: 0.55; }
+/* No diagnóstico (perguntas), fundo liso #FAF8F4: sem orbs, para o vídeo fundir
+   como PNG flutuante e não haver manchas claras sobrepostas. */
+body:has(.question) .cp-orbs { opacity: 0; }
 
 .cp-orb {
   position: absolute;
@@ -97,8 +107,9 @@ body:has(.question) .cp-orbs { opacity: 0.55; }
   transition: opacity 700ms var(--ease);
 }
 body:has(.welcome) .cp-bokeh { opacity: 1; }
-/* Na tela do diagnóstico (perguntas), bem mais discreto para limpar a tela. */
-body:has(.question) .cp-bokeh { opacity: 0.3; }
+/* No diagnóstico (perguntas), fundo liso #FAF8F4: sem bokeh, para o vídeo fundir
+   como PNG flutuante (welcome mantém o bokeh, pois lá a arte é PNG transparente). */
+body:has(.question) .cp-bokeh { opacity: 0; }
 
 .cp-bokeh i {
   position: absolute;

@@ -59,7 +59,7 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   // === S1 · quem responde ===
   dono:       "asset:apresentacao",   // dono estrategista (liderança)
   gerente:    "asset:executivo",      // gestor formal
-  outro:      "asset:lampada",        // outro papel
+  outro:      "asset:outro",          // outro papel (atendente generico)
 
   // === Porte da rede / nº de postos ===
   "1":        "asset:bomba",          // um posto

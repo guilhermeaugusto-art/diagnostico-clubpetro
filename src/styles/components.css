@@ -1701,13 +1701,11 @@ a.btn { text-decoration: none; }
   }
 }
 
-/* Fusao por COR (nao por mascara): a pagina da trilha do frentista e o painel
-   assumem o MESMO creme do fundo dos videos (~#fbf6f1, medido do proprio
-   arquivo). Assim o retangulo do video desaparece sem clarear nem comer a
-   imagem. Um feather minimo (4%) so amacia onde o sujeito encosta na borda
-   (bomba/carro) e revela o mesmo creme atras (nao esbranquica). */
+/* Fusao por COR: o fundo de cada video ja vem recolorido em #FAF8F4 (igual a
+   pagina), entao pagina e painel usam o mesmo #faf8f4 fixo e o video funde no
+   fundo sem retangulo nem mascara, em qualquer device. */
 body:has(.fvideo-panel) {
-  background: #fbf6f1;
+  background-color: #faf8f4;
 }
 .fvideo-panel {
   position: relative;
@@ -1715,29 +1713,11 @@ body:has(.fvideo-panel) {
   width: min(50vw, 210px);       /* mobile: portrait centralizado, cena inteira, compacto */
   margin-inline: auto;
   overflow: hidden;
-  background: #fbf6f1;           /* mesmo creme do fundo dos videos */
-  /* Mascara estilo tela inicial: miolo SOLIDO (radial ate 76%) e as beiradas
-     dissolvem organicamente. Como o fundo atras e o MESMO creme, a dissolucao
-     fica invisivel (sem esbranquicar, sem retangulo). */
-  -webkit-mask-image:
-    radial-gradient(128% 128% at 50% 44%, #000 76%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 6%, #000 94%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
-  -webkit-mask-composite: source-in;
-          mask-image:
-    radial-gradient(128% 128% at 50% 44%, #000 76%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 6%, #000 94%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
-          mask-composite: intersect;
+  background-color: #faf8f4;
 }
 @media (min-width: 960px) {
   .fvideo-panel { width: 100%; margin: 0; }
 }
-
-/* Gerente: creme um pouco mais neutro que o do frentista (medido dos videos),
-   para a fusao tambem ficar invisivel nessa trilha. */
-body:has(.fvideo-panel[data-track="gerente"]) { background: #faf9f5; }
-.fvideo-panel[data-track="gerente"] { background: #faf9f5; }
 
 .fvideo-layer { position: absolute; inset: 0; }
 
@@ -1751,8 +1731,9 @@ body:has(.fvideo-panel[data-track="gerente"]) { background: #faf9f5; }
 }
 .fvideo-player.is-shown { opacity: 1; }
 
-/* Cada video preenche o painel 3:4 (mostra a cena inteira, sem corte). O fade
-   curto entre os dois videos suaviza o ponto de loop. */
+/* Cada video preenche o painel 3:4 e mostra a cena inteira, NITIDO (sem mascara):
+   a fusao e pela cor de fundo casada. O fade curto entre os dois videos suaviza
+   o ponto de loop. */
 .fvideo {
   position: absolute;
   inset: 0;
