@@ -225,10 +225,10 @@ body:has(.welcome) {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);   /* Montserrat */
   font-size: var(--fs-12);
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.117em;             /* ~1.4px @ 12px */
   text-transform: uppercase;
   color: var(--cp-orange-500);
 }
@@ -243,28 +243,28 @@ body:has(.welcome) {
 .eyebrow.on-dark::before { background: var(--cp-orange-400); }
 
 .display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.04;
+  font-family: var(--font-display);   /* Montserrat */
+  font-weight: 600;                    /* SemiBold no H1 principal */
+  letter-spacing: -0.027em;            /* ~-1.5px @ 56px, escala proporcional */
+  line-height: 1.1;
   color: var(--ink-900);
   font-size: var(--fs-display-lg);
 }
 .display .ink-accent { color: var(--cp-orange-500); }
 
 .h2 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);   /* Montserrat */
+  font-weight: 500;                    /* Medium em títulos de seção */
+  letter-spacing: -0.02em;
   line-height: 1.15;
   font-size: var(--fs-display-sm);
   color: var(--ink-900);
 }
 
 .lede {
-  font-family: var(--font-sans);
+  font-family: var(--font-sans);     /* Open Sans */
   font-size: var(--fs-16);
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--ink-500);
   max-width: 34em;
 }

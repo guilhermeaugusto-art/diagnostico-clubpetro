@@ -51,16 +51,15 @@
   --warn:  #C68500;
   --danger:#C53E48;
 
-  /* Typography
-     Serifa de display (Fraunces) dá voz e autoridade aos títulos e números
-     grandes; Inter sustenta corpo, UI, inputs e listas. Hierarquia única:
-     serifa só na camada de headline, sans em tudo que é interface. */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
-  /* --font-display aponta para a serifa: todo título grande herda a voz editorial.
-     Elementos de UI (answer-title, inputs, nomes de pilar, valores pequenos)
-     são reescritos para --font-sans nos seus próprios seletores. */
-  --font-display: var(--font-serif);
+  /* Typography · alinhada à identidade do site institucional (clubpetro.com).
+     Montserrat nos títulos (voz e autoridade), Open Sans no corpo (legibilidade)
+     e DM Sans na interface (botões, inputs, labels funcionais).
+       --font-display  -> títulos / headings (Montserrat)
+       --font-sans     -> corpo / parágrafos (Open Sans)
+       --font-ui       -> botões / inputs / labels funcionais (DM Sans) */
+  --font-sans: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Montserrat", Arial, sans-serif;
+  --font-ui: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Type scale (fluid, mobile-first) */
   --fs-12: 0.75rem;

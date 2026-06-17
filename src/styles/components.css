@@ -65,9 +65,9 @@ body:has(.welcome) .cp-header {
   gap: var(--sp-2);
   padding: 14px 22px;
   border-radius: var(--rd-full);
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);        /* DM Sans */
   font-weight: 600;
-  font-size: var(--fs-15);
+  font-size: var(--fs-16);
   letter-spacing: -0.005em;
   white-space: nowrap;
   transition: transform var(--dur-2) var(--ease-out),
@@ -93,7 +93,7 @@ body:has(.welcome) .cp-header {
   opacity: .5;
 }
 .btn .btn-arrow {
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);        /* DM Sans */
   font-weight: 500;
   transition: transform var(--dur-2) var(--ease-out);
 }
@@ -266,7 +266,7 @@ body:has(.welcome) .cp-header {
 .open-wrap { margin-top: var(--stack-block); }
 .open-input {
   width: 100%;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);        /* DM Sans */
   font-size: var(--fs-16);
   line-height: 1.55;
   color: var(--ink-900);
@@ -449,6 +449,7 @@ body:has(.welcome) .cp-header {
   gap: var(--sp-2);
 }
 .welcome-field-label {
+  font-family: var(--font-ui);        /* DM Sans (label funcional) */
   font-size: var(--fs-13);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -457,7 +458,7 @@ body:has(.welcome) .cp-header {
 }
 .welcome-field-input {
   width: 100%;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);        /* DM Sans */
   font-weight: 600;
   font-size: var(--fs-22);
   letter-spacing: -0.01em;
@@ -688,7 +689,7 @@ body:has(.welcome) .cp-header {
 }
 .contact-input {
   width: 100%;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);        /* DM Sans */
   font-weight: 600;
   font-size: var(--fs-22);
   letter-spacing: -0.01em;
@@ -1074,7 +1075,7 @@ body:has(.welcome) .cp-header {
   color: var(--cp-orange-600);
 }
 .radar-weakest-name {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--fs-18);
   letter-spacing: -0.01em;
@@ -1517,7 +1518,7 @@ body:has(.welcome) .cp-header {
   letter-spacing: -0.01em;
 }
 .plan-card-score {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--fs-20);
   color: var(--ink-700);
@@ -1576,7 +1577,7 @@ body:has(.welcome) .cp-header {
   color: var(--cp-orange-400);
 }
 .raiox-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(1.4rem, 3.5vw, 1.9rem);
   letter-spacing: -0.01em;
@@ -1749,4 +1750,25 @@ body:has(.fvideo-panel) {
 @media (prefers-reduced-motion: reduce) {
   .fvideo,
   .fvideo-player { transition: none; }
+}
+
+/* ============ TIPOGRAFIA · rótulos em maiúsculas ============
+   Identidade institucional ClubPetro (clubpetro.com): rótulos/eyebrows em
+   maiúsculas usam Montserrat; labels de campos de formulário usam DM Sans
+   (interface). Declarado no fim para sobrepor o --font-sans herdado. */
+.q-pillar-tag,
+.plan-item-tag,
+.radar-chart .radar-label,
+.radar-panel-eyebrow,
+.radar-weakest-label,
+.raiox-eyebrow,
+.result-hero-tag,
+.result-level-tag,
+.result-trio-label,
+.welcome-resume-l {
+  font-family: var(--font-display);   /* Montserrat */
+}
+.welcome-field-label,
+.contact-field-label {
+  font-family: var(--font-ui);        /* DM Sans */
 }

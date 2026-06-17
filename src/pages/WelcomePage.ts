@@ -48,12 +48,12 @@ function welcomeIllustration(): string {
 
       <!-- Núcleo: rótulo editorial, sem número (não simular uma nota real) -->
       <text x="480" y="296" text-anchor="middle"
-            font-family="Fraunces, Georgia, serif"
+            font-family="Montserrat, Arial, sans-serif"
             font-size="34" font-weight="600" fill="#353745" letter-spacing="-0.5">
         Saúde
       </text>
       <text x="480" y="330" text-anchor="middle"
-            font-family="Inter, system-ui, sans-serif"
+            font-family="Montserrat, Arial, sans-serif"
             font-size="15" font-weight="600" fill="#6C7C8E"
             letter-spacing="3" style="text-transform:uppercase">
         DO POSTO
