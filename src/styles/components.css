@@ -1812,3 +1812,22 @@ body:has(.fimg-panel) {
 .contact-field-label {
   font-family: var(--font-ui);        /* DM Sans */
 }
+
+/* ============ MOBILE: midia horizontal e layout compacto ============
+   No celular o retrato 3:4 (video do frentista/gerente, imagem do dono)
+   dominava quase metade da dobra e empurrava a pergunta e as opcoes para baixo.
+   A midia vira uma faixa HORIZONTAL curta, enquadrando a parte de cima (cabeca
+   e tronco do personagem), e o espacamento aperta para a pergunta e as primeiras
+   opcoes aparecerem sem rolagem grande. */
+@media (max-width: 720px) {
+  .fvideo-panel,
+  .fimg-panel {
+    width: 100%;
+    max-width: 460px;
+    margin-inline: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .fvideo,
+  .fimg { object-position: 50% 16%; }
+  .q-stage { gap: var(--sp-3); }
+}
