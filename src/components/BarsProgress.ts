@@ -19,7 +19,9 @@ export function BarsProgress(state: AppState): string {
   const q = currentQuestion(state);
   const active = q && q.block !== "qualif" ? q.block : null;
 
-  const items = BLOCK_ORDER.map((b) => {
+  // Só os pilares que a trilha realmente pontua: evita barra sempre zerada
+  // (ex.: a trilha do frentista não tem pergunta do pilar "dados").
+  const items = BLOCK_ORDER.filter((b) => (bs[b]?.possible ?? 0) > 0).map((b) => {
     const v = Math.max(0, Math.min(100, bs[b].pct || 0));
     const cls = b === active ? "bars-item is-active" : "bars-item";
     return `

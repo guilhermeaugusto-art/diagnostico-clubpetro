@@ -794,6 +794,7 @@ function onTransitionRendered(): void {
     }
   });
   transitionTimer = window.setTimeout(() => {
+    transitionTimer = null;
     state.screen = "result";
     saveState(state);
     render();
@@ -1042,7 +1043,8 @@ export function boot(): void {
     hasResumable = true;
   }
   window.addEventListener("pagehide", () => {
-    if (state.screen === "result" || state.screen === "welcome") return;
+    // transition = diagnostico ja concluido (contato entregue), so animacao: nao e abandono.
+    if (state.screen === "result" || state.screen === "welcome" || state.screen === "transition") return;
     const elapsed = state.startedAt
       ? Math.round((Date.now() - new Date(state.startedAt).getTime()) / 1000)
       : 0;
