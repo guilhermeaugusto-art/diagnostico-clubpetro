@@ -28,12 +28,16 @@ export async function generateReportPdf(content: ReportContent): Promise<Blob> {
   // Capa
   drawCover(doc, content, c);
 
-  // Identificação do lead
+  // Qualificação comercial (o que o time comercial precisa ver primeiro)
   newPage(doc, c);
-  drawSection(doc, c, "1. Identificação");
+  drawSection(doc, c, "1. Qualificação comercial");
+  drawQualificationCard(doc, c, content);
+  drawSpacer(c, 12);
+  drawSubsection(doc, c, "Identificação do lead");
   drawKV(doc, c, "Nome",      content.lead.name || "(não informado)");
   drawKV(doc, c, "WhatsApp",  content.lead.whatsapp || "(não informado)");
   drawKV(doc, c, "E-mail",    content.lead.email || "(não informado)");
+  drawKV(doc, c, "Perfil",    content.qualificacao.perfil);
   drawKV(doc, c, "Iniciado",  fmtDate(content.lead.diagnostic_started_at));
   drawKV(doc, c, "Concluído", fmtDate(content.lead.diagnostic_completed_at));
 
@@ -327,6 +331,13 @@ function drawCover(doc: any, content: ReportContent, c: Cursor) {
   doc.setFont("helvetica", "bold");
   doc.text(`Faixa atual: ${content.overall.levelName}`, PAGE_PADDING, tagY + 56);
 
+  // Perfil + qualificação (resumo comercial logo na capa)
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(INK_MUTED);
+  doc.text(`Perfil: ${content.qualificacao.perfil}  ·  ${content.qualificacao.mqlLabel}`,
+    PAGE_PADDING, tagY + 80);
+
   // Rodapé da capa
   doc.setFontSize(9);
   doc.setTextColor(INK_MUTED);
@@ -454,6 +465,51 @@ function drawScoreBlock(doc: any, c: Cursor, content: ReportContent) {
   doc.text(`Ponto de atenção: ${weakTxt}`, x + 160, c.y + 80);
 
   c.y += 100;
+}
+
+function drawQualificationCard(doc: any, c: Cursor, content: ReportContent) {
+  ensureSpace(doc, c, 116);
+  const x = PAGE_PADDING;
+  const w = PAGE_WIDTH - PAGE_PADDING * 2;
+  const q = content.qualificacao;
+
+  doc.setFillColor(PAPER);
+  doc.roundedRect(x, c.y, w, 96, 10, 10, "F");
+
+  // Selo de qualificação (verde = MQL, neutro = não)
+  const badgeColor = q.mql ? "#1F8A5C" : "#6A718D";
+  const badgeText = (q.mql ? "QUALIFICADO · MQL" : "NAO QUALIFICADO");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  const bw = doc.getTextWidth(badgeText) + 28;
+  doc.setFillColor(badgeColor);
+  doc.roundedRect(x + 16, c.y + 16, bw, 26, 13, 13, "F");
+  doc.setTextColor("#FFFFFF");
+  doc.text(badgeText, x + 16 + 14, c.y + 33);
+
+  // Grade de fatos: Perfil · Sinal · Score · Faixa
+  const cells: Array<[string, string]> = [
+    ["PERFIL", q.perfil],
+    ["SINAL", q.sinalLabel],
+    ["SCORE", `${content.overall.score}/100`],
+    ["FAIXA", content.overall.levelName],
+  ];
+  const colW = w / 4;
+  const fy = c.y + 62;
+  cells.forEach(([k, v], i) => {
+    const cx = x + 16 + i * colW;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(INK_MUTED);
+    doc.text(k, cx, fy);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(INK);
+    const vlines = wrap(doc, v, colW - 14);
+    doc.text(vlines[0] || "", cx, fy + 15);
+  });
+
+  c.y += 108;
 }
 
 function drawDimensionBlock(doc: any, c: Cursor, d: ReportContent["dimensions"][number]) {

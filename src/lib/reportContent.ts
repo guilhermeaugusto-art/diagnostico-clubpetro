@@ -20,6 +20,7 @@ import {
   totalScore,
   weakBlockIds,
 } from "./scoring";
+import { currentTrack } from "./engine";
 import type { AppState } from "./state";
 
 export interface ReportContent {
@@ -29,6 +30,16 @@ export interface ReportContent {
     whatsapp: string;
     diagnostic_started_at: string | null;
     diagnostic_completed_at: string | null;
+  };
+  /* Resumo de qualificacao para o time comercial (so no PDF interno). */
+  qualificacao: {
+    perfil: string;          // legivel: Dono / Gerente / Frentista (operacao)
+    papel: string | null;    // valor cru do S1 (dono/gerente/outro)
+    trilha: string | null;   // dono/gerente/frentista
+    mql: boolean;            // dono e gerente viram MQL; frentista nao
+    mqlLabel: string;        // "Qualificado (MQL)" / "Nao qualificado"
+    sinal: string | null;    // critico/neutro/avancado
+    sinalLabel: string;      // legivel
   };
   overall: {
     score: number;
@@ -108,6 +119,21 @@ export function buildReportContent(state: AppState): ReportContent {
   const heroPain = mainPain(state);
   const nextImp = nextImprovementFor(ranked[0]?.id);
 
+  // Qualificacao comercial (so para o PDF interno).
+  const trilha = currentTrack(state);
+  const s1 = state.answers["S1"];
+  const papel = s1 && "value" in s1 ? (s1 as { value: string }).value : null;
+  const mql = trilha === "dono" || trilha === "gerente";
+  const perfil = trilha === "dono" ? "Dono"
+    : trilha === "gerente" ? "Gerente"
+    : trilha === "frentista" ? "Frentista (operacao)"
+    : "(indefinido)";
+  const sinal = state.signal;
+  const sinalLabel = sinal === "critico" ? "Critico (dor alta, prioridade)"
+    : sinal === "avancado" ? "Avancado (operacao madura)"
+    : sinal === "neutro" ? "Neutro"
+    : "(nao calculado)";
+
   const dimensions = BLOCK_ORDER
     .filter((b) => bs[b].possible > 0)
     .map((b) => ({
@@ -142,6 +168,15 @@ export function buildReportContent(state: AppState): ReportContent {
       whatsapp: state.phone,
       diagnostic_started_at: state.startedAt,
       diagnostic_completed_at: state.finishedAt,
+    },
+    qualificacao: {
+      perfil,
+      papel,
+      trilha,
+      mql,
+      mqlLabel: mql ? "Qualificado (MQL)" : "Nao qualificado",
+      sinal,
+      sinalLabel,
     },
     overall: {
       score,

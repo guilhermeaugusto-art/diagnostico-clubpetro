@@ -9,7 +9,9 @@ import { CONFIG } from "./config";
 /* Proxima terca-feira as 19h. Se ja passou da terca 19h desta semana, vai para
    a proxima. Mesma regra da spec (Bloco 2.2). */
 export function proximaTercaAs19(): Date {
-  const agora = new Date();
+  // "Agora" no relogio de Sao Paulo, independente do fuso do navegador do
+  // usuario (evita a data sair deslocada para quem acessa de outro fuso).
+  const agora = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const d = new Date(agora);
   const delta = (2 - d.getDay() + 7) % 7;
   d.setDate(d.getDate() + delta);
