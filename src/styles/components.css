@@ -1823,12 +1823,14 @@ body:has(.fimg-panel) {
   .fvideo-panel,
   .fimg-panel {
     width: 100%;
-    max-width: 460px;
+    max-width: 480px;
     margin-inline: auto;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 3 / 2;      /* take horizontal, mostra mais da cena (menos "zoom") */
   }
-  .fvideo,
-  .fimg { object-position: 50% 16%; }
+  /* Video do frentista/gerente: personagem em pe, enquadra cabeca e tronco. */
+  .fvideo { object-position: 50% 20%; }
+  /* Imagem do dono: foco vertical por imagem (focusY, definido no controlador),
+     para enquadrar a acao de cada cena, nao o topo. */
   .q-stage { gap: var(--sp-3); }
   /* Mais definicao dos cards no mobile: branco sobre creme tem contraste baixo
      e fica "lavado". Borda mais firme + leve sombra para os cartoes descolarem

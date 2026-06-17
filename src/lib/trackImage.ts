@@ -19,17 +19,20 @@ export interface ImageBlock {
   side: "left" | "right";
   bg: string;          // creme do topo da imagem, p/ casar o fundo da pagina
   ground?: boolean;    // base com chao mais escuro: feather so no topo/laterais
+  focusY?: string;     // foco vertical no mobile (object-position Y) p/ enquadrar
+                       // a ACAO de cada cena na faixa horizontal. Sem efeito no
+                       // desktop (la o painel e 3:4 = aspecto da imagem).
 }
 
 /* Atribuicao imagem -> bloco e lado (desktop), com a cor de fundo medida de cada
    imagem. Temas em progressao: visao -> pessoas -> suprimento -> dados ->
    expansao. Lados alternados para dar dinamismo. */
 export const DONO_IMAGE_BLOCKS: ImageBlock[] = [
-  { src: "/dono/dono-1-visao.webp",      side: "left",  bg: "#f9f6ef", ground: true },
-  { src: "/dono/dono-2-pessoas.webp",    side: "right", bg: "#fbf8f3" },
-  { src: "/dono/dono-3-suprimento.webp", side: "left",  bg: "#f9f6ed", ground: true },
-  { src: "/dono/dono-4-dados.webp",      side: "right", bg: "#f7efe2" },
-  { src: "/dono/dono-5-expansao.webp",   side: "left",  bg: "#fbf8f3" },
+  { src: "/dono/dono-1-visao.webp",      side: "left",  bg: "#f9f6ef", ground: true, focusY: "40%" },
+  { src: "/dono/dono-2-pessoas.webp",    side: "right", bg: "#fbf8f3", focusY: "44%" },
+  { src: "/dono/dono-3-suprimento.webp", side: "left",  bg: "#f9f6ed", ground: true, focusY: "58%" },
+  { src: "/dono/dono-4-dados.webp",      side: "right", bg: "#f7efe2", focusY: "48%" },
+  { src: "/dono/dono-5-expansao.webp",   side: "left",  bg: "#fbf8f3", focusY: "42%" },
 ];
 
 /* Bloco a partir do indice da pergunta dentro da trilha (por fracao do total
@@ -67,6 +70,8 @@ function makeImg(blk: ImageBlock): HTMLImageElement {
   im.src = blk.src;
   im.alt = "";
   im.decoding = "async";
+  // Foco vertical da cena (so afeta o recorte da faixa horizontal no mobile).
+  im.style.objectPosition = `50% ${blk.focusY ?? "44%"}`;
   return im;
 }
 
