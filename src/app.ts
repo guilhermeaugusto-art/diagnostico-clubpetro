@@ -83,6 +83,7 @@ let hasResumable = false;
 let questionStartTime = 0;
 let transitionTimer: number | null = null;
 let raioxConfirmed = false; // idempotência da confirmação de presença no Raio-X
+let navDir: "fwd" | "back" = "fwd"; // direção da navegação, para a transição da pergunta
 
 const root = () => document.getElementById("app")!;
 
@@ -580,6 +581,7 @@ function nextStep(): void {
     // para que a transição de preenchimento (950ms) rode contínua através da
     // troca de pergunta, sem o corte seco do innerHTML completo.
     state.cursor = nextCursor;
+    navDir = "fwd";
     saveState(state);
     softRenderQuestion();
   } else {
@@ -624,14 +626,23 @@ function prevStep(): void {
     const list = visibleQuestions(state);
     state.screen = "question";
     state.cursor = Math.max(0, list.length - 1);
-  } else if (state.screen === "question" && state.cursor > 0) {
-    state.cursor -= 1;
-  } else {
+    navDir = "back";
+    saveState(state);
+    track("diag_back", { diag_id: state.diagId }, state.diagId);
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  saveState(state);
-  track("diag_back", { diag_id: state.diagId }, state.diagId);
-  render();
+  if (state.screen === "question" && state.cursor > 0) {
+    state.cursor -= 1;
+    navDir = "back";
+    saveState(state);
+    track("diag_back", { diag_id: state.diagId }, state.diagId);
+    // Soft render no voltar: preserva o header e as barras (sem corte seco) e
+    // roda a transicao direcional para tras.
+    softRenderQuestion();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 function goToTransition(): void {
@@ -690,6 +701,13 @@ function onQuestionRendered(): void {
   const imgMount = document.getElementById("fimgMount");
   if (ti && imgMount) showTrackImage(imgMount, DONO_IMAGE_BLOCKS, ti.block);
   else hideTrackImage();
+
+  // Transicao direcional: a coluna da pergunta entra deslizando conforme a
+  // navegacao (avancar pela direita, voltar pela esquerda). A midia, persistente,
+  // nao e afetada (a animacao e so na .question).
+  const qEl = document.querySelector<HTMLElement>(".question");
+  if (qEl) qEl.classList.add(navDir === "back" ? "q-enter-back" : "q-enter-fwd");
+  navDir = "fwd";
 }
 
 function onWelcomeRendered(): void {

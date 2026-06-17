@@ -89,6 +89,20 @@
   50%      { box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 12px 40px rgba(242,102,0,0.64); }
 }
 
+/* Transicao entre perguntas: a coluna inteira desliza e esmaece como um todo,
+   na direcao da navegacao (avancar = entra pela direita, voltar = pela esquerda).
+   Movimento coeso e curto, sem atrapalhar a leitura nem reiniciar a midia. */
+.question.q-enter-fwd  { animation: qEnterFwd  360ms var(--ease-out) both; }
+.question.q-enter-back { animation: qEnterBack 360ms var(--ease-out) both; }
+@keyframes qEnterFwd {
+  from { opacity: 0; transform: translate3d(26px, 0, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes qEnterBack {
+  from { opacity: 0; transform: translate3d(-26px, 0, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

@@ -452,7 +452,7 @@ export function QuestionPage(p: QuestionPageProps): string {
     .join("");
 
   const context = q.context
-    ? `<p class="q-context anim-fade delay-2">${applyForms(escHtml(q.context), pl)}</p>`
+    ? `<p class="q-context">${applyForms(escHtml(q.context), pl)}</p>`
     : "";
 
   // Tipo de pergunta determina o footer:
@@ -478,15 +478,15 @@ export function QuestionPage(p: QuestionPageProps): string {
 
   const inner = `
       <section class="question">
-        <div class="q-meta anim-fade">
+        <div class="q-meta">
           <span class="q-step-tag">
             <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}
           </span>
           <span class="q-pillar-tag">${escHtml(blockName)} · ${escHtml(metaLabel)}</span>
         </div>
-        <h2 class="q-title anim-rise delay-1">${applyForms(q.text, pl)}</h2>
+        <h2 class="q-title">${applyForms(q.text, pl)}</h2>
         ${context}
-        <div class="answer-grid anim-fade delay-3"
+        <div class="answer-grid"
              role="${grouping === "checkbox" ? "group" : "radiogroup"}"
              aria-label="Alternativas">
           ${opts}
@@ -513,19 +513,19 @@ function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
   const pl = p.plural === true;
   const placeholder = "placeholder" in q && q.placeholder ? q.placeholder : "Escreva com as suas palavras.";
   const context = q.context
-    ? `<p class="q-context anim-fade delay-2">${applyForms(escHtml(q.context), pl)}</p>`
+    ? `<p class="q-context">${applyForms(escHtml(q.context), pl)}</p>`
     : "";
   const inner = `
       <section class="question">
-        <div class="q-meta anim-fade">
+        <div class="q-meta">
           <span class="q-step-tag">
             <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}
           </span>
           <span class="q-pillar-tag">${escHtml(blockName)} · Resposta aberta</span>
         </div>
-        <h2 class="q-title anim-rise delay-1">${applyForms(q.text, pl)}</h2>
+        <h2 class="q-title">${applyForms(q.text, pl)}</h2>
         ${context}
-        <div class="open-wrap anim-fade delay-3">
+        <div class="open-wrap">
           <textarea
             id="openInput"
             class="open-input"
