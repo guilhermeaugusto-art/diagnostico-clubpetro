@@ -1830,4 +1830,9 @@ body:has(.fimg-panel) {
   .fvideo,
   .fimg { object-position: 50% 16%; }
   .q-stage { gap: var(--sp-3); }
+  /* Mais definicao dos cards no mobile: branco sobre creme tem contraste baixo
+     e fica "lavado". Borda mais firme + leve sombra para os cartoes descolarem
+     do fundo, sem mudar a paleta da marca. */
+  .answer-card { box-shadow: 0 2px 8px rgba(11, 18, 24, .055); }
+  .answer-card::before { border-color: var(--border-strong); }
 }
