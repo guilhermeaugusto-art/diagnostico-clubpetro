@@ -598,55 +598,18 @@ body:has(.welcome) .cp-header {
     max-width: 1360px;
   }
 }
-.welcome-video {
-  /* Dois vídeos sobrepostos pra crossfade no loop. */
-  position: absolute;
-  inset: 0;
+/* Imagem hero do welcome (ilustracao isometrica do posto ClubPetro).
+   Mostra a cena inteira (contain) e funde no paper: o fundo claro da propria
+   imagem ja casa com a pagina, com um feather suave so nas bordas. */
+.welcome-hero {
+  position: relative;
   z-index: 2;
   width: 100%;
   height: 100%;
-  /* Aspect do slot é idêntico ao do vídeo (16:9), então cover NÃO corta. */
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   display: block;
   background: transparent;
-  opacity: 0;
-  /* Fade longo o suficiente para mascarar o salto entre as duas instâncias. */
-  transition: opacity 700ms cubic-bezier(.4,0,.2,1);
-  pointer-events: none;
-  will-change: opacity;
-
-  /* ===== Máscara combinada (fusão "PNG flutuante") =====
-     Três camadas com mask-composite: intersect. Miolo SÓLIDO, só a beirada
-     suaviza: o radial mantém o vídeo cheio até 72% do raio (antes 45%, quando
-     mais da metade já esmaecia), e os degradês de borda viram um feather fino. */
-  -webkit-mask-image:
-    radial-gradient(120% 120% at 50% 50%, #000 72%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
-  -webkit-mask-composite: source-in;       /* Safari/Chrome (sintaxe antiga) */
-
-          mask-image:
-    radial-gradient(120% 120% at 50% 50%, #000 72%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
-          mask-composite: intersect;       /* Firefox/spec padrão */
-}
-.welcome-video.is-active { opacity: 1; }
-/* Legado: o controlador agora usa is-active; mantido pra compatibilidade. */
-.welcome-video.is-ready { opacity: 1; }
-.welcome-visual-fallback {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  background: transparent;
-}
-.welcome-illustration {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 @media (min-width: 960px) {
   .welcome-video-wrap { max-width: 100%; }
