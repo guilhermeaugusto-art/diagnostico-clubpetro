@@ -576,7 +576,7 @@ body:has(.welcome) .cp-header {
   /* Slot equilibrado: maior do que o original, menor do que a versão
      anterior. Aspect 16:9 = mesmo do vídeo → cover não recorta. */
   max-width: 1100px;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;        /* aspecto real da imagem hero */
   border-radius: 0;
   overflow: visible;
   /* Sem cor sólida: as bordas esfumaçadas do vídeo revelam o halo dinâmico e o
@@ -606,10 +606,23 @@ body:has(.welcome) .cp-header {
   z-index: 2;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  /* Slot no aspecto real da imagem (4:3): cover preenche sem cortar nem sobrar. */
+  object-fit: cover;
   object-position: center;
   display: block;
   background: transparent;
+  /* Feather nas bordas: a moldura da imagem dissolve no paper (PNG flutuante).
+     Miolo solido; so a beirada esfuma. */
+  -webkit-mask-image:
+    radial-gradient(140% 140% at 50% 50%, #000 78%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    radial-gradient(140% 140% at 50% 50%, #000 78%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+          mask-composite: intersect;
 }
 @media (min-width: 960px) {
   .welcome-video-wrap { max-width: 100%; }
@@ -1345,8 +1358,8 @@ body:has(.welcome) .cp-header {
     margin-right: 0;
     margin-left: 0;
     max-width: 100%;
-    aspect-ratio: 16 / 9;
-    /* No mobile a moldura larga não cabe; vídeo vira hero secundário. */
+    aspect-ratio: 4 / 3;
+    /* No mobile a imagem vira hero secundário, ocupando a largura toda. */
   }
   .welcome-form { max-width: 100%; gap: var(--sp-4); }
   .welcome-field-input { font-size: 16px; padding: var(--sp-3) var(--sp-4); min-height: 52px; }
