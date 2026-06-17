@@ -45,7 +45,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
   /* --- Comercial e margem --- */
   { id: "R-C-1", block: "comercial", priority: 10,
     title: "Margem por litro acompanhada toda semana",
-    desc: "Planilha pronta para registrar custo, preço e margem por bandeirado e por bandeira branca. 10 minutos por semana, decisão saindo do escuro.",
+    desc: "Planilha pronta para registrar custo, preço e margem por tipo de combustível. 10 minutos por semana, decisão saindo do escuro.",
     icon: "asset:margem",
     impact: "Margem visível, decisão informada" },
   { id: "R-C-2", block: "comercial", priority: 8,

@@ -340,21 +340,6 @@ export const Icons = {
     <polyline points="12 19 5 12 12 5"/>
   `),
 
-  /* ================ Diversos legados ================ */
-
-  /* Frasco / aditivo (mantido pra compatibilidade) */
-  bottle: I(`
-    <path d="M10 2h4v3l1.5 2c.5.7 1 2 1 3v9a3 3 0 0 1-3 3h-3a3 3 0 0 1-3-3v-9c0-1 .5-2.3 1-3L10 5V2z"/>
-    <path d="M9 13h6"/>
-  `),
-
-  /* Bomba alternativa (legado) */
-  pumpFull: I(`
-    <line x1="3" y1="22" x2="15" y2="22"/>
-    <path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/>
-    <circle cx="9" cy="9" r="2"/>
-    <path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"/>
-  `),
 };
 
 export type IconName = keyof typeof Icons;

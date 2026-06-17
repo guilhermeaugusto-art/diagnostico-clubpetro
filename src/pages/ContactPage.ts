@@ -22,7 +22,7 @@ export function ContactPage(p: ContactPageProps): string {
         <header class="contact-head">
           <span class="eyebrow">Última etapa</span>
           <h2 class="h2">
-            Seu raio-x está <span style="color:var(--cp-orange-500);">pronto</span>${hi ? `, ${escHtml(hi)}` : ""}.
+            Seu Raio X está <span style="color:var(--cp-orange-500);">pronto</span>${hi ? `, ${escHtml(hi)}` : ""}.
           </h2>
           <p class="lede measure">
             Deixa o seu WhatsApp que a gente te manda agora a leitura completa do

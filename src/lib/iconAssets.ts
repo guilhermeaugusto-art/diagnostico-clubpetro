@@ -14,7 +14,6 @@ export const ICON_ASSETS = {
   "asset:equipe-mercado": "/icons/equipe-mercado.png",  // 3 pessoas + engrenagem
   "asset:headset":        "/icons/headset.png",         // atendimento consultivo
   "asset:executivo":      "/icons/executivo.png",       // homem barbado de terno + estratégia (gestor formal)
-  "asset:lojista":        "/icons/lojista.png",         // pessoa com carrinho (cliente varejista / lojista)
   "asset:grupo":          "/icons/grupo.png",           // 3 pessoas diversas
   "asset:apresentacao":   "/icons/apresentacao.png",    // 2 apresentando gráfico (reunião / consultoria)
   "asset:conversa":       "/icons/conversa.png",        // 2 pessoas + balão de fala
@@ -66,6 +65,11 @@ export const ICON_ASSETS = {
 
   // === Calendário / agenda ===
   "asset:calendario":  "/icons/calendario.png",
+
+  // === Numerados (tempo de operação do gerente: 1, 2, 3) ===
+  "asset:um":   "/icons/um.png",
+  "asset:dois": "/icons/dois.png",
+  "asset:tres": "/icons/tres.png",
 
   // === Recorrência / ciclo ===
   "asset:repetir":  "/icons/repetir.png",

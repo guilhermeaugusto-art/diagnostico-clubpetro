@@ -130,7 +130,7 @@ function heroHeader(state: AppState, primarySlot: string): string {
         </div>
 
         <div class="result-hero-radar anim-fade delay-2">
-          <span class="radar-panel-eyebrow">Raio x dos pilares</span>
+          <span class="radar-panel-eyebrow">Raio X dos pilares</span>
           ${RadarChart({ state, width: 480, theme: "paper" })}
           <div class="radar-bars">${barsHtml}</div>
           ${weakName ? `

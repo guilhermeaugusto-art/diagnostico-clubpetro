@@ -15,7 +15,7 @@ export const CONFIG = {
   RAIOX_MEET_URL: "https://meet.google.com/ado-rhwa-kvx",
   STATE_KEY: "clubpetro_diag_v5_state",
   STATE_TTL_DAYS: 7,
-  TRANSITION_MS: 2200,
+  TRANSITION_MS: 5500,
   VERSION: "v5",
   /* Label exibido na barra superior (oculto do usuário; a versão fica só em payloads). */
   PUBLIC_LABEL: "Diagnóstico",

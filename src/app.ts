@@ -38,6 +38,13 @@ import {
   TRACK_VIDEO_BLOCKS,
   type VideoTrack,
 } from "./lib/trackVideo";
+import {
+  showTrackImage,
+  hideTrackImage,
+  imageBlockFor,
+  preloadDonoStart,
+  DONO_IMAGE_BLOCKS,
+} from "./lib/trackImage";
 import { track } from "./lib/tracking";
 import { uuid, maskPhone, phoneDigitsOnly } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
@@ -117,6 +124,19 @@ function currentTrackVideo(): { track: VideoTrack; block: number; side: "left" |
   return { track, block, side: blocks[block].side };
 }
 
+/* Estado da imagem em blocos da trilha do DONO para a pergunta atual: bloco e
+   lado. Retorna null fora da trilha do dono, no S1 de roteamento ou fora de
+   tela de pergunta. Mesma logica de blocos do video. */
+function currentTrackImage(): { block: number; side: "left" | "right" } | null {
+  if (state.screen !== "question") return null;
+  if (currentTrack(state) !== "dono") return null;
+  const q = currentQuestion(state);
+  if (!q || q.id === "S1") return null;
+  const total = Math.max(1, visibleQuestions(state).length - 1); // exclui o S1
+  const block = imageBlockFor(DONO_IMAGE_BLOCKS, state.cursor - 1, total);
+  return { block, side: DONO_IMAGE_BLOCKS[block].side };
+}
+
 /* ============== Body ============== */
 
 function renderBody(): string {
@@ -150,6 +170,7 @@ function renderBody(): string {
         a && a.kind === "multi" ? a.selectedIndexes : [];
       const openText = a && a.kind === "text" ? a.text : "";
       const fv = currentTrackVideo();
+      const fi = currentTrackImage();
       return QuestionPage({
         question: q,
         currentIndex: state.cursor,
@@ -161,6 +182,7 @@ function renderBody(): string {
         videoSide: fv?.side,
         videoBlock: fv?.block,
         videoTrack: fv?.track,
+        imageSide: fi?.side,
       });
     }
     case "contact":
@@ -186,8 +208,8 @@ function render(): void {
   if (state.screen === "contact") onContactRendered();
   if (state.screen === "transition") onTransitionRendered();
   if (state.screen === "result") onResultRendered();
-  // Fora das perguntas, a camada de vídeo da trilha fica escondida.
-  if (state.screen !== "question") hideTrackVideo();
+  // Fora das perguntas, as camadas de arte das trilhas ficam escondidas.
+  if (state.screen !== "question") { hideTrackVideo(); hideTrackImage(); }
 }
 
 /* ============== Eventos globais ============== */
@@ -494,6 +516,7 @@ function afterAnswer(q: Question): void {
   if (q.id === "S1") {
     const t = currentTrack(state);
     if (t === "frentista" || t === "gerente") preloadTrackStart(t);
+    else if (t === "dono") preloadDonoStart();
   }
 
   // Sinal de checkpoint
@@ -660,100 +683,16 @@ function onQuestionRendered(): void {
   const mount = document.getElementById("fvideoMount");
   if (tv && mount) showTrackVideo(mount, TRACK_VIDEO_BLOCKS[tv.track], tv.block);
   else hideTrackVideo();
-}
 
-/* Crossfade loop entre dois vídeos.
-   Em vez do `loop` nativo (que dá um corte seco no fim), dois <video> ficam
-   sobrepostos. Quando o ativo chega perto do fim, o próximo entra com fade,
-   o ativo sai com fade, e os papéis se invertem. */
-const VIDEO_CROSSFADE_MS = 700;
-function setupWelcomeVideoLoop(): void {
-  const a = document.getElementById("welcomeVideoA") as HTMLVideoElement | null;
-  const b = document.getElementById("welcomeVideoB") as HTMLVideoElement | null;
-  if (!a || !b) return;
-
-  const safePlay = (v: HTMLVideoElement): void => {
-    v.play().catch(() => {/* autoplay com áudio mudo é permitido; ignora falhas */});
-  };
-
-  let active: HTMLVideoElement = a;
-  let standby: HTMLVideoElement = b;
-  let swapping = false;
-
-  const fadeS = VIDEO_CROSSFADE_MS / 1000;
-
-  const onTime = (): void => {
-    if (swapping) return;
-    const dur = active.duration;
-    if (!isFinite(dur) || dur <= 0) return;
-    // Quando faltar menos que o tempo de fade, inicia o swap.
-    if (active.currentTime >= dur - fadeS) {
-      swapping = true;
-      // Prepara o próximo: zera e dispara play antes de revelar.
-      try { standby.currentTime = 0; } catch { /* alguns formatos exigem ready state */ }
-      safePlay(standby);
-      // Próximo frame: cruza a opacidade.
-      requestAnimationFrame(() => {
-        standby.classList.add("is-active");
-        active.classList.remove("is-active");
-      });
-      // Ao terminar o fade, troca papéis e pausa o que saiu (economiza CPU).
-      const oldActive = active;
-      const newActive = standby;
-      window.setTimeout(() => {
-        try { oldActive.pause(); oldActive.currentTime = 0; } catch { /* ignore */ }
-        active = newActive;
-        standby = oldActive;
-        swapping = false;
-      }, VIDEO_CROSSFADE_MS);
-    }
-  };
-
-  // Mesmo listener nos dois: cada um só dispara enquanto for o ativo.
-  a.addEventListener("timeupdate", () => { if (active === a) onTime(); });
-  b.addEventListener("timeupdate", () => { if (active === b) onTime(); });
-
-  // Erro de carregamento: esconde os dois (revela fallback SVG).
-  const onErr = (): void => {
-    a.classList.remove("is-active");
-    b.classList.remove("is-active");
-  };
-  a.addEventListener("error", onErr, { once: true });
-  b.addEventListener("error", onErr, { once: true });
-
-  // Garante muted antes de qualquer play (iOS exige).
-  a.muted = true;
-  b.muted = true;
-  a.playsInline = true;
-  b.playsInline = true;
-
-  // B entra com preload "none" no HTML para não competir com o vídeo principal
-  // no primeiro paint (metade do payload). Assim que A começa a tocar, B carrega
-  // em background, com folga de sobra até o primeiro crossfade (fim do 1º loop).
-  const primeStandby = (): void => { try { b.load(); } catch { /* ignore */ } };
-  a.addEventListener("playing", primeStandby, { once: true });
-
-  // Tenta tocar assim que possível (alguns iOS só topam depois de loadeddata).
-  const tryStart = (): void => { safePlay(a); };
-  tryStart();
-  a.addEventListener("loadeddata", tryStart, { once: true });
-  a.addEventListener("canplay", tryStart, { once: true });
-
-  // Fallback: alguns navegadores mobile só liberam autoplay no primeiro
-  // gesto do usuário. No toque/scroll inicial, força o play.
-  const resumeOnGesture = (): void => {
-    if (a.paused) safePlay(a);
-    document.removeEventListener("touchstart", resumeOnGesture);
-    document.removeEventListener("click", resumeOnGesture);
-    document.removeEventListener("scroll", resumeOnGesture);
-  };
-  document.addEventListener("touchstart", resumeOnGesture, { passive: true, once: true });
-  document.addEventListener("click", resumeOnGesture, { once: true });
-  document.addEventListener("scroll", resumeOnGesture, { passive: true, once: true });
+  // Camada de imagem em blocos da trilha do dono: re-anexa a imagem persistente
+  // (sem recriar) e faz crossfade + morph de cor so quando muda de bloco.
+  const ti = currentTrackImage();
+  const imgMount = document.getElementById("fimgMount");
+  if (ti && imgMount) showTrackImage(imgMount, DONO_IMAGE_BLOCKS, ti.block);
+  else hideTrackImage();
 }
 
 function onWelcomeRendered(): void {
-  setupWelcomeVideoLoop();
   const input = document.getElementById("welcomeName") as HTMLInputElement | null;
   const btn = document.getElementById("btnStartDiag") as HTMLButtonElement | null;
   if (!input) return;

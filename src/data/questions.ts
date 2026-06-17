@@ -17,7 +17,6 @@ import type { BlockId } from "./blocks";
 /* --- Trilhas ------------------------------------------------------------ */
 
 export type TrackId = "dono" | "gerente" | "frentista";
-export const TRACK_IDS: TrackId[] = ["dono", "gerente", "frentista"];
 
 export function trackFromS1Value(v: string | null | undefined): TrackId | null {
   if (v === "dono") return "dono";
@@ -1715,20 +1714,9 @@ export const PAIN_QUESTION_ID_BY_TRACK: Record<TrackId, string> = {
   frentista: "F_MELHORIA",
 };
 
-/* ID da pergunta de "já conhecia ClubPetro" por trilha.
-   Frentista não responde essa, retorna null. */
-export const KNOWS_CLUBPETRO_ID_BY_TRACK: Record<TrackId, string | null> = {
-  dono:      "D_CONHECE",
-  gerente:   "G_CONHECE",
-  frentista: null,
-};
-
 /* ID da pergunta de intenção / prontidão (X3/Y2 equivalentes). Só dono tem. */
 export const READINESS_QUESTION_ID_BY_TRACK: Record<TrackId, string | null> = {
   dono:      "D_INTENCAO",
   gerente:   null,
   frentista: null,
 };
-
-/* Compatibilidade: SIGNAL_CHECKPOINT_IDS default (trilha dono). */
-export const SIGNAL_CHECKPOINT_IDS = SIGNAL_CHECKPOINT_IDS_BY_TRACK.dono;

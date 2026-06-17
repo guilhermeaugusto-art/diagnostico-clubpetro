@@ -10,14 +10,6 @@
   0%   { opacity: 0; transform: scale(.95); }
   100% { opacity: 1; transform: none; }
 }
-@keyframes pulseRing {
-  0%   { box-shadow: 0 0 0 0 rgba(242,102,0,.35); }
-  100% { box-shadow: 0 0 0 14px rgba(242,102,0,0); }
-}
-@keyframes shimmer {
-  0%   { background-position: -120% 0; }
-  100% { background-position: 220% 0; }
-}
 @keyframes phraseFade {
   0%   { opacity: 0; transform: translateY(8px); }
   20%, 70% { opacity: 1; transform: none; }
@@ -26,15 +18,11 @@
 
 .anim-rise   { animation: rise var(--dur-4) var(--ease-out) both; }
 .anim-fade   { animation: fade var(--dur-4) var(--ease) both; }
-.anim-pop    { animation: pop  var(--dur-3) var(--ease-out) both; }
 
 .delay-0  { animation-delay: 0ms; }
 .delay-1  { animation-delay: 80ms; }
 .delay-2  { animation-delay: 160ms; }
 .delay-3  { animation-delay: 240ms; }
-.delay-4  { animation-delay: 320ms; }
-.delay-5  { animation-delay: 400ms; }
-.delay-6  { animation-delay: 480ms; }
 
 /* Deriva lenta dos orbs de ambiente (amplitude 3-5%, sem girar). */
 @keyframes orbDriftA {

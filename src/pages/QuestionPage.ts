@@ -17,6 +17,7 @@ interface QuestionPageProps {
   videoSide?: "left" | "right";        // trilha com vídeo: lado do painel (desktop)
   videoBlock?: number;                 // índice do bloco de vídeo, para a máscara por cena
   videoTrack?: "frentista" | "gerente"; // trilha do vídeo, para casar o creme do fundo
+  imageSide?: "left" | "right";        // trilha do dono (imagem em blocos): lado do painel
 }
 
 /* Envolve o conteúdo da pergunta no palco. Na trilha do frentista, monta o
@@ -28,6 +29,16 @@ function frameStage(inner: string, p: QuestionPageProps): string {
     <div class="shell stage">
       <div class="q-stage q-stage-${p.videoSide}">
         <div class="fvideo-panel" id="fvideoMount" data-fb="${p.videoBlock ?? 0}" data-track="${p.videoTrack ?? "frentista"}" aria-hidden="true"></div>
+        ${inner}
+      </div>
+    </div>
+  `;
+  }
+  if (p.imageSide) {
+    return `
+    <div class="shell stage">
+      <div class="q-stage q-stage-${p.imageSide}">
+        <div class="fimg-panel" id="fimgMount" aria-hidden="true"></div>
         ${inner}
       </div>
     </div>
@@ -81,9 +92,11 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   servicos: "asset:lavagem",
 
   // === Tempo de casa ===
-  ate2:    "asset:lampada", menos1:  "asset:lampada", menos6m: "asset:lampada",   // chegou agora
-  "2a10":  "asset:calendario", "1a3":   "asset:calendario", "6ma2a": "asset:calendario", // consolidado
-  mais10:  "asset:visao", mais3:   "asset:visao", mais2a:  "asset:visao",         // veterano
+  ate2:    "asset:lampada", menos6m: "asset:lampada",   // chegou agora
+  "2a10":  "asset:calendario", "6ma2a": "asset:calendario", // consolidado
+  mais10:  "asset:visao", mais2a:  "asset:visao",         // veterano
+  // Tempo de operacao do gerente: icones numerados 1, 2, 3 (combina com as opcoes)
+  menos1:  "asset:um", "1a3": "asset:dois", mais3: "asset:tres",
 
   // === Tamanho de equipe ===
   ate5:  "asset:frentista", "1a2": "asset:frentista",   // time pequeno
@@ -186,7 +199,6 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   fidelizar: "asset:repetir",          // dor: cliente não volta
   equipe: "asset:grupo",               // dor: falta de gente
   concorrencia: "asset:concorrencia",  // dor: concorrência
-  padrao_dor: "asset:qualidade",       // (reservado)
 
   // === Conhece ClubPetro ===
   cliente:  "asset:check",             // já é cliente
@@ -197,8 +209,6 @@ const VALUE_ICON: Record<string, AnyIcon> = {
   sempre:      "asset:check",
   as_vezes:    "asset:balanca",
   quase_nunca: "asset:aviso-triangulo",
-  nao_olhei:   "asset:aviso-triangulo",
-  nao_olhou:   "asset:aviso-triangulo",
 };
 
 /* Fallback por palavra-chave no texto da opção (PNG flat onde disponível). */
@@ -288,7 +298,6 @@ const ICON_ALTS: Record<string, AnyIcon[]> = {
   "asset:grupo":          ["asset:equipe-mercado", "asset:apresentacao", "asset:frentista", "team"],
   "asset:apresentacao":   ["asset:executivo", "asset:grupo", "asset:headset", "asset:conversa"],
   "asset:executivo":      ["asset:apresentacao", "asset:headset", "asset:frentista", "user"],
-  "asset:lojista":        ["asset:carrinho", "asset:cesta", "asset:frentista"],
   "asset:conversa":       ["asset:apresentacao", "asset:headset", "asset:atendimento"],
   "asset:atendimento":    ["asset:frentista", "asset:headset", "asset:apresentacao", "asset:equipe-mercado", "stars"],
   team:                   ["asset:grupo", "asset:equipe-mercado", "asset:frentista", "user"],

@@ -75,7 +75,7 @@ export function WelcomePage(p: WelcomePageProps): string {
             Entenda a <span class="ink-accent">saúde</span> do seu posto.
           </h1>
           <p class="lede measure anim-rise delay-2">
-            Em poucos minutos, um raio-x do seu posto: onde o lucro está vazando
+            Em poucos minutos, um Raio X do seu posto: onde o lucro está vazando
             hoje, o que rende mais mexer primeiro, e por onde começar a virar o jogo.
           </p>
           ${ctaArea}

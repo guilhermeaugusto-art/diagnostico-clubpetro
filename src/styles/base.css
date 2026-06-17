@@ -241,6 +241,8 @@ body:has(.welcome) {
 }
 .eyebrow.on-dark { color: var(--cp-orange-400); }
 .eyebrow.on-dark::before { background: var(--cp-orange-400); }
+/* Tela inicial: sem o traco decorativo antes do eyebrow (pedido), so o texto. */
+.welcome .eyebrow::before { display: none; }
 
 .display {
   font-family: var(--font-display);   /* Montserrat */

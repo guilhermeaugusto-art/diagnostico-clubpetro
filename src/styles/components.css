@@ -201,8 +201,8 @@ body:has(.welcome) .cp-header {
 .answer-card.is-selected::before { border-color: var(--cp-orange-500); border-width: 1.5px; }
 
 .answer-icon {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border-radius: var(--rd-md);
@@ -212,8 +212,8 @@ body:has(.welcome) .cp-header {
   transition: transform var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease);
   overflow: hidden;
 }
-.answer-icon svg { width: 20px; height: 20px; }
-.answer-icon .icon-png { width: 26px; height: 26px; object-fit: contain; display: block; }
+.answer-icon svg { width: 18px; height: 18px; }
+.answer-icon .icon-png { width: 22px; height: 22px; object-fit: contain; display: block; }
 .answer-card.is-selected .answer-icon {
   background: linear-gradient(160deg, var(--cp-orange-500) 0%, var(--cp-orange-600) 100%);
   color: #fff;
@@ -1389,9 +1389,9 @@ body:has(.welcome) .cp-header {
     border-radius: var(--rd-lg);
   }
   /* Container do ícone: 48px, fundo gradiente, ícone PNG/SVG centralizado. */
-  .answer-icon { width: 48px; height: 48px; border-radius: var(--rd-md); }
-  .answer-icon svg { width: 24px; height: 24px; }
-  .answer-icon .icon-png { width: 30px; height: 30px; }
+  .answer-icon { width: 42px; height: 42px; border-radius: var(--rd-md); }
+  .answer-icon svg { width: 20px; height: 20px; }
+  .answer-icon .icon-png { width: 26px; height: 26px; }
   /* Remove o padding-top decorativo: com align-items:center o body fica
      numericamente centralizado com o ícone. */
   .answer-body { padding-top: 0; }
@@ -1432,7 +1432,6 @@ body:has(.welcome) .cp-header {
   .radar-chart { max-width: 100%; }
   .radar-chart .radar-label { font-size: 11px; }
   .radar-chart .radar-label-val { font-size: 12px; }
-  .btn-radar-cta { font-size: var(--fs-13); padding: 12px 14px; min-height: 48px; width: 100%; }
 
   /* Sections mais juntas */
   .result > section + section { margin-top: var(--sp-10); }
@@ -1451,9 +1450,9 @@ body:has(.welcome) .cp-header {
   .welcome-main .lede { font-size: var(--fs-14); }
   .answer-grid { gap: var(--sp-3); }
   .answer-card { grid-template-columns: 44px 1fr; padding: var(--sp-3) var(--sp-4); padding-right: var(--sp-10); min-height: 64px; }
-  .answer-icon { width: 44px; height: 44px; }
-  .answer-icon svg { width: 22px; height: 22px; }
-  .answer-icon .icon-png { width: 28px; height: 28px; }
+  .answer-icon { width: 38px; height: 38px; }
+  .answer-icon svg { width: 19px; height: 19px; }
+  .answer-icon .icon-png { width: 24px; height: 24px; }
   .result-hero { padding: var(--sp-4); }
 }
 
@@ -1666,12 +1665,14 @@ a.btn { text-decoration: none; }
     max-width: 1080px;
     align-items: start;          /* topo, para o sticky funcionar */
   }
-  /* Lado direito: pergunta a esquerda, video a direita (sem mexer no DOM). */
+  /* Lado direito: pergunta a esquerda, arte a direita (sem mexer no DOM). */
   .q-stage-right { grid-template-columns: minmax(0, 1fr) minmax(0, 320px); }
-  .q-stage-right .fvideo-panel { order: 2; }
+  .q-stage-right .fvideo-panel,
+  .q-stage-right .fimg-panel { order: 2; }
   .q-stage-right .question { order: 1; }
-  /* Video fixo enquanto a pergunta (alta) rola: assim ele nao "some". */
-  .q-stage .fvideo-panel {
+  /* Arte (video/imagem) fixa enquanto a pergunta (alta) rola: nao "some". */
+  .q-stage .fvideo-panel,
+  .q-stage .fimg-panel {
     position: sticky;
     top: calc(var(--header-h) + var(--sp-5));
     align-self: start;
@@ -1694,6 +1695,69 @@ body:has(.fvideo-panel) {
 }
 @media (min-width: 960px) {
   .fvideo-panel { width: 100%; margin: 0; }
+}
+
+/* ============ IMAGEM EM BLOCOS (trilha do dono) ============
+   Mesma mecanica/layout das trilhas de video, mas com <img>. A pagina assume a
+   cor de fundo da imagem do bloco (--fimg-bg) e as bordas dissolvem nela
+   (fusao "PNG flutuante", igual ao welcome). A cor transiciona junto com o
+   crossfade ao trocar de bloco. */
+body:has(.fimg-panel) {
+  background-color: var(--fimg-bg, #f9f6ef);
+  transition: background-color 620ms var(--ease);
+}
+.fimg-panel {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  width: min(54vw, 230px);       /* mobile: portrait centralizado, dono em quadro */
+  margin-inline: auto;
+  overflow: visible;             /* deixa o leve zoom respirar; a mascara some a borda */
+  background-color: transparent;
+}
+@media (min-width: 960px) {
+  .fimg-panel { width: 100%; margin: 0; }
+}
+.fimg-layer { position: absolute; inset: 0; }
+.fimg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  opacity: 0;
+  transform: scale(1.02);        /* entra levemente maior e assenta em 1.0 */
+  transition: opacity 620ms var(--ease), transform 900ms var(--ease-out);
+  will-change: opacity, transform;
+  /* Feather nas bordas (mesma fusao do welcome): miolo solido, beirada esfuma. */
+  -webkit-mask-image:
+    radial-gradient(140% 140% at 50% 45%, #000 76%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 92%, transparent 100%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    radial-gradient(140% 140% at 50% 45%, #000 76%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 92%, transparent 100%);
+          mask-composite: intersect;
+}
+.fimg.is-shown { opacity: 1; transform: scale(1); }
+/* Imagens com chao mais escuro na base (visao, suprimento): feather no topo e
+   laterais; base com corte mais limpo (nao dissolve o chao no creme). */
+.fimg.is-ground {
+  -webkit-mask-image:
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 7%, #000 98%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    linear-gradient(to right,  transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 7%, #000 98%);
+          mask-composite: intersect;
+}
+.fimg.is-static { transform: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .fimg { transition: none; transform: none; }
 }
 
 .fvideo-layer { position: absolute; inset: 0; }
