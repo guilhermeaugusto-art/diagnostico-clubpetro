@@ -576,6 +576,10 @@ function nextStep(): void {
   if (state.screen !== "question") return;
   const list = visibleQuestions(state);
   const nextCursor = state.cursor + 1;
+  // Saindo do S1 a trilha passa a ser conhecida: reconstrói o header (render
+  // completo) para o gráfico de barras por pilar nascer com os pilares da
+  // trilha (S1 nao tem trilha, entao o header dele vem sem barras).
+  const leavingS1 = state.cursor === 0;
   if (nextCursor < list.length) {
     // Continua nas perguntas: atualiza só o corpo e preserva o nó das barras,
     // para que a transição de preenchimento (950ms) rode contínua através da
@@ -583,7 +587,8 @@ function nextStep(): void {
     state.cursor = nextCursor;
     navDir = "fwd";
     saveState(state);
-    softRenderQuestion();
+    if (leavingS1) render();
+    else softRenderQuestion();
   } else {
     state.cursor = list.length;
     state.screen = "contact";
