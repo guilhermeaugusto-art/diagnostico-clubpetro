@@ -98,10 +98,12 @@ export async function setSessionContact(id: string, name: string, email: string,
 }
 
 /* Marca a conclusão do diagnóstico (chegou ao fim do raio-x) e se virou MQL
-   (dono ou gerente que deixou contato). created_at já marca o início. */
+   (dono ou gerente que deixou contato). created_at já marca o início.
+   OBS: a coluna `concluiu` é GERADA no banco (calculada automaticamente), então
+   NÃO pode ser setada aqui (PostgREST rejeita o PATCH inteiro com 400). Gravamos
+   só concluido_em + mql; o `concluiu` se resolve sozinho no banco. */
 export async function completeSession(id: string, mql: boolean): Promise<void> {
   await updateRow(id, {
-    concluiu: true,
     concluido_em: new Date().toISOString(),
     mql,
   });
