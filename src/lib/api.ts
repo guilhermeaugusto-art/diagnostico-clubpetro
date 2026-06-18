@@ -327,14 +327,17 @@ export async function markReportFailed(sessionId: string, _error: string): Promi
 /* ============== Raio X ============== */
 
 /* Lead clicou em "Garantir minha vaga no Raio X" no app.
-   Grava SO a intencao (agendou_raiox) e libera o PDF do cliente.
-   raiox_status e raiox_data ficam por conta da Edge Function `confirmar-raiox`
-   e do cron diario (aceite real no Google Calendar), para nao colidir com a
-   semantica de "confirmado". */
+   Regra de negocio (opcao A): agendar JA conta como CONFIRMADO. Entao grava
+   agendou_raiox + raiox_status='confirmado' + raiox_data, o que dispara a tag
+   `raiox-confirmado` no RD (via o gatilho de conversao). Libera tambem o PDF.
+   O cron `?sync=confirmados` segue marcando participou_raiox para quem de fato
+   aceita o convite (presenca real). */
 export async function persistAgendouRaiox(sessionId: string): Promise<void> {
   bufferEvent("rayx_agendou", "rayx", {});
   await updateRow(sessionId, {
     agendou_raiox: true,
+    raiox_status: "confirmado",
+    raiox_data: new Date().toISOString(),
     // Ao garantir a vaga no Raio X, o PDF do cliente fica liberado para envio.
     pdf_liberado: true,
   });
