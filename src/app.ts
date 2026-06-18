@@ -1,6 +1,7 @@
 import "./styles/index.css";
 
 import { CONFIG } from "./lib/config";
+import { calendarTemplateUrl } from "./lib/raiox";
 import { BLOCKS, BLOCK_ORDER } from "./data/blocks";
 import {
   type Question,
@@ -1003,19 +1004,30 @@ function openInNewTab(url: string): void {
   a.remove();
 }
 
-/* "Garantir minha vaga no Raio X": adiciona o lead como convidado do MESMO
-   evento compartilhado, via Edge Function `confirmar-raiox?email=`, e o leva
-   para a tela do evento no Google (onde ele da "Sim"). Mesma sala para todos.
-   Grava agendou_raiox no Supabase (intencao). */
+/* "Garantir minha vaga no Raio X". Fluxo:
+   1) Abre a AGENDA DA PROPRIA PESSOA com o evento ja pre-preenchido (link
+      "salvar evento" do Google Calendar). Ela so clica em Salvar e o Raio X fica
+      na agenda dela de verdade (nao depende de aceitar convite de convidado).
+   2) Em paralelo, confirma a presenca no evento compartilhado (adiciona o email
+      como convidado) e dispara o email de confirmacao, via Edge Function
+      `confirmar-raiox?email=` (fetch em segundo plano, nao abre aba).
+   3) Grava agendou_raiox no Supabase (intencao) e atualiza a UI. */
 function ctaRaiox(): void {
   track("rayx_cta_clicked", { diag_id: state.diagId }, state.diagId);
   const email = state.email.trim();
-  const url = email && email.includes("@")
-    ? CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email)
-    : CONFIG.RAIOX_MEET_URL;
-  // Abre a aba primeiro, dentro do gesto do clique, antes de qualquer await.
-  openInNewTab(url);
-  // Depois grava a intenção (fetch keepalive, não depende da aba nova).
+  const hasEmail = email.includes("@");
+
+  // 1) Abre a agenda da pessoa (dentro do gesto do clique). Sem email valido,
+  //    cai na sala do Meet.
+  openInNewTab(hasEmail ? calendarTemplateUrl() : CONFIG.RAIOX_MEET_URL);
+
+  // 2) Confirma no evento compartilhado + email de confirmacao, em segundo plano.
+  if (hasEmail) {
+    const fnUrl = CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email);
+    try { fetch(fnUrl, { mode: "no-cors", keepalive: true }).catch(() => {}); } catch { /* ignore */ }
+  }
+
+  // 3) Grava a intencao + UI.
   if (!raioxConfirmed) {
     raioxConfirmed = true;
     if (state.diagId) persistAgendouRaiox(state.diagId);

@@ -32,3 +32,27 @@ export function dataProximaSessao(): string {
 export function meetLabel(): string {
   return CONFIG.RAIOX_MEET_URL.replace(/^https?:\/\//, "");
 }
+
+/* Link "salvar na agenda" do Google Calendar, com o evento do Raio X JA
+   pre-preenchido (titulo, proxima terca 19h America/Sao_Paulo, sala do Meet).
+   Ao abrir, a pessoa cai direto na tela de criar evento NA AGENDA DELA e e so
+   clicar em Salvar, entao o evento fica de verdade no calendario dela (nao
+   depende de aceitar convite de convidado). */
+export function calendarTemplateUrl(): string {
+  const d = proximaTercaAs19(); // relogio de Sao Paulo (getHours() === 19)
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  const ymd = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const dates = `${ymd}T190000/${ymd}T200000`; // 19h as 20h
+  const meet = CONFIG.RAIOX_MEET_URL;
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: "Raio X do Posto · ClubPetro",
+    dates,
+    details:
+      "Sessao ao vivo do Raio X do seu posto com um Especialista ClubPetro.\n" +
+      "Entre pela sala do Meet: " + meet,
+    location: meet,
+    ctz: "America/Sao_Paulo",
+  });
+  return "https://calendar.google.com/calendar/render?" + params.toString();
+}
