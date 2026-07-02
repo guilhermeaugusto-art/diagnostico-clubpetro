@@ -2,8 +2,8 @@
 export const CONFIG = {
   CLUBPETRO_WHATSAPP: "5531992697762",
   /* WhatsApp do especialista para o CTA de contato direto do resultado.
-     Número informado: +55 35 9839-4401. */
-  WHATSAPP_ESPECIALISTA: "553598394401",
+     Número: +55 35 99839-4401. */
+  WHATSAPP_ESPECIALISTA: "5535998394401",
   SUPABASE_URL: "https://azmtxhjtqodtaeoshrye.supabase.co",
   SUPABASE_ANON_KEY:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0",
