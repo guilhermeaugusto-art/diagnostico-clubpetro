@@ -86,7 +86,7 @@ export function WelcomePage(p: WelcomePageProps): string {
     <div class="shell stage">
       <section class="welcome">
         <div class="welcome-main">
-          <span class="eyebrow anim-rise delay-0">Análise gratuita do posto</span>
+          <span class="eyebrow anim-rise delay-0">Saúde do seu posto</span>
           <h1 class="display anim-rise delay-1">
             As 6 frentes que definem o <span class="ink-accent">lucro</span> do seu posto.
           </h1>

@@ -130,9 +130,13 @@ COMMENT ON COLUMN public.diagnostico_respostas.leitura_comercial   IS 'JSONB com
 -- =============================================================================
 -- Bucket privado para PDFs
 -- =============================================================================
+-- Bucket PÚBLICO: os PDFs são servidos por URL pública com o UUID da sessão no
+-- caminho (decisão de produto; signed URL dava InvalidJWT). Alinhado à produção
+-- para a migration NÃO re-privatizar o bucket e quebrar os links se for re-rodada.
+-- Se algum dia for exigir privacidade estrita, servir via Edge Function/service_role.
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('diagnostico-pdfs', 'diagnostico-pdfs', false)
-ON CONFLICT (id) DO UPDATE SET public = false;
+VALUES ('diagnostico-pdfs', 'diagnostico-pdfs', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- Anon pode UPLOAD (front grava o PDF). NÃO pode ler/listar/deletar.
 DROP POLICY IF EXISTS diag_pdfs_anon_insert ON storage.objects;

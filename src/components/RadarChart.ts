@@ -33,6 +33,17 @@ export function RadarChart({ state, width = 480, theme = "paper" }: RadarChartPr
   const r = Math.min(vbW, vbH) * 0.30;
   const order = RADAR_ORDER.length === BLOCK_ORDER.length ? RADAR_ORDER : BLOCK_ORDER;
   const n = order.length;
+
+  // Frente sem pergunta pontuável visível (ex.: Resiliência do frentista quando
+  // não há carregador elétrico) não foi medida. Em vez de desenhá-la em 0 (que
+  // parece nota péssima), usa a média das frentes medidas como vértice neutro e
+  // não mostra número no rótulo (BUG-08). Para dono/gerente todas são medidas,
+  // então o comportamento é idêntico ao anterior.
+  const measuredPcts = order.filter((b) => bs[b].possible > 0).map((b) => bs[b].pct);
+  const meanPct = measuredPcts.length
+    ? Math.round(measuredPcts.reduce((s, v) => s + v, 0) / measuredPcts.length)
+    : 0;
+  const valueFor = (b: BlockId): number => (bs[b].possible > 0 ? bs[b].pct : meanPct);
   const angles = Array.from({ length: n }, (_, i) => (-Math.PI / 2) + (i * 2 * Math.PI) / n);
 
   const ringPolygon = (factor: number) =>
@@ -50,7 +61,7 @@ export function RadarChart({ state, width = 480, theme = "paper" }: RadarChartPr
 
   const dataPoints = order.map((b, i) => {
     const a = angles[i];
-    const v = Math.max(0.04, (bs[b].pct || 0) / 100);
+    const v = Math.max(0.04, valueFor(b) / 100);
     const x = cx + r * v * Math.cos(a);
     const y = cy + r * v * Math.sin(a);
     return `${x.toFixed(2)},${y.toFixed(2)}`;
@@ -58,7 +69,7 @@ export function RadarChart({ state, width = 480, theme = "paper" }: RadarChartPr
 
   const dots = order.map((b, i) => {
     const a = angles[i];
-    const v = Math.max(0.04, (bs[b].pct || 0) / 100);
+    const v = Math.max(0.04, valueFor(b) / 100);
     const x = cx + r * v * Math.cos(a);
     const y = cy + r * v * Math.sin(a);
     const lead = b === "fidelizacao" ? " radar-dot-lead" : "";
@@ -105,7 +116,7 @@ export function RadarChart({ state, width = 480, theme = "paper" }: RadarChartPr
             class="radar-label${lead}" dy="${nameDy}">${BLOCKS[b].short}</text>
       <text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}"
             text-anchor="${anchor}" dominant-baseline="${baseline}"
-            class="radar-label-val" dy="${valueDy}">${bs[b].pct}</text>
+            class="radar-label-val" dy="${valueDy}">${bs[b].possible > 0 ? bs[b].pct : ""}</text>
     `;
   }).join("");
 

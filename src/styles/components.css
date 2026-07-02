@@ -145,11 +145,6 @@ body:has(.welcome) .cp-header {
 @media (min-width: 720px) {
   .answer-grid { grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 }
-.answer-grid + .answer-grid-hint {
-  margin-top: var(--sp-3);
-  font-size: var(--fs-13);
-  color: var(--ink-400);
-}
 
 .answer-card {
   position: relative;
@@ -348,7 +343,6 @@ body:has(.welcome) .cp-header {
   flex-wrap: wrap;
   margin-bottom: var(--sp-4);
 }
-.is-hidden { display: none !important; }
 .q-step-tag {
   display: inline-flex;
   align-items: center;
@@ -433,10 +427,16 @@ body:has(.welcome) .cp-header {
 
 /* Form de nome */
 .welcome-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: var(--sp-5);
   max-width: 520px;
+}
+/* Desktop/tablet: nome e WhatsApp lado a lado, visíveis sem rolar; o CTA ocupa a
+   linha inteira. No mobile seguem empilhados (grid de 1 coluna). (Fase 4 #4) */
+@media (min-width: 720px) {
+  .welcome-form { grid-template-columns: 1fr 1fr; column-gap: var(--sp-4); }
+  .welcome-form .welcome-cta-row { grid-column: 1 / -1; }
 }
 .welcome-field {
   display: flex;
@@ -476,15 +476,6 @@ body:has(.welcome) .cp-header {
 .welcome-field-input.is-invalid {
   border-color: var(--danger);
   box-shadow: 0 0 0 4px rgba(197,62,72,.10);
-}
-.welcome-field-hint {
-  font-size: var(--fs-13);
-  color: var(--ink-400);
-  min-height: 18px;
-}
-.welcome-field-input.is-invalid + .welcome-field-hint {
-  color: var(--danger);
-  font-weight: 500;
 }
 .welcome-cta-row {
   display: flex;
@@ -612,105 +603,6 @@ body:has(.welcome) .cp-header {
   .welcome-video-wrap { max-width: 100%; }
 }
 
-/* ============ CONTACT STAGE ============
-   Layout compacto pra deixar o botão "Ver meu diagnóstico" visível sem
-   precisar rolar em desktops comuns (1366×768 com chrome) e em mobile. */
-.contact-stage {
-  max-width: 600px;
-  margin-inline: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-}
-.contact-head { display: flex; flex-direction: column; gap: var(--sp-2); }
-.contact-head .h2 { margin-top: var(--sp-1); font-size: clamp(1.5rem, 4vw, 2rem); }
-.contact-head .lede { font-size: var(--fs-15); }
-.contact-card {
-  padding: var(--sp-5);
-  border-radius: var(--rd-lg);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  box-shadow: 0 2px 8px rgba(11, 18, 24, .05);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-.contact-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-.contact-field-label {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-400);
-}
-.contact-input {
-  width: 100%;
-  font-family: var(--font-ui);        /* DM Sans */
-  font-weight: 600;
-  font-size: var(--fs-22);
-  letter-spacing: -0.01em;
-  padding: var(--sp-3) 0;
-  border: 0;
-  border-bottom: 2px solid var(--ink-200);
-  background: transparent;
-  color: var(--ink-900);
-  font-variant-numeric: tabular-nums;
-  outline: none;
-  min-height: var(--touch);
-  transition: border-color var(--dur-2) var(--ease);
-}
-.contact-input::placeholder { color: var(--ink-200); font-weight: 500; }
-.contact-input:focus { border-color: var(--cp-orange-500); }
-.contact-input.is-invalid { border-color: var(--danger); }
-.contact-field-hint {
-  font-size: var(--fs-13);
-  color: var(--ink-400);
-}
-.contact-input.is-invalid ~ .contact-field-hint {
-  color: var(--danger);
-  font-weight: 500;
-}
-.contact-trust {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--fs-12);
-  color: var(--ink-400);
-}
-.contact-trust svg { width: 14px; height: 14px; color: var(--ok); flex-shrink: 0; }
-.contact-nav {
-  justify-content: space-between;
-  position: sticky;
-  bottom: var(--sp-4);
-  background: linear-gradient(180deg, transparent, var(--paper) 40%);
-  padding-block: var(--sp-3);
-  z-index: 5;
-}
-/* Em mobile, garante que o nav fique sempre no rodapé, visível. */
-@media (max-width: 720px) {
-  .contact-nav {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(180deg, transparent, var(--paper) 35%);
-    padding-block: var(--sp-3) var(--sp-4);
-    margin-inline: calc(-1 * var(--sp-5));
-    padding-inline: var(--sp-5);
-  }
-}
-/* Layout otimizado pra viewport curtas (notebooks 1366×768): reduzir
-   espaçamentos extras e garantir botão acima da dobra. */
-@media (min-width: 721px) and (max-height: 800px) {
-  .contact-stage { gap: var(--sp-4); }
-  .contact-head .h2 { font-size: var(--fs-22); }
-  .contact-head .lede { font-size: var(--fs-14); }
-  .contact-card { padding: var(--sp-4); gap: var(--sp-3); }
-  .contact-input { font-size: var(--fs-18); padding: var(--sp-2) 0; }
-}
-
 /* ============ TRANSITION ============ */
 .transition-wrap {
   min-height: 60vh;
@@ -766,352 +658,33 @@ body:has(.welcome) .cp-header {
 
 /* Hero do resultado: gradiente azul ClubPetro + glow reativo por urgência.
    --urgency-accent e --urgency-glow são definidas inline pelo ResultPage. */
-.result-hero {
-  position: relative;
-  padding: var(--sp-8);
-  border-radius: var(--rd-2xl);
-  background:
-    radial-gradient(60% 70% at 90% 0%, var(--urgency-glow, rgba(242,102,0,0.30)), transparent 70%),
-    radial-gradient(40% 50% at 5% 100%, rgba(242,102,0,0.10), transparent 70%),
-    linear-gradient(160deg, var(--cp-blue-800) 0%, var(--cp-blue-900) 100%);
-  color: #fff;
-  box-shadow:
-    0 30px 60px rgba(11,31,51,0.30),
-    0 12px 24px rgba(11,31,51,0.18);
-  overflow: hidden;
-  isolation: isolate;
-}
 /* Movimento lento e quase imperceptível do glow (8s, easing suave). */
-.result-hero::after {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  background: radial-gradient(40% 40% at 50% 50%, var(--urgency-glow, transparent), transparent 70%);
-  filter: blur(40px);
-  opacity: 0.55;
-  z-index: -1;
-  animation: heroGlow 12s ease-in-out infinite alternate;
-  pointer-events: none;
-}
 @keyframes heroGlow {
   0%   { transform: translate(0, 0); }
   100% { transform: translate(6%, -4%); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .result-hero::after { animation: none; }
-}
 
 /* Score na cor da urgência (não sempre branco). */
-.result-hero.urgency-critical .score-number,
-.result-hero.urgency-warning .score-number  { color: var(--urgency-accent, #fff); }
 /* Topline: eyebrow à esquerda, chip de status à direita, mesma linha */
-.result-hero-topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-4);
-}
 
 /* Chip de status urgência */
-.result-hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 6px 12px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid var(--border-on-dark);
-  border-radius: var(--rd-full);
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #fff;
-  text-transform: uppercase;
-}
-.result-hero-tag-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--urgency-accent, var(--cp-orange-400));
-  box-shadow: 0 0 12px var(--urgency-accent, var(--cp-orange-400));
-}
 /* Glow suave em vez de grid quadriculado: profundidade sem visual técnico. */
-.result-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(50% 60% at 85% -10%, rgba(242,102,0,0.16), transparent 70%),
-    radial-gradient(40% 50% at 0% 100%, rgba(255,138,61,0.08), transparent 70%);
-  z-index: -1;
-  pointer-events: none;
-}
-@media (min-width: 720px) { .result-hero { padding: var(--sp-12); } }
 /* Headline grande "Boa, [Nome]. Sua operação está em construção." */
-.result-hero-headline {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(1.75rem, 4vw, 2.6rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: #fff;
-  margin-top: var(--sp-4);
-  max-width: 28ch;
-}
-.result-hero-headline .ink-orange { color: var(--cp-orange-400); }
-
-.result-hero-lede {
-  font-size: var(--fs-16);
-  line-height: 1.65;
-  color: rgba(255,255,255,.78);
-  margin-top: var(--sp-4);
-  max-width: 60ch;
-}
-
-.result-hero-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-8);
-  align-items: start;
-  margin-top: var(--sp-8);
-}
-@media (min-width: 960px) {
-  .result-hero-grid { grid-template-columns: 1fr 1fr; gap: var(--sp-10); }
-}
-
-.result-hero-left {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-  min-width: 0;
-}
-.result-hero-left .score-dial-wrap { margin-top: 0; }
 
 /* Score + faixa lado a lado, otimizando espaço vertical */
-.result-hero-scoreblock {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--sp-5);
-  flex-wrap: wrap;
-}
-
-.result-level-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: var(--sp-2);
-}
-.result-level-msg {
-  font-size: var(--fs-15);
-  line-height: 1.65;
-  color: rgba(255,255,255,.78);
-  max-width: 44ch;
-}
 
 /* Trio: Ponto mais forte / Ponto de atenção / Próxima melhoria */
-.result-trio {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-on-dark);
-}
-.result-trio-item {
-  display: grid;
-  grid-template-columns: 36px 1fr;
-  gap: var(--sp-3);
-  align-items: flex-start;
-}
-.result-trio-icon {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--rd-md);
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border-on-dark);
-  color: var(--cp-orange-400);
-}
-.result-trio-icon svg { width: 18px; height: 18px; }
-.result-trio-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.result-trio-label {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.55);
-}
-.result-trio-value {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: var(--fs-16);
-  letter-spacing: -0.005em;
-  line-height: 1.35;
-  color: #fff;
-  overflow-wrap: anywhere;
-}
 
 /* Painel do radar EM PAPEL dentro do hero escuro: rótulos em tinta, sem glow,
    sem azul de dashboard. O papel sobre o azul faz o raio-x saltar. */
-.result-hero-radar {
-  position: relative;
-  padding: var(--sp-6);
-  border-radius: var(--rd-lg);
-  background: var(--paper);
-  border: 1px solid var(--border-soft);
-  box-shadow: 0 12px 32px rgba(11, 18, 24, .30);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-.radar-panel-eyebrow {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--cp-orange-600);
-}
-.result-hero-radar-reading {
-  font-size: var(--fs-13);
-  line-height: 1.6;
-  color: var(--ink-500);
-  padding-top: var(--sp-3);
-  border-top: 1px solid var(--border-soft);
-}
 
 /* Leitura por barras: valor exato por pilar, sem o leitor precisar adivinhar. */
-.radar-bars { display: flex; flex-direction: column; gap: var(--sp-2); }
-.radar-bar-row {
-  display: grid;
-  grid-template-columns: 92px 1fr 26px;
-  align-items: center;
-  gap: var(--sp-3);
-}
-.radar-bar-name {
-  font-size: var(--fs-13);
-  font-weight: 600;
-  color: var(--ink-700);
-  overflow-wrap: anywhere;
-}
-.radar-bar-track {
-  position: relative;
-  height: 8px;
-  background: var(--paper-deep);
-  border-radius: var(--rd-full);
-  overflow: hidden;
-}
-.radar-bar-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--cp-orange-500);
-  border-radius: inherit;
-}
-.radar-bar-val {
-  font-family: var(--font-sans);
-  font-size: var(--fs-13);
-  font-weight: 700;
-  color: var(--ink-900);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-.radar-bar-row.is-weak .radar-bar-fill { background: var(--danger); }
-.radar-bar-row.is-weak .radar-bar-name { color: var(--danger); }
 
 /* Frase que nomeia o ponto fraco: o radar encanta, isto explica. */
-.radar-weakest {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--rd-md);
-  background: var(--cp-orange-50);
-  border: 1px solid var(--cp-orange-100);
-}
-.radar-weakest-label {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cp-orange-600);
-}
-.radar-weakest-name {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-18);
-  letter-spacing: -0.01em;
-  color: var(--ink-900);
-}
-.radar-weakest-line {
-  font-size: var(--fs-13);
-  line-height: 1.5;
-  color: var(--ink-600);
-}
-.score-dial-wrap { display: flex; align-items: baseline; gap: var(--sp-3); margin-top: var(--sp-4); }
-.score-number {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: clamp(4rem, 12vw, 6.5rem);
-  line-height: 0.95;
-  letter-spacing: -0.04em;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-}
-.score-of {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  color: rgba(255,255,255,.5);
-  letter-spacing: -0.02em;
-}
-.result-level {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-.result-level-tag {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--cp-orange-400);
-}
-.result-level-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  letter-spacing: -0.015em;
-  line-height: 1.1;
-  color: #fff;
-}
-.result-level-msg {
-  font-size: var(--fs-15);
-  line-height: 1.6;
-  color: rgba(255,255,255,.78);
-  max-width: 32em;
-}
-.result-level-msg strong { color: #fff; font-weight: 600; }
 
 /* Texto de intro abaixo do section-header */
-.section-intro {
-  font-size: var(--fs-14);
-  line-height: 1.6;
-  color: var(--ink-500);
-  max-width: var(--measure);
-  margin-top: calc(-1 * var(--sp-2));
-  margin-bottom: var(--sp-5);
-}
-.section-intro b { color: var(--ink-900); font-weight: 600; }
 
 /* Nota discreta abaixo de uma seção (ex.: frente não avaliada neste perfil). */
-.section-note {
-  font-size: var(--fs-13);
-  line-height: 1.55;
-  color: var(--ink-400);
-  max-width: var(--measure);
-  margin-top: var(--sp-4);
-  padding-left: var(--sp-3);
-  border-left: 2px solid var(--border-soft);
-}
 
 /* RADAR CHART (resultado) — sem corte de labels, mais respiro lateral */
 .radar-chart {
@@ -1185,121 +758,11 @@ body:has(.welcome) .cp-header {
 }
 
 /* ===== CTA do hero (botao "Quero aumentar meu resultado") ===== */
-.result-next { margin-top: var(--sp-2); }
-.result-next-micro {
-  font-size: var(--fs-14);
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.82);
-  max-width: 42ch;
-}
-
-.btn-hero-primary,
-.btn-hero-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 12px 18px;
-  border-radius: var(--rd-full);
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: var(--fs-14);
-  letter-spacing: -0.005em;
-  cursor: pointer;
-  border: 0;
-  min-height: 44px;
-  transition: transform var(--dur-2) var(--ease-out),
-              background var(--dur-2) var(--ease),
-              box-shadow var(--dur-2) var(--ease);
-}
-.btn-hero-primary svg,
-.btn-hero-secondary svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-.btn-cta-png {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-  flex-shrink: 0;
-  display: block;
-}
-.btn-hero-primary {
-  background: var(--cp-orange-500);
-  color: #fff;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.18) inset,
-    0 6px 18px rgba(242,102,0,0.32);
-}
-.btn-hero-primary:hover {
-  background: var(--cp-orange-600);
-  transform: translateY(-1px);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.18) inset,
-    0 10px 24px rgba(242,102,0,0.42);
-}
-.btn-hero-primary:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-}
 /* P8: CTA dominante da tela de score — maior, mais peso e leve pulsar de brilho
    pra ser o elemento de maior destaque. */
-.btn-hero-xl {
-  padding: 18px 28px;
-  font-size: var(--fs-18);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.22) inset,
-    0 10px 30px rgba(242,102,0,0.48);
-  animation: ctaPulse 2.6s var(--ease) infinite;
-}
-.btn-hero-xl:hover { transform: translateY(-2px); }
-@media (prefers-reduced-motion: reduce) { .btn-hero-xl { animation: none; } }
 /* Estado confirmado (Raio-X): vira verde de sucesso. */
-.btn-hero-primary.is-confirmed {
-  background: var(--ok);
-  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 6px 18px rgba(31,138,92,0.32);
-  animation: none;
-}
-.btn-hero-primary.is-confirmed:hover { background: #1a7a51; transform: none; }
-.btn-hero-secondary {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  border: 1px solid var(--border-on-dark);
-}
-.btn-hero-secondary:hover {
-  background: rgba(255,255,255,0.16);
-  transform: translateY(-1px);
-}
-.btn-hero-secondary:focus-visible {
-  outline: 2px solid var(--cp-orange-400);
-  outline-offset: 2px;
-}
 
 /* Section header */
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
-}
-.section-header-num {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: var(--fs-13);
-  letter-spacing: 0;
-  color: var(--ink-300);
-  font-variant-numeric: tabular-nums;
-}
-.section-header-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-22);
-  letter-spacing: -0.015em;
-  color: var(--ink-900);
-}
-.section-header-rule { flex: 1; height: 1px; background: var(--border-soft); }
 
 
 /* ====================== MOBILE BREAKPOINT ======================
@@ -1386,26 +849,8 @@ body:has(.welcome) .cp-header {
   .q-nav .btn { min-height: 52px; }
 
   /* CONTACT mobile: tudo full-width, inputs com touch confortável */
-  .contact-stage { gap: var(--sp-4); }
-  .contact-card { padding: var(--sp-5); gap: var(--sp-4); border-radius: var(--rd-lg); }
-  .contact-input { font-size: 16px; min-height: 52px; padding: var(--sp-3) var(--sp-4); }
-  .contact-stage .btn { width: 100%; min-height: 56px; }
 
   /* RESULT mobile: hero empilhado, radar reduzido, todos labels visíveis */
-  .result-hero { padding: var(--sp-5); border-radius: var(--rd-xl); }
-  .result-hero-topline { gap: var(--sp-3); }
-  .result-hero-headline { font-size: clamp(1.625rem, 7vw, 2rem); max-width: 100%; line-height: 1.12; }
-  .result-hero-lede { font-size: var(--fs-14); line-height: 1.55; }
-  .result-hero-grid { grid-template-columns: 1fr; gap: var(--sp-6); margin-top: var(--sp-5); }
-  .result-hero-left .score-dial-wrap { gap: var(--sp-2); }
-  .score-number { font-size: clamp(4rem, 22vw, 5.5rem); }
-  .score-of { font-size: clamp(1.25rem, 6vw, 1.75rem); }
-  .result-trio { padding-top: var(--sp-3); gap: var(--sp-3); }
-  .result-trio-item { grid-template-columns: 32px 1fr; gap: var(--sp-2); }
-  .result-trio-icon { width: 32px; height: 32px; }
-  .result-trio-icon svg { width: 16px; height: 16px; }
-  .result-trio-value { font-size: var(--fs-14); }
-  .result-hero-radar { padding: var(--sp-4); gap: var(--sp-3); border-radius: var(--rd-lg); }
   .radar-chart { max-width: 100%; }
   .radar-chart .radar-label { font-size: 11px; }
   .radar-chart .radar-label-val { font-size: 12px; }
@@ -1427,274 +872,27 @@ body:has(.welcome) .cp-header {
   .welcome-main .lede { font-size: var(--fs-14); }
   .answer-grid { gap: var(--sp-3); }
   .answer-card { padding: var(--sp-4); padding-right: var(--sp-10); min-height: 60px; }
-  .result-hero { padding: var(--sp-4); }
 }
 
 /* ============================================================
    PLANO POR FRENTE (resultado dono e gerente, Bloco 2.1c)
    ============================================================ */
-.plan-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-3);
-}
-@media (min-width: 720px) {
-  .plan-grid { grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
-}
-.plan-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-  padding: var(--sp-5);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-left: 4px solid var(--cp-orange-500);
-  border-radius: var(--rd-lg);
-  box-shadow: var(--sh-1);
-}
-@media (min-width: 720px) { .plan-card { padding: var(--sp-6); } }
-.plan-card-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-.plan-card-name {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: var(--fs-16);
-  color: var(--ink-900);
-  letter-spacing: -0.01em;
-}
-.plan-card-score {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-20);
-  color: var(--ink-700);
-  flex-shrink: 0;
-}
-.plan-card-score small { font-size: var(--fs-12); color: var(--ink-400); font-weight: 500; }
-.plan-item { display: flex; flex-direction: column; gap: var(--sp-2); }
-.plan-item-tag {
-  align-self: flex-start;
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: var(--rd-full);
-}
-.plan-item-now .plan-item-tag {
-  color: var(--ok);
-  background: rgba(31, 138, 92, 0.10);
-}
-.plan-item-apoio .plan-item-tag {
-  color: var(--cp-orange-600);
-  background: var(--cp-orange-50);
-}
-.plan-item-text {
-  font-size: var(--fs-14);
-  line-height: 1.6;
-  color: var(--ink-700);
-  max-width: var(--measure);
-}
 
 /* ============================================================
    LEITURA POR FRENTE (resultado, 6 frentes com ganha/perde)
    Assinatura de cor por pilar: cada frente tem um acento próprio,
    fora do clichê de roxo, ancorado no universo de posto.
    ============================================================ */
-.frentes-read { display: flex; flex-direction: column; gap: var(--sp-4); }
-.frente-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-3);
-}
-@media (min-width: 720px) {
-  .frente-grid { grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-4); }
-}
-.frente-card {
-  --accent: var(--cp-orange-500);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding: var(--sp-5);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-top: 3px solid var(--accent);
-  border-radius: var(--rd-lg);
-  box-shadow: var(--sh-1);
-}
-.frente-card[data-block="comercial"]   { --accent: #1F8A5C; }
-.frente-card[data-block="fidelizacao"] { --accent: #F26600; }
-.frente-card[data-block="pessoas"]     { --accent: #2F6DB0; }
-.frente-card[data-block="marca"]       { --accent: #C0532A; }
-.frente-card[data-block="dados"]       { --accent: #0E8A8A; }
-.frente-card[data-block="resiliencia"] { --accent: #566074; }
-.frente-card-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-2);
-}
-.frente-card-name {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: var(--fs-15);
-  color: var(--ink-900);
-  letter-spacing: -0.01em;
-}
-.frente-card-score {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-22);
-  color: var(--accent);
-  flex-shrink: 0;
-}
-.frente-card-score small { font-size: var(--fs-12); color: var(--ink-400); font-weight: 500; }
-.frente-card-bar {
-  height: 6px;
-  border-radius: var(--rd-full);
-  background: var(--paper-deep);
-  overflow: hidden;
-}
-.frente-card-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
-}
-.frente-card-tag {
-  align-self: flex-start;
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.frente-card.is-weak .frente-card-tag { color: var(--danger); }
-.frente-card.is-weak .frente-card-fill { background: var(--danger); }
-.frente-card.is-weak .frente-card-score { color: var(--danger); }
-.frente-card-line {
-  font-size: var(--fs-14);
-  line-height: 1.55;
-  color: var(--ink-600);
-}
 
 /* ============================================================
    REGIÃO TRAVADA + GATE DE TELEFONE (recompensa primeiro)
    Conteúdo (3 frentes + plano) fica meio embaçado, espiando por
    cima do gate. O WhatsApp destrava tudo.
    ============================================================ */
-.result-locked { position: relative; display: flex; flex-direction: column; }
-.locked-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-8);
-  filter: blur(6px);
-  opacity: .5;
-  pointer-events: none;
-  user-select: none;
-  max-height: 320px;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(180deg, #000 38%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 38%, transparent 100%);
-  transition: filter var(--dur-4) var(--ease), opacity var(--dur-4) var(--ease);
-}
-.locked-content.is-unlocked {
-  filter: none;
-  opacity: 1;
-  pointer-events: auto;
-  user-select: auto;
-  max-height: none;
-  overflow: visible;
-  -webkit-mask-image: none;
-  mask-image: none;
-}
-.locked-plan { display: flex; flex-direction: column; gap: var(--sp-4); }
-
-.lock-gate {
-  position: relative;
-  z-index: 2;
-  margin-top: calc(var(--sp-16) * -1);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  align-items: flex-start;
-  padding: var(--sp-6);
-  background: var(--surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--rd-xl);
-  box-shadow: var(--sh-3);
-}
-@media (min-width: 720px) { .lock-gate { padding: var(--sp-8); } }
-.lock-gate.is-hidden { display: none; }
-.lock-gate-progress {
-  align-self: flex-start;
-  font-size: var(--fs-12);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--cp-orange-600);
-  background: var(--cp-orange-50);
-  padding: 5px 12px;
-  border-radius: var(--rd-full);
-}
-.lock-gate-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-22);
-  line-height: 1.2;
-  color: var(--ink-900);
-  letter-spacing: -0.01em;
-}
-.lock-gate-text {
-  font-size: var(--fs-15);
-  line-height: 1.55;
-  color: var(--ink-600);
-  max-width: var(--measure);
-}
-.lock-gate-field { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
-.lock-gate-label {
-  font-size: var(--fs-13);
-  font-weight: 600;
-  color: var(--ink-700);
-}
-.lock-gate .btn { margin-top: var(--sp-1); }
-.lock-gate-why { font-size: var(--fs-13); color: var(--ink-400); }
 
 /* ============================================================
    PASSO OPCIONAL DE E-MAIL (pós-destrave)
    ============================================================ */
-.email-step {
-  padding: var(--sp-6);
-  background: var(--surface-alt);
-  border: 1px dashed var(--border-medium);
-  border-radius: var(--rd-lg);
-}
-.email-step.is-hidden { display: none; }
-.email-step-body { display: flex; flex-direction: column; gap: var(--sp-3); }
-.email-step-eyebrow {
-  font-size: var(--fs-12);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--cp-orange-600);
-}
-.email-step-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-18);
-  color: var(--ink-900);
-}
-.email-step-text { font-size: var(--fs-14); line-height: 1.55; color: var(--ink-600); max-width: var(--measure); }
-.email-step-row { display: flex; flex-direction: column; gap: var(--sp-3); }
-@media (min-width: 560px) {
-  .email-step-row { flex-direction: row; align-items: stretch; }
-  .email-step-row .contact-input { flex: 1; }
-  .email-step-row .btn { flex-shrink: 0; }
-}
-.email-step-done { font-size: var(--fs-13); font-weight: 600; color: var(--ok); }
 
 /* ============================================================
    POP-UP DE RESGATE NA SAÍDA (um campo só)
@@ -1755,118 +953,18 @@ body:has(.welcome) .cp-header {
 /* ============================================================
    BLOCO DO RAIO X (proximo passo principal, Bloco 2.1d)
    ============================================================ */
-.raiox-block {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-8);
-  border-radius: var(--rd-2xl);
-  background:
-    radial-gradient(60% 70% at 90% 0%, rgba(242,102,0,0.26), transparent 70%),
-    linear-gradient(160deg, var(--cp-blue-800) 0%, var(--cp-blue-900) 100%);
-  color: #fff;
-  box-shadow: 0 20px 44px rgba(11,31,51,0.24);
-  overflow: hidden;
-  isolation: isolate;
-}
-@media (min-width: 720px) { .raiox-block { padding: var(--sp-12); } }
-.raiox-eyebrow {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cp-orange-400);
-}
-.raiox-title {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.4rem, 3.5vw, 1.9rem);
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-  color: #fff;
-}
-.raiox-text {
-  font-size: var(--fs-15);
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.82);
-  max-width: 56ch;
-}
-.raiox-date {
-  font-size: var(--fs-15);
-  font-weight: 600;
-  color: #fff;
-  margin-top: var(--sp-1);
-}
-.raiox-block .btn-primary { margin-top: var(--sp-2); }
-.raiox-meet {
-  font-size: var(--fs-13);
-  color: rgba(255, 255, 255, 0.62);
-}
-.raiox-meet a {
-  color: var(--cp-orange-300);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  word-break: break-all;
-}
-.raiox-meet a:hover { color: #fff; }
 
 /* ============================================================
    RODAPE GHOST DO ESPECIALISTA (Bloco 2.1e)
    ============================================================ */
-.result-foot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-2);
-  text-align: center;
-}
-.result-foot .btn-ghost { color: var(--ink-500); }
-.result-foot-save {
-  font-size: var(--fs-12);
-  color: var(--ink-400);
-}
 
 /* ============================================================
    BARRA FIXA DO RAIO X (Bloco 2.3)
    ============================================================ */
-.raiox-sticky {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--z-overlay);
-  padding: var(--sp-3) var(--sp-5);
-  padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
-  background: var(--surface);
-  border-top: 1px solid var(--border-medium);
-  box-shadow: 0 -8px 24px rgba(11,18,24,0.12);
-}
-.raiox-sticky .btn {
-  max-width: var(--shell-narrow);
-  margin-inline: auto;
-}
 
 /* ============================================================
    TELA FINAL DO FRENTISTA (Bloco 2.4)
    ============================================================ */
-.frentista-final {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-  padding: var(--sp-6) var(--sp-8);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-left: 4px solid var(--cp-orange-500);
-  border-radius: var(--rd-lg);
-  box-shadow: var(--sh-1);
-}
-.frentista-recognition {
-  font-size: var(--fs-16);
-  line-height: 1.7;
-  color: var(--ink-800);
-  max-width: var(--measure);
-}
 /* Link estilizado como botao (CTA de compartilhar do frentista). */
 a.btn { text-decoration: none; }
 
@@ -2024,19 +1122,11 @@ body:has(.fimg-panel) {
    maiúsculas usam Montserrat; labels de campos de formulário usam DM Sans
    (interface). Declarado no fim para sobrepor o --font-sans herdado. */
 .q-pillar-tag,
-.plan-item-tag,
 .radar-chart .radar-label,
-.radar-panel-eyebrow,
-.radar-weakest-label,
-.raiox-eyebrow,
-.result-hero-tag,
-.result-level-tag,
-.result-trio-label,
 .welcome-resume-l {
   font-family: var(--font-display);   /* Montserrat */
 }
-.welcome-field-label,
-.contact-field-label {
+.welcome-field-label {
   font-family: var(--font-ui);        /* DM Sans */
 }
 
@@ -2104,14 +1194,7 @@ body:has(.fimg-panel) {
   border: 1.5px solid var(--border-strong);
 }
 .rr-cta-ghost:hover { border-color: var(--cp-orange-500); color: var(--cp-orange-600); }
-.rr-cta.is-confirmed {
-  background: var(--ok);
-  box-shadow: none;
-  cursor: default;
-  opacity: 1;
-}
 .rr-cta[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
-.rr-cta.is-confirmed[disabled] { opacity: 1; }
 
 .rr-eyebrow {
   font-family: var(--font-ui);
@@ -2173,12 +1256,6 @@ body:has(.fimg-panel) {
   line-height: 1.05;
   letter-spacing: -0.03em;
   color: var(--ink-900);
-}
-.rr-sub {
-  font-size: var(--fs-18);
-  line-height: 1.5;
-  color: var(--ink-600);
-  max-width: 40ch;
 }
 .rr-scoreline {
   display: flex;
@@ -2275,56 +1352,6 @@ body:has(.fimg-panel) {
 .rr-step-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rr-step-front { font-family: var(--font-ui); font-size: var(--fs-12); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
 .rr-step-text { font-size: var(--fs-15); line-height: 1.55; color: var(--ink-700); }
-
-.rr-locked { position: relative; display: flex; flex-direction: column; margin-top: var(--sp-3); }
-.rr-steplist-blur {
-  filter: blur(6px);
-  opacity: .5;
-  pointer-events: none;
-  user-select: none;
-  max-height: 260px;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(180deg, #000 40%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 40%, transparent 100%);
-  transition: filter var(--dur-4) var(--ease), opacity var(--dur-4) var(--ease);
-}
-.rr-steplist:not(.rr-steplist-blur) { filter: none; opacity: 1; max-height: none; overflow: visible; -webkit-mask-image: none; mask-image: none; }
-
-.rr-confirm {
-  position: relative;
-  z-index: 2;
-  margin-top: calc(var(--sp-12) * -1);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  padding: var(--sp-8) var(--sp-6);
-  background: var(--surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--rd-2xl);
-  box-shadow: var(--sh-3);
-}
-@media (min-width: 720px) { .rr-confirm { padding: var(--sp-10) var(--sp-8); } }
-.rr-confirm-badge {
-  font-family: var(--font-ui);
-  font-size: var(--fs-12);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--cp-orange-600);
-  background: var(--cp-orange-50);
-  padding: 5px 12px;
-  border-radius: var(--rd-full);
-}
-.rr-confirm-title {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.375rem, 3.5vw, 1.75rem);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: var(--ink-900);
-}
-.rr-confirm-text { font-size: var(--fs-15); line-height: 1.55; color: var(--ink-600); max-width: 50ch; }
 .rr-field { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
 .rr-field-label { font-size: var(--fs-13); font-weight: 600; color: var(--ink-700); }
 .rr-input {
@@ -2342,44 +1369,14 @@ body:has(.fimg-panel) {
 .rr-input::placeholder { color: var(--ink-200); }
 .rr-input:focus { outline: none; border-color: var(--cp-orange-500); }
 .rr-input.is-invalid { border-color: var(--danger); }
-.rr-benefits {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-5);
-  margin-top: var(--sp-1);
-}
-.rr-benefits li {
-  position: relative;
-  padding-left: 22px;
-  font-size: var(--fs-13);
-  color: var(--ink-600);
-}
-.rr-benefits li::before {
-  content: "";
-  position: absolute;
-  left: 0; top: 3px;
-  width: 14px; height: 14px;
-  border-radius: var(--rd-full);
-  background:
-    var(--ok)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E")
-    center / 10px no-repeat;
-}
-.rr-confirm-done {
-  margin-top: var(--sp-2);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--ok);
-}
 
 /* ---------- RAIO-X (banda de contraste, deep slate) ---------- */
 .rr-raiox {
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
-  padding: var(--sp-10) var(--sp-6);
+  scroll-margin-top: var(--sp-6); /* ao rolar até aqui, sobra respiro no topo e a intro aparece primeiro (Fase 4 #5) */
+  padding: var(--sp-8) var(--sp-6);
   background: linear-gradient(165deg, var(--cp-blue-800), var(--cp-blue-900));
   border-radius: var(--rd-2xl);
   color: #fff;
@@ -2418,9 +1415,6 @@ body:has(.fimg-panel) {
   margin-bottom: var(--sp-2);
 }
 .rr-value-v { font-size: var(--fs-14); line-height: 1.55; color: rgba(255,255,255,.85); }
-.rr-raiox-cta { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
-.rr-raiox-when { font-size: var(--fs-14); font-weight: 600; color: rgba(255,255,255,.9); }
-.rr-reassure-light { color: rgba(255,255,255,.6); }
 
 /* ---------- ESPECIALISTA (fim) ---------- */
 .rr-specialist {
@@ -2448,96 +1442,57 @@ body:has(.fimg-panel) {
 .rr-specialist-text { font-size: var(--fs-14); line-height: 1.55; color: var(--ink-500); max-width: 56ch; }
 .rr-save { font-size: var(--fs-12); color: var(--ink-300); }
 
+/* Card do especialista: foto + texto + CTA de WhatsApp lado a lado (empilha no mobile). */
+.rr-specialist-card {
+  display: flex;
+  gap: var(--sp-5);
+  align-items: center;
+  width: 100%;
+}
+.rr-specialist-photo {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  border-radius: var(--rd-full);
+  object-fit: cover;
+  border: 2px solid var(--border-medium);
+  box-shadow: var(--sh-2);
+}
+.rr-specialist-card .rr-specialist-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+.rr-cta-wpp {
+  gap: var(--sp-2);
+  background: #1FA855;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(31, 138, 92, .24);
+}
+.rr-cta-wpp:hover {
+  background: #178A45;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(31, 138, 92, .30);
+}
+.rr-cta-wpp-icon { display: inline-flex; align-items: center; }
+.rr-cta-wpp-icon svg { width: 20px; height: 20px; }
+@media (max-width: 560px) {
+  .rr-specialist-card { flex-direction: column; align-items: flex-start; }
+  .rr-specialist-photo { width: 72px; height: 72px; }
+}
+
 /* ---------- FRENTISTA ---------- */
 .rr-frentista { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-4); }
 .rr-frentista-text { font-size: var(--fs-16); line-height: 1.6; color: var(--ink-700); max-width: 60ch; }
 
 /* ---------- Pop-up de resgate: usa o e-mail como campo padrão ---------- */
-.rescue-card .contact-input {
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--rd-md);
-  padding: 12px var(--sp-4);
-  font-size: var(--fs-16);
-}
 
 /* ---------- SEÇÃO 2 · Veja seu problema ---------- */
-.rr-problem { --accent: var(--cp-orange-500); display: flex; flex-direction: column; }
-.rr-problem-card {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-5);
-  margin-top: var(--sp-5);
-  padding: var(--sp-6);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--rd-xl);
-  box-shadow: var(--sh-2);
-}
-@media (min-width: 760px) { .rr-problem-card { grid-template-columns: 300px 1fr; gap: var(--sp-8); align-items: center; padding: var(--sp-8); } }
-.rr-problem-gauge { display: flex; flex-direction: column; gap: var(--sp-2); }
-.rr-problem-gauge-top { display: flex; align-items: baseline; justify-content: space-between; }
-.rr-problem-gauge-tag {
-  font-family: var(--font-ui); font-size: var(--fs-12); font-weight: 700;
-  letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-400);
-}
-.rr-problem-gauge-val { font-family: var(--font-display); font-weight: 600; font-size: clamp(2.25rem, 7vw, 3rem); line-height: 1; color: var(--accent); }
-.rr-problem-gauge-val small { font-size: var(--fs-16); color: var(--ink-300); font-weight: 500; }
-.rr-problem-gauge-bar { height: 10px; border-radius: var(--rd-full); background: var(--paper-deep); overflow: hidden; }
-.rr-problem-gauge-bar span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
-.rr-problem-gauge-note { font-size: var(--fs-13); line-height: 1.45; color: var(--ink-500); }
-.rr-problem-body { display: flex; flex-direction: column; gap: var(--sp-3); }
-.rr-problem-text { font-size: var(--fs-16); line-height: 1.6; color: var(--ink-800); }
-.rr-problem-hook { font-size: var(--fs-15); line-height: 1.55; color: var(--accent); font-weight: 600; }
 
 /* ---------- SEÇÃO 3 · Selo sobre os passos embaçados ---------- */
-.rr-locked-seal {
-  position: relative;
-  z-index: 2;
-  margin-top: calc(var(--sp-10) * -1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-6);
-  text-align: center;
-  background: linear-gradient(180deg, rgba(250,248,244,0) 0%, var(--paper) 32%);
-}
-.rr-locked-seal-badge {
-  max-width: 46ch;
-  font-size: var(--fs-14);
-  font-weight: 600;
-  color: var(--ink-600);
-}
-.rr-locked.is-unlocked .rr-locked-seal { display: none; }
-.rr-locked.is-unlocked .rr-steplist-blur { margin-bottom: 0; }
 
 /* ---------- SEÇÃO 5 · Portão único (conversão) ---------- */
-.rr-portao {
-  padding: var(--sp-10) var(--sp-6);
-  background:
-    radial-gradient(70% 90% at 100% 0%, rgba(242,102,0,.10), transparent 70%),
-    var(--surface);
-  border: 1px solid var(--cp-orange-200);
-  border-radius: var(--rd-2xl);
-  box-shadow: var(--sh-3);
-}
-@media (min-width: 720px) { .rr-portao { padding: var(--sp-12); } }
-.rr-portao-inner { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); max-width: 620px; margin-inline: auto; }
-.rr-portao-badge {
-  font-family: var(--font-ui); font-size: var(--fs-12); font-weight: 700;
-  letter-spacing: 0.05em; text-transform: uppercase; color: var(--cp-orange-600);
-  background: var(--cp-orange-50); padding: 5px 12px; border-radius: var(--rd-full);
-}
-.rr-portao-title {
-  font-family: var(--font-display); font-weight: 600;
-  font-size: clamp(1.5rem, 4vw, 2rem); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink-900);
-}
-.rr-portao-text { font-size: var(--fs-16); line-height: 1.6; color: var(--ink-600); }
-.rr-portao .rr-field { margin-top: var(--sp-2); }
-.rr-portao-micro { font-size: var(--fs-13); line-height: 1.5; color: var(--ink-400); }
-.rr-portao-done:empty { display: none; }
-.rr-portao-done { margin-top: var(--sp-2); font-size: var(--fs-14); font-weight: 600; line-height: 1.5; color: var(--ok); }
 
 /* ---------- Pop-up de saída: botão secundário ---------- */
 .rescue-dismiss {
@@ -2553,6 +1508,14 @@ body:has(.fimg-panel) {
 }
 .rescue-dismiss:hover { color: var(--ink-600); }
 
+/* ---------- Portão de e-mail das trilhas comerciais (dono/gerente) ----------
+   Pop-up obrigatório que libera o resultado; reaproveita .rescue-overlay/.rescue-card.
+   O resultado atrás fica desfocado e sem interação até o e-mail ser confirmado. */
+.rr-result.is-gated { filter: blur(7px); pointer-events: none; user-select: none; }
+.result-gate-card { text-align: left; }
+.result-gate-field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.result-gate-micro { font-size: var(--fs-13); line-height: 1.5; color: var(--ink-400); }
+
 /* ---------- Nota do CTA de entrada (welcome) ---------- */
 .welcome-cta-note { display: block; margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--ink-400); }
 
@@ -2565,24 +1528,9 @@ body:has(.fimg-panel) {
   .rr-hero-copy .rr-cta-lg { width: 100%; }
   .rr-raiox { padding: var(--sp-6) var(--sp-5); }
   .rr-bar { grid-template-columns: 72px 1fr 26px; }
-  .rr-portao { padding: var(--sp-6) var(--sp-5); }
 }
 
 /* ---------- SEÇÃO 4 · Gate de e-mail DENTRO do bloco escuro do Raio-X ---------- */
-.rr-raiox-when { font-size: var(--fs-14); font-weight: 600; color: rgba(255,255,255,.9); }
-.rr-raiox-gate {
-  margin-top: var(--sp-5);
-  padding: var(--sp-6);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border-on-dark);
-  border-radius: var(--rd-xl);
-}
-@media (min-width: 720px) { .rr-raiox-gate { padding: var(--sp-8); } }
-.rr-raiox-bridge { font-size: var(--fs-16); line-height: 1.6; color: rgba(255,255,255,.9); max-width: 60ch; }
 .rr-field-dark { width: 100%; }
 .rr-field-dark .rr-field-label { color: rgba(255,255,255,.72); }
 .rr-field-dark .rr-input {
@@ -2592,18 +1540,6 @@ body:has(.fimg-panel) {
 }
 .rr-field-dark .rr-input::placeholder { color: rgba(255,255,255,.42); }
 .rr-field-dark .rr-input:focus { border-color: var(--cp-orange-400); background: rgba(255,255,255,.12); }
-.rr-raiox-micro { font-size: var(--fs-13); line-height: 1.5; color: rgba(255,255,255,.55); }
-.rr-raiox-done:empty { display: none; }
-.rr-raiox-done {
-  margin-top: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  line-height: 1.5;
-  color: #0f2a1c;
-  background: #7fe3b0;
-  border-radius: var(--rd-md);
-}
 
 /* ============================================================
    CARD DE GARANTIR VAGA (rr-gate) — dentro do bloco escuro do Raio-X.

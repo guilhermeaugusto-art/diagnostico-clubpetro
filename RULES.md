@@ -75,7 +75,16 @@ revisa-se a regra aqui, não se ignora caso a caso.
 
 3.14 **Registro de voz.** Português do Brasil com contrações do dia a dia ("pra", "tá"). Saudação "Fala, PRIMEIRO_NOME" assim que o nome estiver disponível. Vocabulário nativo de pista quando couber: pista, bomba, frentista, galonagem, ticket médio, aditivada.
 
-3.15 **Reward-first.** No resultado, a nota e parte das frentes aparecem antes de qualquer cadastro. O telefone (WhatsApp) é o único dado exigido para destravar o resto, pedido de forma conversacional, com o porquê do dado. E-mail é passo posterior e opcional.
+3.15 **Portão de e-mail nas trilhas comerciais (revisto em 02/07/2026).** A nota é
+calculada e o resultado é montado antes de qualquer venda. Nas trilhas comerciais
+(dono e gerente), um pop-up obrigatório pede o e-mail para liberar o resultado: é
+nesse momento que o lead é enviado ao RD/Kommo, então o contato entra na base mesmo
+que a pessoa não marque a agenda depois. O WhatsApp segue sendo exigido na entrada.
+Na trilha do frentista NÃO há portão: o resultado abre direto (frentista não vira
+lead). O bloco do Raio-X, dentro do resultado, mantém a única ação de confirmar a
+presença na agenda, com o e-mail já pré-preenchido. (Versão anterior era reward-first
+sem portão, com e-mail opcional; a decisão de produto passou a exigir o e-mail para
+liberar a análise nas trilhas comerciais.)
 
 ## 4. Componentes
 

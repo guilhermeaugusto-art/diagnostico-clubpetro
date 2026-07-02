@@ -1,7 +1,7 @@
 /* API de persistência do diagnóstico no Supabase.
-   Tudo numa única tabela: `diagnostic_sessions`.
+   Tudo numa única tabela: `diagnostico_respostas`.
    Cada momento do fluxo dispara um UPDATE/UPSERT parcial dessa linha.
-   Eventos são bufferizados localmente e flushados em momentos-chave. */
+   A telemetria por evento vai por GTM/Meta (tracking.ts); não é persistida aqui. */
 
 import { getSupabase } from "./supabase";
 import { CONFIG } from "./config";
@@ -34,23 +34,13 @@ function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   });
 }
 
-/* ============== Buffer local de eventos ==============
-   Eventos são empurrados aqui durante o fluxo e gravados na coluna
-   `events jsonb` da sessão a cada flush. */
-interface BufferedEvent {
-  at: string;
-  name: string;
-  category?: string;
-  metadata?: Record<string, unknown>;
-}
-const eventBuffer: BufferedEvent[] = [];
-
-export function bufferEvent(name: string, category?: string, metadata?: Record<string, unknown>): void {
-  eventBuffer.push({ at: new Date().toISOString(), name, category, metadata });
-}
-
-export function snapshotEvents(): BufferedEvent[] {
-  return [...eventBuffer];
+/* ============== Eventos (telemetria) ==============
+   A telemetria granular por evento NÃO é persistida (o modelo enxuto não tem
+   coluna/tabela de eventos). `bufferEvent` é um no-op mantido só por compat com
+   os call sites; o buffer local e `snapshotEvents` foram removidos (código morto
+   F02). O tracking real vai por GTM/Meta em tracking.ts. */
+export function bufferEvent(_name: string, _category?: string, _metadata?: Record<string, unknown>): void {
+  /* no-op */
 }
 
 /* ============== Create / Upsert ============== */
@@ -171,10 +161,14 @@ export async function persistAnswer(
 
   // "interesse" (o que quer resolver / dor principal): D_DOR / G_DOR / F_MELHORIA.
   if (
-    (questionId === "D_DOR" || questionId === "G_DOR" || questionId === "F_MELHORIA") &&
+    (questionId === "D_DOR" || questionId === "G_DOR") &&
     answer.kind !== "multi" && answer.kind !== "text"
   ) {
     patch.interesse = answer.value;
+  } else if (questionId === "F_MELHORIA" && answer.kind === "text") {
+    // F_MELHORIA é pergunta aberta (kind "text"): grava o texto na coluna
+    // dedicada `interesse`, que antes ficava sempre nula para o frentista (B-04).
+    patch.interesse = answer.text;
   }
 
   // Servicos alem do combustivel (multi) em coluna dedicada `servicos_extras`
@@ -343,9 +337,13 @@ export async function persistAgendouRaiox(sessionId: string): Promise<void> {
   });
 }
 
-export async function persistSpecialistCta(_sessionId: string, score: number): Promise<void> {
+export async function persistSpecialistCta(sessionId: string, score: number): Promise<void> {
   bufferEvent("specialist_cta_clicked", "cta", { score_total: score });
-  // Não há coluna específica de CTA no modelo enxuto; só GA/Pixel via track().
+  // Marca no banco que a pessoa acionou o contato direto com o especialista.
+  await updateRow(sessionId, {
+    contato_especialista: true,
+    contato_especialista_em: new Date().toISOString(),
+  });
 }
 
 /* Flush sem efeito no modelo enxuto (não tem coluna `events`). Mantido pra

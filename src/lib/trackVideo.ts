@@ -99,6 +99,10 @@ function makePlayer(src: string): Player {
 
   const a = makeBaseVideo(src);
   const b = makeBaseVideo(src);
+  // O standby (b) só entra no crossfade perto do fim do loop. Mantê-lo em
+  // "metadata" evita baixar a mesma cena duas vezes de imediato; quando ele
+  // entra, o vídeo já está no cache do navegador (mesma URL de `a`). (PERF-01)
+  b.preload = "metadata";
   a.classList.add("is-active");
   wrap.append(a, b);
 

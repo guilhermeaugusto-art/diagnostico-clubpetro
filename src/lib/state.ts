@@ -59,6 +59,10 @@ export interface AppState {
   startedAt: string | null;
   finishedAt: string | null;
   diagId: string | null;
+  /* Marcadores de conversão persistidos: evitam reenviar o lead ao RD e reabrir
+     o portão/UI de confirmação numa retomada de sessão (BUG-03). */
+  leadSent: boolean;
+  raioxConfirmed: boolean;
 }
 
 export function freshState(): AppState {
@@ -74,5 +78,7 @@ export function freshState(): AppState {
     startedAt: null,
     finishedAt: null,
     diagId: null,
+    leadSent: false,
+    raioxConfirmed: false,
   };
 }

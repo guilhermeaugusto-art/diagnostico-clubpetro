@@ -2,11 +2,12 @@ import { BLOCKS, type BlockId } from "../data/blocks";
 import { levelFor } from "../data/levels";
 import { planFor } from "../data/recommendations";
 import { RadarChart } from "../components/RadarChart";
-import { rankedBlocks, totalScore, emailValid } from "../lib/scoring";
+import { rankedBlocks, totalScore } from "../lib/scoring";
 import { currentTrack } from "../lib/engine";
 import { dataProximaSessao } from "../lib/raiox";
 import type { AppState } from "../lib/state";
 import { escHtml } from "../lib/format";
+import { Icons } from "../lib/icons";
 
 /* ============================================================
    Personalização: nome e perfil (papel), puxados do diagnóstico.
@@ -158,23 +159,11 @@ function raioxSection(state: AppState): string {
         </div>
         <h3 class="rr-gate-title">${first ? `${escHtml(first)}, garanta ` : "Garanta "}a sua vaga no próximo Raio-X</h3>
         <p class="rr-gate-text">
-          Confirma o seu e-mail e o Raio-X entra direto na sua agenda. Rápido e simples:
-          basta entrar com a sua conta Google.
+          O Raio-X entra direto na sua agenda. Basta entrar com a sua conta Google
+          e salvar o evento.
         </p>
-        <label class="rr-field rr-field-dark" for="confirmEmail">
-          <span class="rr-field-label">Seu melhor e-mail</span>
-          <input
-            id="confirmEmail"
-            class="rr-input"
-            type="email"
-            inputmode="email"
-            autocomplete="email"
-            placeholder="voce@empresa.com"
-            value="${escHtml(state.email)}"
-          >
-        </label>
-        <button class="rr-cta rr-cta-primary rr-cta-lg rr-cta-block" type="button" data-action="confirm-presence" id="btnConfirmPresence"${emailValid(state) ? "" : " disabled aria-disabled=\"true\""}>
-          Quero garantir minha vaga no próximo Raio-X
+        <button class="rr-cta rr-cta-primary rr-cta-lg rr-cta-block" type="button" data-action="confirm-presence" id="btnConfirmPresence">
+          Quero marcar o Raio-X no meu Google Agenda
         </button>
         <span class="rr-gate-micro">Leva 30 segundos. Você entra com o Google e a sua vaga fica garantida.</span>
         <p class="rr-gate-done" id="rrConfirmDone" aria-live="polite"></p>
@@ -212,9 +201,7 @@ function pontosSection(state: AppState): string {
   const first = firstNameOf(state);
   const steps = buildSteps(state);
   const open = steps.slice(0, 3);
-  const locked = steps.slice(3);
   const openHtml = open.map((s, i) => stepCard(s, i, false)).join("");
-  const lockedHtml = locked.map((s, i) => stepCard(s, i + open.length, true)).join("");
 
   const intro = weak
     ? `${first ? `${escHtml(first)}, como ${escHtml(roleWord(state))}, ` : ""}o que você respondeu mostra que ${escHtml(PROBLEM_COPY[weak.id])}`
@@ -234,8 +221,6 @@ function pontosSection(state: AppState): string {
           Quero aplicar isso agora
         </button>
       </div>
-
-      <ol class="rr-steplist rr-steplist-blur" aria-hidden="true">${lockedHtml}</ol>
     </section>`;
 }
 
@@ -246,17 +231,21 @@ function pontosSection(state: AppState): string {
 function specialistSection(): string {
   return `
     <footer class="rr-specialist">
-      <div class="rr-specialist-body">
-        <span class="rr-specialist-eyebrow">Já entendi o que preciso melhorar</span>
-        <h3 class="rr-specialist-title">Prefere falar direto com um especialista?</h3>
-        <p class="rr-specialist-text">
-          Se você já sabe onde o posto aperta e quer resolver agora, fale direto com
-          um Especialista ClubPetro pelo WhatsApp.
-        </p>
+      <div class="rr-specialist-card">
+        <img class="rr-specialist-photo" src="/especialista.jpg" alt="Especialista ClubPetro" loading="lazy" decoding="async" onerror="this.style.display='none'">
+        <div class="rr-specialist-body">
+          <span class="rr-specialist-eyebrow">Já entendi o que preciso melhorar</span>
+          <h3 class="rr-specialist-title">Prefere falar direto com um especialista?</h3>
+          <p class="rr-specialist-text">
+            Se você já sabe onde o posto aperta e quer resolver agora, chame um
+            Especialista ClubPetro no WhatsApp.
+          </p>
+          <button class="rr-cta rr-cta-wpp" type="button" data-action="cta-especialista">
+            <span class="rr-cta-wpp-icon" aria-hidden="true">${Icons.whatsapp}</span>
+            Fale com um Especialista ClubPetro
+          </button>
+        </div>
       </div>
-      <button class="rr-cta rr-cta-ghost" type="button" data-action="cta-especialista">
-        Quero falar direto com um especialista do ClubPetro
-      </button>
       <span class="rr-save" id="saveMsg"></span>
     </footer>`;
 }
