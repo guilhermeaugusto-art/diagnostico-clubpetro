@@ -29,7 +29,7 @@ const PAIN_SINGLE: Record<BlockId, string> = {
   fidelizacao:
     "Suas respostas indicam que o cliente abastece e some. Sem fidelização estruturada e sem captura do dado do cliente, o seu caixa depende de movimento novo o tempo todo. Quando um concorrente próximo lança um programa de verdade, ele leva embora a base que hoje volta no informal, e você perde recorrência sem nem perceber.",
   dados:
-    "Suas respostas mostram um posto que decide sem o número na mão. Sem dado integrado e sem painel claro, a decisão fica no escuro no dia a dia. Comportamento do cliente, frequência de retorno, ticket médio e oportunidades de venda passam despercebidos. Você trabalha mais do que precisa pra entregar o mesmo resultado.",
+    "Suas respostas mostram um posto que decide sem o número na mão. Sem dado integrado e sem painel claro, a decisão corre no improviso no dia a dia. Comportamento do cliente, frequência de retorno, ticket médio e oportunidades de venda passam despercebidos. Você trabalha mais do que precisa pra entregar o mesmo resultado.",
   resiliencia:
     "O diagnóstico mostra pouco fôlego para os próximos meses. Caixa apertado e exposição à concorrência irregular deixam o seu posto reativo, sem espaço pra planejar movimentos próprios. Qualquer pressão de mercado vira sufoco operacional e empurra a sua gestão pro curto prazo.",
 };
@@ -50,7 +50,7 @@ function painCombined(a: BlockId, b: BlockId): string | null {
     case "comercial+marca":
       return "Você disputa cliente só por preço, sem método comercial pra extrair mais por litro. É a pior combinação pra enfrentar concorrente novo, porque tanto o motivo de escolha quanto a sua margem ficam pressionados.";
     case "comercial+resiliencia":
-      return "Margem no escuro e caixa apertado: o seu posto não tem fôlego nem método pra atravessar a pressão de mercado. Qualquer aperto na praça vira sufoco operacional.";
+      return "Margem sem método e caixa apertado: o seu posto não tem fôlego nem controle pra atravessar a pressão de mercado. Qualquer aperto na praça vira sufoco operacional.";
     case "fidelizacao+marca":
       return "O cliente não tem motivo pra escolher o seu posto nem pra voltar. Sem diferencial e sem recorrência, você compete só por preço e fica refém do movimento de passagem.";
     case "marca+pessoas":

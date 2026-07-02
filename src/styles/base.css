@@ -155,11 +155,10 @@ body:has(.question) .cp-bokeh { opacity: 0; }
 /* Welcome: cor base = média das bordas do vídeo (rgb 235,230,233).
    Glow laranja sutil por cima dá vida sem criar contraste justo onde a
    máscara do vídeo dissolve, mantendo a fusão "PNG flutuante". */
+/* Welcome usa o mesmo creme liso #FAF8F4 do resto do app. O video do hero ja
+   vem com esse fundo recolorido, entao funde sem revelar retangulo. */
 body:has(.welcome) {
-  background:
-    radial-gradient(900px 500px at 75% 25%,
-      rgba(242, 102, 0, 0.04), rgba(0, 0, 0, 0) 60%),
-    rgb(235, 230, 233);
+  background: #faf8f4;
 }
 
 /* Vertical rhythm desktop */

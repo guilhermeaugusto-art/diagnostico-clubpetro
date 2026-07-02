@@ -1,16 +1,18 @@
 import { escHtml } from "../lib/format";
 import { Icons } from "../lib/icons";
-import { renderIcon, type AnyIcon } from "../lib/renderIcon";
 
 interface AnswerCardProps {
   index: number;
   label: string;
   desc: string;
-  icon: AnyIcon;
   selected: boolean;
   multi?: boolean; // checkbox vs radio
 }
 
+/* Card de resposta sem ícone: título + descrição + indicador de seleção.
+   A carga visual do ícone foi removida (não ajudava a decisão e pesava na
+   leitura no celular). A hierarquia agora é só texto, com o card inteiro como
+   área de toque. */
 export function AnswerCard(p: AnswerCardProps): string {
   const cls = p.selected ? "answer-card is-selected" : "answer-card";
   const desc = p.desc
@@ -24,7 +26,6 @@ export function AnswerCard(p: AnswerCardProps): string {
             aria-checked="${p.selected ? "true" : "false"}"
             data-option="${p.index}"
             data-multi="${p.multi ? "1" : "0"}">
-      <span class="answer-icon" aria-hidden="true">${renderIcon(p.icon, { sizeClass: "icon-png answer-icon-png" })}</span>
       <span class="answer-body">
         <span class="answer-title">${escHtml(p.label)}</span>
         ${desc}

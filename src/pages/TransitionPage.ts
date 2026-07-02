@@ -1,9 +1,9 @@
 import { CONFIG } from "../lib/config";
 
 const PHRASES = [
-  'Cruzando as suas <em>respostas</em>...',
-  'Montando o <em>Raio X</em> do seu posto...',
-  'Quase lá...',
+  'Cruzando as suas <em>respostas</em>',
+  'Montando o <em>Raio X</em> do seu posto',
+  'Quase lá',
 ];
 
 export function TransitionPage(): string {

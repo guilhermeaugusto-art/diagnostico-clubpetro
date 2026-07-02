@@ -1,6 +1,8 @@
 import type { BlockId } from "../data/blocks";
 
-export type Screen = "welcome" | "question" | "contact" | "transition" | "result";
+/* "contact" saiu do fluxo: a captura de telefone virou um gate dentro do
+   resultado (recompensa primeiro). Mantido fora da união de telas. */
+export type Screen = "welcome" | "question" | "transition" | "result";
 
 export type SignalTier = "critico" | "neutro" | "avancado";
 

@@ -172,7 +172,7 @@ export const FRENTE_PLAN: Record<BlockId, FrentePlan> = {
     estaSemana:
       "Abra uma planilha simples e, por uma semana, anote o custo e o preço de venda por litro. No fim da semana você já enxerga a margem que está deixando passar.",
     comApoio:
-      "Estruture o acompanhamento de margem e a oferta de aditivado na pista, para parar de decidir preço no escuro. É um dos pontos que tratamos no Raio X.",
+      "Estruture o acompanhamento de margem e a oferta de aditivado na pista, para parar de decidir preço sem o número na mão. É um dos pontos que tratamos no Raio X.",
   },
   fidelizacao: {
     estaSemana:

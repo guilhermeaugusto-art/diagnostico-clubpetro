@@ -19,7 +19,6 @@ import {
   phoneValid,
   emailValid,
   nameValid,
-  contactValid,
 } from "./lib/scoring";
 import {
   computeSignal,
@@ -75,7 +74,6 @@ import { Header } from "./components/Header";
 import { BarsProgress } from "./components/BarsProgress";
 import { WelcomePage } from "./pages/WelcomePage";
 import { QuestionPage } from "./pages/QuestionPage";
-import { ContactPage } from "./pages/ContactPage";
 import { TransitionPage } from "./pages/TransitionPage";
 import { ResultPage } from "./pages/ResultPage";
 
@@ -83,7 +81,9 @@ let state: AppState = freshState();
 let hasResumable = false;
 let questionStartTime = 0;
 let transitionTimer: number | null = null;
-let raioxConfirmed = false; // idempotência da confirmação de presença no Raio-X
+let raioxConfirmed = false; // clicou em garantir a vaga (abriu a agenda), idempotente
+let leadSent = false;       // idempotência do envio do lead (contato + RD + PDF)
+let exitRescueShown = false; // idempotência do pop-up de recuperação
 let navDir: "fwd" | "back" = "fwd"; // direção da navegação, para a transição da pergunta
 
 const root = () => document.getElementById("app")!;
@@ -94,7 +94,6 @@ function headerContextLabel(): string {
   if (state.screen === "welcome") return "";
   if (state.screen === "transition") return "Calculando";
   if (state.screen === "result") return "Resultado";
-  if (state.screen === "contact") return "Contato";
   const q = currentQuestion(state);
   if (!q) return "";
   if (q.block === "qualif") return "Qualificação";
@@ -147,21 +146,18 @@ function renderBody(): string {
       return WelcomePage({
         resumable: hasResumable,
         name: state.name,
-        nameValid: nameValid(state),
+        phone: state.phone,
+        entryValid: nameValid(state) && phoneValid(state),
       });
     case "question": {
       const q = currentQuestion(state);
       if (!q) {
-        state.screen = "contact";
+        // Fim do quiz sem próxima pergunta (ex.: retomada no fim): vai direto
+        // ao resultado. A captura de telefone virou um gate dentro dele.
+        state.screen = "result";
+        state.finishedAt = state.finishedAt || new Date().toISOString();
         saveState(state);
-        return ContactPage({
-          name: state.name,
-          phone: state.phone,
-          email: state.email,
-          phoneValid: phoneValid(state),
-          emailValid: emailValid(state),
-          allValid: contactValid(state),
-        });
+        return ResultPage(state);
       }
       const a = state.answers[q.id];
       const selectedIndex =
@@ -187,15 +183,6 @@ function renderBody(): string {
         imageSide: fi?.side,
       });
     }
-    case "contact":
-      return ContactPage({
-        name: state.name,
-        phone: state.phone,
-        email: state.email,
-        phoneValid: phoneValid(state),
-        emailValid: emailValid(state),
-        allValid: contactValid(state),
-      });
     case "transition":
       return TransitionPage();
     case "result":
@@ -207,7 +194,6 @@ function render(): void {
   root().innerHTML = renderHeader() + renderBody();
   if (state.screen === "welcome") onWelcomeRendered();
   if (state.screen === "question") onQuestionRendered();
-  if (state.screen === "contact") onContactRendered();
   if (state.screen === "transition") onTransitionRendered();
   if (state.screen === "result") onResultRendered();
   // Fora das perguntas, as camadas de arte das trilhas ficam escondidas.
@@ -241,55 +227,62 @@ function handleAction(action: string): void {
     case "back":           return prevStep();
     case "advance-multi":  return advanceFromMulti();
     case "advance-open":   return advanceFromOpen();
-    case "submit-contact": return goToTransition();
+    case "see-next-steps": return gotoRaiox();
+    case "goto-raiox":     return gotoRaiox();
+    case "confirm-presence": return confirmPresence();
     case "cta-whatsapp":   return ctaEspecialista();
     case "cta-especialista": return ctaEspecialista();
-    case "cta-raiox":      return ctaRaiox();
-    case "reveal-plan":    return revealPlan();
+    case "rescue-confirm": return rescueConfirm();
+    case "rescue-close":   return closeExitRescue();
     case "share-diagnostico": return trackShareFrentista();
   }
 }
 
-/* Botao "Quero aumentar meu resultado": revela o plano por frente, o bloco do
-   Raio X e o rodape do especialista. O proprio botao some (a acao foi feita),
-   mantendo um unico accent por estado de tela. Liga a barra fixa do Raio X. */
-function revealPlan(): void {
-  const ids = ["planSection", "raioxBlock", "resultFoot"];
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.classList.remove("is-hidden");
-      el.setAttribute("aria-hidden", "false");
-    }
-  });
-  const reveal = document.getElementById("resultNext");
-  if (reveal) reveal.classList.add("is-hidden");
-  setupRaioxSticky();
-  const plan = document.getElementById("planSection");
-  if (plan) plan.scrollIntoView({ behavior: "smooth", block: "start" });
-  track("result_plan_revealed", { diag_id: state.diagId }, state.diagId);
+/* Todos os CTAs (hero e "aplicar isso agora") levam ao bloco do Raio-X, que fica
+   logo abaixo do hero. O do "aplicar" sobe, o do hero desce: os dois convergem lá. */
+function gotoRaiox(): void {
+  const el = document.getElementById("raiox");
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  track("result_goto_raiox", { diag_id: state.diagId }, state.diagId);
 }
 
-/* Barra fixa do rodape com o CTA do Raio X (dono e gerente). Some quando o
-   bloco do Raio X esta visivel na tela; reaparece quando ele sai. */
-function setupRaioxSticky(): void {
-  const sticky = document.getElementById("raioxSticky");
-  const block = document.getElementById("raioxBlock");
-  if (!sticky || !block) return;
-  sticky.classList.remove("is-hidden");
-  sticky.setAttribute("aria-hidden", "false");
-  if (!("IntersectionObserver" in window)) return;
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        const hide = e.isIntersecting;
-        sticky.classList.toggle("is-hidden", hide);
-        sticky.setAttribute("aria-hidden", hide ? "true" : "false");
-      }
-    },
-    { threshold: 0.2 },
-  );
-  io.observe(block);
+/* Ação principal: garantir a vaga no Raio-X. Salva o e-mail e o lead na hora
+   (sempre), abre o Google Agenda com o e-mail pré-preenchido, adiciona a pessoa
+   como convidada no evento e grava o agendamento. Não destrava nada: os 3 passos
+   já estão visíveis e o resto é teaser permanente. Idempotente. */
+function confirmPresence(): void {
+  const input = document.getElementById("confirmEmail") as HTMLInputElement | null;
+  if (input) { state.email = input.value; saveState(state); }
+  if (!emailValid(state)) {
+    if (input) {
+      input.classList.add("is-invalid");
+      input.setAttribute("aria-invalid", "true");
+      input.focus();
+    }
+    return;
+  }
+
+  const email = state.email.trim();
+  // 1) lead sempre (e-mail + contato + RD + PDF), idempotente
+  submitLead();
+  // 2) abre a agenda da pessoa com o evento pronto (e-mail pré-preenchido)
+  openInNewTab(calendarTemplateUrl(email));
+  // 3) confirma a presença: convidado no evento compartilhado + agendamento no banco
+  if (!raioxConfirmed) {
+    raioxConfirmed = true;
+    const fnUrl = CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email);
+    try { fetch(fnUrl, { mode: "no-cors", keepalive: true }).catch(() => {}); } catch { /* ignore */ }
+    if (state.diagId) persistAgendouRaiox(state.diagId);
+  }
+  revealConfirmed();
+  track("raiox_presence_confirmed", { diag_id: state.diagId }, state.diagId);
+}
+
+/* Mostra a linha de confirmação no card. Não mexe nos passos borrados (o resto
+   é teaser permanente) nem relabela o botão. */
+function revealConfirmed(): void {
+  const done = document.getElementById("rrConfirmDone");
+  if (done) done.textContent = "Pronto. Sua vaga está garantida e o convite entrou na sua agenda. Você recebe o plano completo das seis frentes no Raio-X.";
 }
 
 /* Compartilhamento do frentista: o link abre nativamente (target _blank).
@@ -301,15 +294,26 @@ function trackShareFrentista(): void {
 
 /* ============== Welcome / boot actions ============== */
 
+/* Zera os travões de idempotência do resultado (destrave, lead, Raio X, resgate)
+   para um novo diagnóstico não herdar o estado de um anterior na mesma aba. */
+function resetFlowFlags(): void {
+  leadSent = false;
+  raioxConfirmed = false;
+  exitRescueShown = false;
+}
+
 function startDiagnostic(): void {
-  if (!nameValid(state)) {
-    flagNameInvalid();
-    return;
-  }
+  // Entrada só libera o quiz com nome + WhatsApp (é essa captura que abre a
+  // porta e já garante o lead pra follow-up mesmo se a pessoa não confirmar).
+  if (!nameValid(state)) { flagFieldInvalid("welcomeName"); return; }
+  if (!phoneValid(state)) { flagFieldInvalid("welcomePhone"); return; }
   hasResumable = false;
+  resetFlowFlags();
   const keptName = state.name.trim();
+  const keptPhone = state.phone;
   state = freshState();
   state.name = keptName;
+  state.phone = keptPhone;
   state.diagId = uuid();
   state.startedAt = new Date().toISOString();
   state.screen = "question";
@@ -318,8 +322,9 @@ function startDiagnostic(): void {
   // Persiste a sessão (fire-and-forget) e zera buffer local de respostas.
   resetLocalAnswers();
   if (state.diagId) {
-    createSession(state.diagId, CONFIG.VERSION, bootContext || captureContext())
-      .then(() => setSessionName(state.diagId!, keptName));
+    const id = state.diagId;
+    createSession(id, CONFIG.VERSION, bootContext || captureContext())
+      .then(() => setSessionContact(id, keptName, "", keptPhone));
   }
   track("diagnostic_started", { name: keptName }, state.diagId);
   render();
@@ -327,7 +332,14 @@ function startDiagnostic(): void {
 }
 function resumeDiagnostic(): void {
   hasResumable = false;
-  state.screen = state.cursor >= visibleQuestions(state).length ? "contact" : "question";
+  // Já respondeu tudo antes de sair: volta direto ao resultado (o gate de
+  // telefone vive lá). Senão, retoma na pergunta onde parou.
+  if (state.cursor >= visibleQuestions(state).length) {
+    state.screen = "result";
+    state.finishedAt = state.finishedAt || new Date().toISOString();
+  } else {
+    state.screen = "question";
+  }
   track("diag_resume", { step: state.cursor, diag_id: state.diagId }, state.diagId);
   render();
 }
@@ -335,10 +347,13 @@ function resumeDiagnostic(): void {
    Sem passar pela tela intermediária "começar diagnóstico" outra vez. */
 function discardAndStart(): void {
   const keptName = state.name.trim();
+  const keptPhone = state.phone;
   clearState();
   hasResumable = false;
+  resetFlowFlags();
   state = freshState();
   state.name = keptName;
+  state.phone = keptPhone;
   state.diagId = uuid();
   state.startedAt = new Date().toISOString();
   state.screen = "question";
@@ -346,15 +361,16 @@ function discardAndStart(): void {
   resetLocalAnswers();
   saveState(state);
   if (state.diagId) {
-    createSession(state.diagId, CONFIG.VERSION, bootContext || captureContext())
-      .then(() => setSessionName(state.diagId!, keptName));
+    const id = state.diagId;
+    createSession(id, CONFIG.VERSION, bootContext || captureContext())
+      .then(() => setSessionContact(id, keptName, "", keptPhone));
   }
   track("diagnostic_restarted", {}, state.diagId);
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
-function flagNameInvalid(): void {
-  const input = document.getElementById("welcomeName") as HTMLInputElement | null;
+function flagFieldInvalid(id: string): void {
+  const input = document.getElementById(id) as HTMLInputElement | null;
   if (input) {
     input.classList.add("is-invalid");
     input.setAttribute("aria-invalid", "true");
@@ -592,9 +608,8 @@ function nextStep(): void {
     else softRenderQuestion();
   } else {
     state.cursor = list.length;
-    state.screen = "contact";
-    saveState(state);
-    render();
+    finishQuiz();
+    return;
   }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -619,7 +634,7 @@ function softRenderQuestion(): void {
 function updateHeaderForQuestion(): void {
   const label = headerContextLabel();
   const tag = document.querySelector<HTMLElement>(".cp-brand-tag");
-  if (tag) tag.innerHTML = `Diagnóstico${label ? ` · <b>${label}</b>` : ""}`;
+  if (tag) tag.innerHTML = `Análise do posto${label ? ` · <b>${label}</b>` : ""}`;
   const q = currentQuestion(state);
   const active = q && q.block !== "qualif" ? q.block : null;
   document.querySelectorAll<HTMLElement>(".bars-item").forEach((item) => {
@@ -628,17 +643,6 @@ function updateHeaderForQuestion(): void {
 }
 
 function prevStep(): void {
-  if (state.screen === "contact") {
-    const list = visibleQuestions(state);
-    state.screen = "question";
-    state.cursor = Math.max(0, list.length - 1);
-    navDir = "back";
-    saveState(state);
-    track("diag_back", { diag_id: state.diagId }, state.diagId);
-    render();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
   if (state.screen === "question" && state.cursor > 0) {
     state.cursor -= 1;
     navDir = "back";
@@ -651,28 +655,14 @@ function prevStep(): void {
   }
 }
 
-function goToTransition(): void {
-  if (!contactValid(state)) return;
+/* Fim do quiz: a pessoa respondeu tudo. Vai pra animação de cálculo e daí pro
+   resultado. O contato NÃO é mais exigido aqui: o telefone virou um gate dentro
+   do resultado (recompensa primeiro), então a pessoa já vê nota e parte das
+   frentes antes de deixar qualquer dado. */
+function finishQuiz(): void {
   state.finishedAt = new Date().toISOString();
   state.screen = "transition";
   saveState(state);
-  // Persiste contato no Supabase, registra consentimento implícito (LGPD)
-  // e marca a sessão como completa.
-  if (state.diagId) {
-    const trilha = currentTrack(state);
-    const isMql = trilha === "dono" || trilha === "gerente";
-    setSessionContact(state.diagId, state.name, state.email, state.phone);
-    completeSession(state.diagId, isMql);
-  }
-  track(
-    "contact_form_submitted",
-    {
-      phone_length: phoneDigitsOnly(state.phone).length,
-      has_email: state.email.length > 0,
-      diag_id: state.diagId,
-    },
-    state.diagId,
-  );
   track("diagnostic_completed", { diag_id: state.diagId }, state.diagId);
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -717,11 +707,29 @@ function onQuestionRendered(): void {
 }
 
 function onWelcomeRendered(): void {
+  // Vídeo do hero. O WebM tem canal alpha (fundo transparente de verdade), que
+  // Chrome/Firefox/Android renderizam. Safari e iOS (todos WebKit) NÃO suportam
+  // alpha em WebM e mostrariam um retângulo preto, então nesses casos removemos
+  // o WebM e caímos no mp4 (mesmo creme do fundo, funde sem caixa).
+  const vid = document.getElementById("welcomeHeroVideo") as HTMLVideoElement | null;
+  if (vid) {
+    const ua = navigator.userAgent;
+    const isApple = /iP(hone|ad|od)/.test(ua) || (/Safari/.test(ua) && !/Chrome|Chromium|Android|CriOS|FxiOS|Edg/.test(ua));
+    if (isApple) {
+      vid.querySelector('source[type="video/webm"]')?.remove();
+      vid.load();
+    }
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { vid.removeAttribute("autoplay"); vid.pause(); }
+    else { void vid.play?.().catch(() => {}); }
+  }
+
   const input = document.getElementById("welcomeName") as HTMLInputElement | null;
+  const phoneEl = document.getElementById("welcomePhone") as HTMLInputElement | null;
   const btn = document.getElementById("btnStartDiag") as HTMLButtonElement | null;
   if (!input) return;
   const updateBtn = () => {
-    const ok = nameValid(state);
+    const ok = nameValid(state) && phoneValid(state);
     if (ok) btn?.removeAttribute("disabled");
     else btn?.setAttribute("disabled", "");
     btn?.setAttribute("aria-disabled", ok ? "false" : "true");
@@ -735,24 +743,8 @@ function onWelcomeRendered(): void {
     updateBtn();
   });
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      startDiagnostic();
-    }
+    if (e.key === "Enter") { e.preventDefault(); phoneEl?.focus(); }
   });
-  setTimeout(() => input.focus(), 200);
-}
-
-function onContactRendered(): void {
-  const phoneEl = document.getElementById("phoneInput") as HTMLInputElement | null;
-  const emailEl = document.getElementById("emailInput") as HTMLInputElement | null;
-  const btn = document.getElementById("btnGoResult") as HTMLButtonElement | null;
-  const updateBtn = () => {
-    const ok = contactValid(state);
-    if (ok) btn?.removeAttribute("disabled");
-    else btn?.setAttribute("disabled", "");
-    btn?.setAttribute("aria-disabled", ok ? "false" : "true");
-  };
   if (phoneEl) {
     phoneEl.addEventListener("input", (e) => {
       const t = e.target as HTMLInputElement;
@@ -763,30 +755,36 @@ function onContactRendered(): void {
       phoneEl.setAttribute("aria-invalid", "false");
       updateBtn();
     });
-    phoneEl.addEventListener("blur", () => {
-      if (phoneEl.value.length > 0 && !phoneValid(state)) {
-        phoneEl.classList.add("is-invalid");
-        phoneEl.setAttribute("aria-invalid", "true");
-      }
+    phoneEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); startDiagnostic(); }
     });
   }
-  if (emailEl) {
-    emailEl.addEventListener("input", (e) => {
-      const t = e.target as HTMLInputElement;
-      state.email = t.value;
-      saveState(state);
-      emailEl.classList.remove("is-invalid");
-      emailEl.setAttribute("aria-invalid", "false");
-      updateBtn();
-    });
-    emailEl.addEventListener("blur", () => {
-      if (emailEl.value.length > 0 && !emailValid(state)) {
-        emailEl.classList.add("is-invalid");
-        emailEl.setAttribute("aria-invalid", "true");
-      }
-    });
-  }
-  setTimeout(() => phoneEl?.focus(), 160);
+  setTimeout(() => input.focus(), 200);
+}
+
+/* Liga o campo de e-mail do gate de confirmação: valida em tempo real, habilita
+   o botão "Confirmar minha presença" e confirma no Enter. */
+function wireResultInputs(): void {
+  const emailEl = document.getElementById("confirmEmail") as HTMLInputElement | null;
+  const btn = document.getElementById("btnConfirmPresence") as HTMLButtonElement | null;
+  if (!emailEl) return;
+  emailEl.addEventListener("input", (e) => {
+    const t = e.target as HTMLInputElement;
+    state.email = t.value;
+    saveState(state);
+    emailEl.classList.remove("is-invalid");
+    emailEl.setAttribute("aria-invalid", "false");
+    const ok = emailValid(state);
+    if (ok) btn?.removeAttribute("disabled");
+    else btn?.setAttribute("disabled", "");
+    btn?.setAttribute("aria-disabled", ok ? "false" : "true");
+  });
+  emailEl.addEventListener("keydown", (e) => {
+    if ((e as KeyboardEvent).key === "Enter" && emailValid(state)) {
+      e.preventDefault();
+      confirmPresence();
+    }
+  });
 }
 
 function onTransitionRendered(): void {
@@ -815,12 +813,28 @@ function onResultRendered(): void {
     const target = Number((targetEl as HTMLElement).dataset.target || "0");
     animateScore(numEl, target, 1100, 280);
   }
-  setTimeout(() => {
-    document.querySelectorAll<HTMLElement>(".pillar-bar-fill").forEach((el) => {
-      el.style.width = (el.dataset.target || "0") + "%";
-    });
-  }, 1900);
-  saveResultToBackend();
+
+  // Grava o diagnóstico (anônimo) já na abertura do resultado, mesmo antes do
+  // contato. Assim medimos quem chegou ao resultado e não converteu.
+  persistResultData();
+
+  const trilha = currentTrack(state);
+  if (trilha === "frentista") {
+    // Frentista não gera MQL: marca a conclusão e para por aqui.
+    if (state.diagId) completeSession(state.diagId, false);
+  } else {
+    // Dono e gerente: liga o campo de e-mail e arma o resgate na saída.
+    wireResultInputs();
+    // Se a pessoa já garantiu a vaga nesta sessão (retomada), mostra a confirmação.
+    if (raioxConfirmed) restoreConfirmedUI();
+    else setupExitRescue();
+  }
+}
+
+/* Restaura a UI confirmada quando a pessoa volta ao resultado já convertida
+   (retomada de sessão): desembaça os passos e mostra a linha de confirmação. */
+function restoreConfirmedUI(): void {
+  revealConfirmed();
 }
 
 function animateScore(el: HTMLElement, target: number, dur: number, delay: number): void {
@@ -839,7 +853,10 @@ function animateScore(el: HTMLElement, target: number, dur: number, delay: numbe
 
 /* ============== Persistência no backend ============== */
 
-async function saveResultToBackend(): Promise<void> {
+/* Grava o resultado consolidado (anônimo, sem contato) já na abertura da tela.
+   Roda pra todo mundo que chega ao resultado, converta ou não. O envio do lead
+   (contato + RD + PDF) fica em submitLead, disparado quando o telefone entra. */
+async function persistResultData(): Promise<void> {
   const score = totalScore(state);
   const lvl = levelFor(score);
   const routing = buildRoutingPayload(state);
@@ -858,7 +875,6 @@ async function saveResultToBackend(): Promise<void> {
 
   if (!state.diagId) return;
 
-  // ============== Persiste resultado consolidado na linha da sessão ==============
   const dimensions: Record<string, { earned: number; possible: number; pct: number }> = {};
   BLOCK_ORDER.forEach((b) => {
     dimensions[b] = { earned: bs[b].earned, possible: bs[b].possible, pct: bs[b].pct };
@@ -898,47 +914,69 @@ async function saveResultToBackend(): Promise<void> {
     readiness: routing.readiness ? routing.readiness.value : null,
   });
 
-  // Sinaliza "Respostas registradas" no rodapé.
   const m = document.getElementById("saveMsg");
   if (m) m.textContent = "Respostas registradas";
+}
 
-  // ============== Edge function RD (best-effort, mantida) ==============
-  // Frentista (papel = "outro") pontua só para comparação interna, sem MQL.
-  // Pulamos o disparo da edge function nesse caso.
+/* Envio do lead: a pessoa deixou o WhatsApp e destravou o plano. Grava o
+   contato, marca a sessão como MQL, dispara a conversão no RD Station e gera o
+   PDF. Só dono e gerente chegam aqui (frentista não vira lead). Idempotente. */
+async function submitLead(): Promise<void> {
+  if (leadSent) return;
+  leadSent = true;
+  if (!state.diagId) return;
+
+  const score = totalScore(state);
+  const lvl = levelFor(score);
+  const routing = buildRoutingPayload(state);
+  const bs = blockScores(state);
+  const ranked = rankedBlocks(state);
   const trilha = currentTrack(state);
-  if (trilha !== "frentista") {
-    const blockPctsObj: Record<string, number> = {};
-    BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
-    try {
-      const res = await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + CONFIG.SUPABASE_ANON_KEY,
-          apikey: CONFIG.SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          nome: state.name,
-          email: state.email,
-          telefone: state.phone,
-          score_total: score,
-          nivel: lvl.name,
-          dimensao_fraca: ranked[0]?.id ?? null,
-          sinal: state.signal,
-          z2: routing.z2,
-          readiness: routing.readiness,
-          block_scores: blockPctsObj,
-          diag_id: state.diagId,
-          papel: trilha,
-          approach_message: routing.approachMessage,
-        }),
-        keepalive: true,
-      });
-      // Marca no banco que o lead já foi enviado ao RD Station.
-      if (res.ok && state.diagId) markRdSent(state.diagId);
-    } catch (e) {
-      console.warn("RD conversion best-effort falhou:", e);
-    }
+
+  setSessionContact(state.diagId, state.name, state.email, state.phone);
+  completeSession(state.diagId, true);
+
+  track(
+    "lead_captured",
+    {
+      phone_length: phoneDigitsOnly(state.phone).length,
+      has_email: state.email.length > 0,
+      diag_id: state.diagId,
+    },
+    state.diagId,
+  );
+
+  // ============== Edge function RD (best-effort) ==============
+  const blockPctsObj: Record<string, number> = {};
+  BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
+  try {
+    const res = await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + CONFIG.SUPABASE_ANON_KEY,
+        apikey: CONFIG.SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        nome: state.name,
+        email: state.email,
+        telefone: state.phone,
+        score_total: score,
+        nivel: lvl.name,
+        dimensao_fraca: ranked[0]?.id ?? null,
+        sinal: state.signal,
+        z2: routing.z2,
+        readiness: routing.readiness,
+        block_scores: blockPctsObj,
+        diag_id: state.diagId,
+        papel: trilha,
+        approach_message: routing.approachMessage,
+      }),
+      keepalive: true,
+    });
+    if (res.ok && state.diagId) markRdSent(state.diagId);
+  } catch (e) {
+    console.warn("RD conversion best-effort falhou:", e);
   }
 
   // ============== Geração + upload do PDF (background) ==============
@@ -962,17 +1000,6 @@ async function generateAndUploadReport(): Promise<void> {
 }
 
 /* ============== CTAs ============== */
-
-/* Marca a vaga como garantida nos botões do Raio X (idempotente: chamado só
-   na primeira vez, evita registro duplicado). Cobre o botão principal e o da
-   barra fixa. */
-function markRaioxConfirmedUI(): void {
-  document.querySelectorAll<HTMLElement>('[data-action="cta-raiox"]').forEach((b) => {
-    const span = b.querySelector("span");
-    if (span) span.textContent = "Vaga garantida";
-    b.classList.add("is-confirmed");
-  });
-}
 
 /* CTA secundário (ghost) do resultado: falar agora com um Especialista
    ClubPetro pelo WhatsApp. Número da Camila entra via WHATSAPP_ESPECIALISTA. */
@@ -1004,35 +1031,65 @@ function openInNewTab(url: string): void {
   a.remove();
 }
 
-/* "Garantir minha vaga no Raio X". Fluxo:
-   1) Abre a AGENDA DA PROPRIA PESSOA com o evento ja pre-preenchido (link
-      "salvar evento" do Google Calendar). Ela so clica em Salvar e o Raio X fica
-      na agenda dela de verdade (nao depende de aceitar convite de convidado).
-   2) Em paralelo, confirma a presenca no evento compartilhado (adiciona o email
-      como convidado) e dispara o email de confirmacao, via Edge Function
-      `confirmar-raiox?email=` (fetch em segundo plano, nao abre aba).
-   3) Grava agendou_raiox no Supabase (intencao) e atualiza a UI. */
-function ctaRaiox(): void {
-  track("rayx_cta_clicked", { diag_id: state.diagId }, state.diagId);
-  const email = state.email.trim();
-  const hasEmail = email.includes("@");
+/* ============== Resgate na saída ============== */
 
-  // 1) Abre a agenda da pessoa (dentro do gesto do clique). Sem email valido,
-  //    cai na sala do Meet.
-  openInNewTab(hasEmail ? calendarTemplateUrl() : CONFIG.RAIOX_MEET_URL);
+/* Arma o resgate: no desktop, se a pessoa ainda não garantiu a vaga e leva o
+   cursor pra fora pela borda de cima (intenção de fechar), chama de volta pro
+   bloco do Raio-X. No mobile não dá pra interceptar a saída a tempo, então lá
+   o resgate não aparece (o lead já ficou salvo na entrada). */
+function setupExitRescue(): void {
+  const onMouseOut = (e: MouseEvent) => {
+    if (state.screen !== "result") return;
+    if (exitRescueShown || raioxConfirmed) return;
+    if (e.clientY <= 0 && !e.relatedTarget) {
+      showExitRescue();
+    }
+  };
+  document.addEventListener("mouseout", onMouseOut);
+}
 
-  // 2) Confirma no evento compartilhado + email de confirmacao, em segundo plano.
-  if (hasEmail) {
-    const fnUrl = CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email);
-    try { fetch(fnUrl, { mode: "no-cors", keepalive: true }).catch(() => {}); } catch { /* ignore */ }
-  }
+/* Pop-up de recuperação: um CTA só, que leva de volta pro bloco de garantir a
+   vaga. O nome e o WhatsApp já vieram na entrada. */
+function showExitRescue(): void {
+  if (exitRescueShown || raioxConfirmed) return;
+  exitRescueShown = true;
+  const first = state.name.trim().split(/\s+/)[0] || "";
+  const wrap = document.createElement("div");
+  wrap.className = "rescue-overlay";
+  wrap.id = "rescueOverlay";
+  wrap.innerHTML = `
+    <div class="rescue-card" role="dialog" aria-modal="true" aria-label="Garantir vaga no Raio-X">
+      <button class="rescue-close" type="button" data-action="rescue-close" aria-label="Fechar">&times;</button>
+      <span class="rescue-eyebrow">Espera</span>
+      <h3 class="rescue-title">Você está a um passo${first ? `, ${first}` : ""}.</h3>
+      <p class="rescue-text">
+        A sua vaga no próximo Raio-X ainda não está garantida. Leva 30 segundos e o
+        evento entra direto na sua agenda.
+      </p>
+      <button class="rr-cta rr-cta-primary rr-cta-block" type="button" data-action="rescue-confirm" id="btnRescueConfirm">
+        Quero garantir minha vaga agora
+      </button>
+      <button class="rescue-dismiss" type="button" data-action="rescue-close">
+        Fechar
+      </button>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  track("exit_rescue_shown", { diag_id: state.diagId }, state.diagId);
+}
 
-  // 3) Grava a intencao + UI.
-  if (!raioxConfirmed) {
-    raioxConfirmed = true;
-    if (state.diagId) persistAgendouRaiox(state.diagId);
-    markRaioxConfirmedUI();
-  }
+/* Botão do pop-up: fecha e leva de volta pro bloco de garantir a vaga. Se já há
+   e-mail válido, confirma direto. */
+function rescueConfirm(): void {
+  track("exit_rescue_confirm", { diag_id: state.diagId }, state.diagId);
+  closeExitRescue();
+  if (emailValid(state)) confirmPresence();
+  else gotoRaiox();
+}
+
+function closeExitRescue(): void {
+  const el = document.getElementById("rescueOverlay");
+  if (el) el.remove();
 }
 
 /* ============== Boot ============== */
@@ -1055,7 +1112,8 @@ export function boot(): void {
     if (typeof state.name !== "string") state.name = "";
     if (typeof state.email !== "string") state.email = "";
     if (typeof state.phone !== "string") state.phone = "";
-    if ((state.screen as string) === "phone") state.screen = "contact";
+    // Sempre reabre no welcome com opção de retomar (telas antigas "phone" e
+    // "contact" não existem mais no fluxo).
     state.screen = "welcome";
     hasResumable = true;
   }

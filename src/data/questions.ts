@@ -380,7 +380,7 @@ export const QUESTIONS: Question[] = [
     tracks: ["dono"],
     text: "Você sabe quanto sobra de <em>margem em cada litro</em> que vende?",
     context:
-      "Na bomba sobra centavos por litro. Quem não sabe a própria margem está dirigindo no escuro.",
+      "Na bomba sobra centavos por litro. Quem não sabe a própria margem decide sem o número na mão.",
     options: [
       { label: "Sei de cabeça.",
         desc: "Acompanho semana a semana.",
@@ -1662,26 +1662,56 @@ export function getQuestionById(id: string): Question | undefined {
 
 /* Ordem de exibição por trilha (S1 entra primeiro em todas).
    Cada item é o id da pergunta na ordem em que aparece ao usuário.
-   Condicionais são filtradas em runtime pelo engine. */
+   Condicionais são filtradas em runtime pelo engine.
+
+   Enxugamento (mantém os 6 pilares se movimentando em cada trilha):
+   - Fidelização vem primeiro, é o pilar de maior peso e o que mais move o
+     ranking na hora. Depois marca e comercial (diferencial e preço), e cedo a
+     pergunta identitária de aditivada. Perfil de rede e condicionais no meio,
+     fechamento no fim.
+   - Dono: fica em 18 perguntas base (fora as condicionais). Foram tirados do
+     fluxo D_PT_TEMPO, D_P1, D_P5, D_P6, D_M3, D_C4 e D_F2 (baixo peso ou
+     sobreposição). D_PADRAO e D_EXPANDIR seguem como condicionais de rede.
+   - Gerente: fica em 16 base (fora as condicionais). Foram tirados G_PT_TEMPO,
+     G_PT_REDE, G_P1, G_P5, G_P6, G_P7, G_C3 e G_F2.
+   - Dados (DA1) e Resiliência (R1) têm um único item pontuável cada e nunca
+     saem do fluxo.
+   - Os objetos das perguntas fora de fluxo seguem no banco acima, mas não
+     entram em nenhuma ordem: o motor só exibe o que está listado aqui. */
 export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
   dono: [
-    "D_PT_POSTOS", "D_PT_MIX", "D_PT_TEMPO", "D_DOR",
-    "D_C1", "D_F1", "D_DA1", "D_R1", "D_C2",
-    "D_P1", "D_P2", "D_P3", "D_P4", "D_P5", "D_P6",
-    "D_M1", "D_M2", "D_M3",
-    "D_C3", "D_C4", "D_C_SERV", "D_C_LOJA",
-    "D_F2", "D_FCHURN", "D_F3",
+    // Fidelização primeiro (maior peso, move o ranking)
+    "D_F1", "D_F3",
+    // Diferencial fora o preço + decisão de preço da bomba
+    "D_M2", "D_C2",
+    // Identitária do setor: aditivada
+    "D_C3",
+    // Resto da fidelização + margem
+    "D_FCHURN", "D_C1",
+    // Perfil de rede e serviços (define plural e condicionais), depois a dor
+    "D_PT_POSTOS", "D_PT_MIX", "D_DOR",
+    "D_C_SERV", "D_C_LOJA",
+    // Marca, pessoas, dados, resiliência
+    "D_M1", "D_P2", "D_P3", "D_P4", "D_DA1", "D_R1",
+    // Condicionais de rede (2+ postos) e fechamento
     "D_PADRAO", "D_EXPANDIR",
     "D_CONHECE", "D_INTENCAO",
   ],
   gerente: [
-    "G_PT_TEMPO", "G_PT_EQUIPE", "G_PT_REDE", "G_PT_MIX", "G_DOR",
-    "G_C1", "G_F1", "G_DA1", "G_M2", "G_C2",
-    "G_P1", "G_P2", "G_P3", "G_P4", "G_P5", "G_P6", "G_P7",
-    "G_M1",
-    "G_C3", "G_C_SERV", "G_C_LOJA",
-    "G_F2", "G_FCHURN", "G_F3",
-    "G_R1",
+    // Fidelização primeiro
+    "G_F1", "G_F3",
+    // Diferencial fora o preço + visibilidade da margem por litro
+    "G_M2", "G_C1",
+    // Identitária do setor: aditivada
+    "G_C2",
+    // Resto da fidelização
+    "G_FCHURN",
+    // Perfil (define condicionais e contexto do gerente), depois a dor
+    "G_PT_MIX", "G_PT_EQUIPE", "G_DOR",
+    "G_C_SERV", "G_C_LOJA",
+    // Marca, pessoas, dados, resiliência
+    "G_M1", "G_P2", "G_P3", "G_P4", "G_DA1", "G_R1",
+    // Fechamento
     "G_CONHECE",
   ],
   frentista: [
@@ -1699,8 +1729,8 @@ export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
    Para frentista mantemos os 5 primeiros score para gerar sinal interno,
    mesmo que não vire MQL. */
 export const SIGNAL_CHECKPOINT_IDS_BY_TRACK: Record<TrackId, string[]> = {
-  dono:     ["D_C1", "D_F1", "D_DA1", "D_R1", "D_C2"],
-  gerente:  ["G_C1", "G_F1", "G_DA1", "G_M2", "G_C2"],
+  dono:     ["D_F1", "D_F3", "D_M2", "D_C2", "D_C3"],
+  gerente:  ["G_F1", "G_F3", "G_M2", "G_C1", "G_C2"],
   frentista:["F_F1", "F_M2", "F_P3", "F_F3", "F_P1"],
 };
 

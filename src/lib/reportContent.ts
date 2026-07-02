@@ -232,7 +232,7 @@ function dimensionInsight(b: BlockId, pct: number): string {
     comercial: {
       high: "Margem sob controle e mix puxando lucro. Aqui o resultado se decide.",
       mid:  "Acompanha parte da margem, mas deixa pontos cegos. Cada lacuna pesa em centavos por litro.",
-      low:  "Margem no escuro e preço no instinto. Resultado refém da bomba mais barata.",
+      low:  "Margem sem controle e preço no instinto. Resultado refém da bomba mais barata.",
     },
     fidelizacao: {
       high: "Programa estruturado e motivo de volta conhecido. Base pronta pra escalar.",

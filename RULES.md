@@ -47,7 +47,7 @@ revisa-se a regra aqui, não se ignora caso a caso.
 
 ## 3. Copy (inegociável)
 
-3.1 Sem travessão (— ou –). Reescreve com vírgula, ponto, parênteses ou dois pontos.
+3.1 Sem travessão (— ou –) e sem reticências (...). Reescreve com vírgula, ponto, parênteses ou dois pontos.
 
 3.2 Sem emoji em lugar nenhum.
 
@@ -57,9 +57,9 @@ revisa-se a regra aqui, não se ignora caso a caso.
 
 3.5 Frase curta. Máximo 20 palavras por frase. Acima disso, quebra.
 
-3.6 CTAs falam de resolução de um problema do posto, nunca de venda crua. Fora: "compre agora", "contrate", "saiba mais". Dentro: "Fale com um Especialista ClubPetro", "Reservar vaga".
+3.6 CTAs são frase de benefício em primeira pessoa (o que a pessoa ganha), nunca descrição de tarefa nem venda crua. Fora: "compre agora", "contrate", "saiba mais", "Iniciar diagnóstico". Dentro: "Quero saber onde meu posto perde dinheiro", "Quero analisar meu posto no Raio X", "Quero destravar meu plano de ação".
 
-3.7 "Fale com um Especialista ClubPetro" é a copy oficial do CTA principal. Nunca personalizar com nome de operador.
+3.7 "Fale com um Especialista ClubPetro" é a copy oficial do CTA de contato direto (secundário no resultado). Nunca personalizar com nome de operador.
 
 3.8 Português do Brasil. Sem anglicismo desnecessário ("dashboard" é aceito quando é jargão do mercado, mas "insight" vira "leitura", "feature" vira "função", "lead" só em texto técnico).
 
@@ -67,17 +67,21 @@ revisa-se a regra aqui, não se ignora caso a caso.
 
 3.10 Nunca repetir a mesma palavra três vezes em duas frases seguidas (regra anti-IA). Se "posto" apareceu duas vezes, a terceira vira "operação" ou "negócio".
 
-3.11 **Termos proibidos na UI.** "Sem login", "sem cadastro", "nota de 0 a 6", "seis frentes" (no welcome), "onde dói", "gancho de resolução", "oportunidade adicional".
+3.11 **Termos proibidos na UI.** "Sem login", "sem cadastro", "nota de 0 a 6", "onde dói" (usar "onde o posto perde dinheiro"), "gancho de resolução", "oportunidade adicional", "gestão no escuro", "feeling", "no escuro". Palavra em inglês fora de jargão de mercado.
 
-3.12 **Termos canônicos.** "Próxima melhoria" (no lugar de "oportunidade adicional"). "Leitura por frente", "Principais pontos de atenção", "Caminho sugerido", "Como o ClubPetro ajuda".
+3.12 **Termos canônicos.** A chamada da home é "As 6 frentes que definem o lucro do posto" (o termo "6 frentes" é permitido, revisa a regra anterior que o proibia). "Análise das 6 frentes" no lugar de "diagnóstico" onde couber (o identificador interno segue "diagnóstico"). "Plano de ação por frente" no lugar de "relatório". "Próxima melhoria", "Leitura por frente", "Caminho sugerido", "Como o ClubPetro ajuda".
 
-3.13 **Pontuação.** A faixa máxima visível é "Operação consistente" (61–80). Nada de "Referência na praça". Resultados acima de 70 só saem quando frentes estão de fato altas e equilibradas.
+3.13 **Pontuação.** A nota tem um teto interno (mecânica de vendas) e nunca chega a 100: isso NUNCA aparece na UI, e o número do teto nunca é citado. Onde precisar comunicar, usar "nenhum posto está totalmente otimizado". A faixa máxima visível é "Operação consistente" (61–80). Resultados acima de 70 só saem quando frentes estão de fato altas e equilibradas.
+
+3.14 **Registro de voz.** Português do Brasil com contrações do dia a dia ("pra", "tá"). Saudação "Fala, PRIMEIRO_NOME" assim que o nome estiver disponível. Vocabulário nativo de pista quando couber: pista, bomba, frentista, galonagem, ticket médio, aditivada.
+
+3.15 **Reward-first.** No resultado, a nota e parte das frentes aparecem antes de qualquer cadastro. O telefone (WhatsApp) é o único dado exigido para destravar o resto, pedido de forma conversacional, com o porquê do dado. E-mail é passo posterior e opcional.
 
 ## 4. Componentes
 
 4.1 **Card.** Sempre tem: background, sombra ou borda sutil, padding mínimo, radius do design system. Nunca tem só borda chapada.
 
-4.2 **AnswerCard.** Sempre carrega ícone temático + título + descrição opcional + indicador de seleção. Sem só texto.
+4.2 **AnswerCard.** Título + descrição opcional + indicador de seleção. Sem ícone: os ícones foram removidos por somarem carga visual sem ajudar a decisão. O card inteiro é área de toque (mínimo confortável para o polegar) e responde ao toque.
 
 4.3 **Botão primário.** Apenas para a ação principal. Inclui seta direita quando avança fluxo.
 

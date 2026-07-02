@@ -14,7 +14,7 @@ export function Header(props: HeaderProps): string {
         <div class="cp-header-row">
           <a class="cp-brand" href="/" aria-label="ClubPetro, página inicial">
             ${Logo()}
-            <span class="cp-brand-tag">Diagnóstico${props.contextLabel ? ` · <b>${props.contextLabel}</b>` : ""}</span>
+            <span class="cp-brand-tag">Análise do posto${props.contextLabel ? ` · <b>${props.contextLabel}</b>` : ""}</span>
           </a>
           ${props.barsHtml
             ? `<div class="cp-header-bars">${props.barsHtml}</div>`

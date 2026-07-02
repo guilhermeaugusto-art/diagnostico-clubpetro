@@ -139,7 +139,9 @@ export function questionnaireLength(state: AppState): number {
   return visibleQuestions(state).length;
 }
 
-/* O passo de "telefone" entra como última etapa visualmente, após as perguntas. */
+/* Progresso do quiz: só as perguntas. A captura de telefone saiu do fluxo do
+   quiz e passou a viver no resultado (recompensa primeiro), então não conta
+   mais como uma etapa da régua de perguntas. */
 export function totalSteps(state: AppState): number {
-  return questionnaireLength(state) + 1;
+  return questionnaireLength(state);
 }

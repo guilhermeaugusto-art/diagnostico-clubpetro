@@ -1,216 +1,269 @@
 import { BLOCKS, type BlockId } from "../data/blocks";
 import { levelFor } from "../data/levels";
 import { planFor } from "../data/recommendations";
-import {
-  radarReading,
-  nextImprovementFor,
-  strongestBlock,
-  weakestBlock,
-  mainPain,
-} from "../data/radar-reading";
-import { urgencyFor } from "../data/urgency";
-import { SectionHeader } from "../components/SectionHeader";
 import { RadarChart } from "../components/RadarChart";
-import { rankedBlocks, totalScore } from "../lib/scoring";
+import { rankedBlocks, totalScore, emailValid } from "../lib/scoring";
 import { currentTrack } from "../lib/engine";
-import { dataProximaSessao, meetLabel } from "../lib/raiox";
-import { CONFIG } from "../lib/config";
+import { dataProximaSessao } from "../lib/raiox";
 import type { AppState } from "../lib/state";
 import { escHtml } from "../lib/format";
-import { Icons } from "../lib/icons";
 
-/* Frase curta que nomeia o ponto cego de cada frente fraca, em linguagem de
-   dono: o radar encanta, esta linha explica. Sem travessao, sem emoji,
-   no maximo 20 palavras (RULES 3.1, 3.2, 3.5). */
-const WEAK_LINE: Record<BlockId, string> = {
-  pessoas:     "Seu posto ainda depende de esforço individual, sem rotina que sustente o atendimento.",
-  marca:       "Falta um motivo de escolha além do preço, e isso entrega o seu cliente ao concorrente.",
-  comercial:   "Sua margem é acompanhada no escuro, e dinheiro escapa todo mês sem aparecer.",
-  fidelizacao: "Você sabe quem abastece, não sabe quem volta nem por quê.",
-  dados:       "Sua decisão ainda corre sem número na mão, sem painel que mostre o que acontece.",
-  resiliencia: "Sobra pouco fôlego de caixa para você planejar movimento próprio na praça.",
+/* ============================================================
+   Personalização: nome e perfil (papel), puxados do diagnóstico.
+   ============================================================ */
+
+function firstNameOf(state: AppState): string {
+  return state.name.trim().split(/\s+/)[0] || "";
+}
+
+/* "Você, como {revendedor|gestor}," */
+function roleWord(state: AppState): string {
+  const t = currentTrack(state);
+  if (t === "gerente") return "gestor";
+  return "revendedor";
+}
+
+/* Cor de assinatura por pilar (fora do clichê de roxo). */
+const PILLAR_ACCENT: Record<BlockId, string> = {
+  comercial: "#1F8A5C",
+  fidelizacao: "#F26600",
+  pessoas: "#2F6DB0",
+  marca: "#C0532A",
+  dados: "#0E8A8A",
+  resiliencia: "#566074",
 };
 
-/* Uma barra da leitura por pilar: nome, trilha, preenchimento e valor exato.
-   A frente mais fraca recebe destaque (cor de atencao). */
-function radarBar(name: string, pct: number, weak: boolean): string {
-  return `
-    <div class="radar-bar-row${weak ? " is-weak" : ""}">
-      <span class="radar-bar-name">${escHtml(name)}</span>
-      <span class="radar-bar-track"><span class="radar-bar-fill" style="width:${pct}%"></span></span>
-      <span class="radar-bar-val">${pct}</span>
-    </div>
-  `;
+/* Recorte da frente mais fraca, escrito pra fluir depois de
+   "{nome}, como {perfil}, o que você respondeu mostra que ". */
+const PROBLEM_COPY: Record<BlockId, string> = {
+  comercial:
+    "o seu posto marcou baixo em Comercial. É aqui que mora o seu ticket médio e a margem da aditivada. Tem espaço claro pra crescer, e você ainda não está usando.",
+  fidelizacao:
+    "na Fidelização o seu posto ficou pra trás. Cliente que passa uma vez e some não sustenta galonagem. Dá pra transformar quem abastece hoje em quem volta toda semana.",
+  pessoas:
+    "o seu frentista é quem fecha ou perde a venda na pista. Essa foi uma das suas frentes mais fracas, e é uma das de retorno mais rápido.",
+  dados:
+    "em Dados o seu posto ficou atrás. Sem número na mão, cada decisão da pista vira aposta. Dá pra enxergar galonagem, ticket médio e margem num lugar só.",
+  marca:
+    "na Marca o seu posto ficou pra trás. Quando o único motivo pra parar é o preço, o vizinho leva o seu cliente. Dá pra construir um motivo de escolha que segura quem passa.",
+  resiliencia:
+    "em Resiliência o seu posto ficou exposto. Sem fôlego de caixa, a guerra de preço da praça manda no seu mês. Dá pra montar uma reserva que te tira do sufoco.",
+};
+
+/* Leitura curta do momento, adaptada à faixa da nota. */
+function shortRead(score: number): string {
+  if (score <= 30) return "Tem margem escapando em várias frentes ao mesmo tempo. A boa notícia: é onde mais dá pra ganhar rápido.";
+  if (score <= 60) return "Você já acerta em pontos importantes, mas o conjunto ainda não rende o que poderia. Faltam poucas peças no lugar.";
+  return "Sua base já é sólida. O próximo degrau é fino: método e dado puxando mais resultado por litro.";
 }
 
-/* Item do trio do hero: rotulo curto + valor + icone tematico. */
-function trioItem(label: string, value: string, icon: "trend" | "alert" | "spark"): string {
-  const ICON: Record<typeof icon, string> = {
-    trend: Icons.trendUp,
-    alert: Icons.alert,
-    spark: Icons.spark,
-  };
-  return `
-    <div class="result-trio-item">
-      <span class="result-trio-icon" aria-hidden="true">${ICON[icon]}</span>
-      <div class="result-trio-body">
-        <span class="result-trio-label">${escHtml(label)}</span>
-        <span class="result-trio-value">${escHtml(value)}</span>
-      </div>
-    </div>
-  `;
+/* ============================================================
+   Radar do hero (destaque) com as 6 frentes e barras.
+   ============================================================ */
+
+function radarBars(state: AppState): string {
+  const ranked = rankedBlocks(state); // fraco -> forte
+  const weakId = ranked[0]?.id;
+  return ranked
+    .map((r) => `
+      <div class="rr-bar${r.id === weakId ? " is-weak" : ""}" style="--accent:${PILLAR_ACCENT[r.id]}">
+        <span class="rr-bar-name">${escHtml(BLOCKS[r.id].short)}</span>
+        <span class="rr-bar-track"><span class="rr-bar-fill" style="width:${r.pct}%"></span></span>
+        <span class="rr-bar-val">${r.pct}</span>
+      </div>`)
+    .join("");
 }
 
-/* Cabecalho compartilhado do resultado (hero com radar, nivel e leitura).
-   `primarySlot` injeta a acao principal especifica de cada trilha. */
-function heroHeader(state: AppState, primarySlot: string): string {
-  const score = totalScore(state);
+/* ============================================================
+   SEÇÃO 1 · HERO (nota + radar)
+   CTA leva pro próximo passo guiado (o Raio-X, logo abaixo).
+   ============================================================ */
+
+function hero(state: AppState, score: number): string {
   const lvl = levelFor(score);
-  const ranked = rankedBlocks(state);
-  const firstName = state.name.trim().split(/\s+/)[0] || "";
-
-  const radar = radarReading(state);
-  const heroStrong = strongestBlock(state);
-  const heroWeak = weakestBlock(state);
-  const framesTied =
-    ranked.length > 1 && ranked[ranked.length - 1].pct - ranked[0].pct < 5;
-  const nextImprovement = nextImprovementFor(ranked[0]?.id);
-  const heroPain = mainPain(state);
-  const urgency = urgencyFor(score);
-
-  const weakId = ranked[0]?.id as BlockId | undefined;
-  const barsHtml = ranked
-    .map((r) => radarBar(BLOCKS[r.id].short, r.pct, r.id === weakId))
-    .join("");
-  const weakName = weakId ? BLOCKS[weakId].short : "";
-  const weakLine = weakId ? WEAK_LINE[weakId] : "";
-
+  const first = firstNameOf(state);
   return `
-    <header class="result-hero anim-rise ${urgency.cssClass}"
-            style="--urgency-accent:${urgency.accent}; --urgency-glow:${urgency.glow};">
-      <div class="result-hero-topline">
-        <span class="eyebrow on-dark">Resultado do diagnóstico</span>
-        <span class="result-hero-tag">
-          <span class="result-hero-tag-dot"></span>
-          ${escHtml(urgency.statusLabel)}
-        </span>
-      </div>
+    <header class="rr-hero">
+      <div class="rr-hero-copy">
+        <span class="rr-eyebrow">Sua análise está pronta</span>
+        <h1 class="rr-headline">
+          ${first ? `Fala, ${escHtml(first)}.` : "Olá."} Esse é o retrato do seu posto hoje.
+        </h1>
 
-      <h1 class="result-hero-headline">
-        ${firstName
-          ? `Boa, <span class="ink-orange">${escHtml(firstName)}</span>.`
-          : "Diagnóstico do seu posto."}
-      </h1>
-      <p class="result-hero-lede">${escHtml(heroPain)}</p>
-
-      <div class="result-hero-grid">
-        <div class="result-hero-left">
-          <div class="result-hero-scoreblock">
-            <div class="score-dial-wrap">
-              <span class="score-number" id="rScoreNumber">0</span>
-              <span class="score-of">/100</span>
-            </div>
-            <div class="result-level-inline">
-              <span class="result-level-tag">Faixa atual</span>
-              <h2 class="result-level-name">${escHtml(lvl.name)}</h2>
-            </div>
+        <div class="rr-scoreline">
+          <div class="rr-score">
+            <span class="rr-score-num" id="rScoreNumber">0</span>
+            <span class="rr-score-den">/100</span>
           </div>
-
-          <div class="result-trio">
-            ${framesTied
-              ? trioItem("Leitura geral", "Frentes niveladas", "trend")
-              : trioItem("Ponto mais forte", heroStrong ? `${heroStrong.name} ${heroStrong.pct}` : "Ainda sem leitura", "trend")}
-            ${framesTied
-              ? trioItem("Foco sugerido", "Consistência do conjunto", "alert")
-              : trioItem("Ponto de atenção", heroWeak ? `${heroWeak.name} ${heroWeak.pct}` : "Ainda sem leitura", "alert")}
-            ${trioItem("Próxima melhoria", nextImprovement, "spark")}
+          <div class="rr-scoreline-meta">
+            <span class="rr-level">${escHtml(lvl.name)}</span>
+            <p class="rr-hero-read">Nenhum posto opera no limite. Sempre tem frente pra destravar, e o seu tem várias mapeadas aqui.</p>
           </div>
-
-          ${primarySlot}
         </div>
 
-        <div class="result-hero-radar anim-fade delay-2">
-          <span class="radar-panel-eyebrow">Raio X dos pilares</span>
-          ${RadarChart({ state, width: 480, theme: "paper" })}
-          <div class="radar-bars">${barsHtml}</div>
-          ${weakName ? `
-          <div class="radar-weakest">
-            <span class="radar-weakest-label">Ponto mais fraco</span>
-            <p class="radar-weakest-name">${escHtml(weakName)}</p>
-            <p class="radar-weakest-line">${escHtml(weakLine)}</p>
-          </div>` : ""}
-          <p class="result-hero-radar-reading">${escHtml(radar.p1)}</p>
-        </div>
+        <button class="rr-cta rr-cta-primary rr-cta-lg" type="button" data-action="see-next-steps">
+          Quero ver meus próximos passos
+        </button>
+        <span class="rr-reassure">${escHtml(shortRead(score))}</span>
       </div>
-    </header>
-  `;
+
+      <div class="rr-hero-radar">
+        <span class="rr-radar-label">As suas 6 frentes</span>
+        <div class="rr-radar-chart">${RadarChart({ state, width: 460, theme: "paper" })}</div>
+        <div class="rr-bars">${radarBars(state)}</div>
+      </div>
+    </header>`;
 }
 
-/* Plano por frente (dono e gerente): cada frente fraca com os dois rotulos. */
-function planSection(state: AppState): string {
-  const ranked = rankedBlocks(state); // do mais fraco ao mais forte
-  /* Frentes fracas: as abaixo de 70, no maximo tres. Se todas estiverem
-     fortes, mostra ao menos a mais fraca para o plano nunca ficar vazio. */
-  let weak = ranked.filter((r) => r.pct < 70).slice(0, 3);
-  if (weak.length === 0 && ranked.length > 0) weak = ranked.slice(0, 1);
+/* ============================================================
+   SEÇÃO 2 · RAIO-X (importância + garantir a vaga)
+   Bloco escuro único: explicação + card de confirmação juntos.
+   É o único ponto de ação da tela e o alvo dos dois CTAs.
+   ============================================================ */
 
-  const cards = weak
-    .map((r, i) => {
-      const plan = planFor(r.id);
-      return `
-        <article class="plan-card anim-rise" style="animation-delay:${120 + i * 90}ms;">
-          <header class="plan-card-head">
-            <h3 class="plan-card-name">${escHtml(BLOCKS[r.id].name)}</h3>
-            <span class="plan-card-score">${r.pct}<small>/100</small></span>
-          </header>
-          <div class="plan-item plan-item-now">
-            <span class="plan-item-tag">Para fazer esta semana</span>
-            <p class="plan-item-text">${escHtml(plan.estaSemana)}</p>
-          </div>
-          <div class="plan-item plan-item-apoio">
-            <span class="plan-item-tag">Para estruturar com apoio</span>
-            <p class="plan-item-text">${escHtml(plan.comApoio)}</p>
-          </div>
-        </article>`;
-    })
-    .join("");
-
-  return `
-    <section id="planSection" class="result-plan is-hidden" aria-hidden="true">
-      ${SectionHeader({ num: 1, title: "Seu plano por frente" })}
-      <p class="section-intro">
-        Para cada frente que pede atenção, um passo que você começa esta semana
-        e um que estrutura com apoio. Comece pelo primeiro de cada uma.
-      </p>
-      <div class="plan-grid">${cards}</div>
-    </section>
-  `;
-}
-
-/* Bloco do Raio X (dono e gerente): proximo passo principal da pagina. */
-function raioxBlock(): string {
+function raioxSection(state: AppState): string {
   const data = dataProximaSessao();
-  const meet = meetLabel();
+  const first = firstNameOf(state);
   return `
-    <section class="raiox-block is-hidden" id="raioxBlock" aria-hidden="true">
-      <span class="raiox-eyebrow">Ao vivo, toda terça</span>
-      <h2 class="raiox-title">Seu próximo passo: o Raio X do Posto</h2>
-      <p class="raiox-text">
-        Uma sessão fechada, ao vivo, onde nossos especialistas leem o mercado da
-        semana e mostram o que postos como o seu estão fazendo para melhorar
-        resultado. Só participa quem concluiu o diagnóstico.
-      </p>
-      <p class="raiox-date">Próxima sessão: terça, ${escHtml(data)}, às 19h.</p>
-      <button class="btn btn-primary btn-lg btn-block" type="button" data-action="cta-raiox" id="btnRaioxMain">
-        <span>Garantir minha vaga no Raio X</span>
-      </button>
-      <p class="raiox-meet">
-        Prefere entrar como convidado?
-        <a href="${CONFIG.RAIOX_MEET_URL}" target="_blank" rel="noopener noreferrer">Sala do Raio X no Meet (${escHtml(meet)})</a>
-      </p>
-    </section>
-  `;
+    <section class="rr-raiox" id="raiox">
+      <div class="rr-raiox-head">
+        <span class="rr-section-eyebrow rr-eyebrow-light">O seu próximo passo guiado</span>
+        <h2 class="rr-section-title rr-title-light">O que é o Raio-X do Posto</h2>
+        <p class="rr-raiox-lead">
+          Um encontro ao vivo, em grupo, toda terça, de cerca de 30 minutos. Um
+          Especialista ClubPetro abre estratégias reais de postos junto com outros
+          revendedores e mostra, no seu caso, onde o posto perde dinheiro e o que fazer.
+        </p>
+      </div>
+
+      <ul class="rr-value">
+        <li class="rr-value-item">
+          <span class="rr-value-k">Por que importa</span>
+          <p class="rr-value-v">Você sai da teoria. Vê o que postos parecidos com o seu fizeram pra virar o resultado, sem tentativa e erro no seu caixa.</p>
+        </li>
+        <li class="rr-value-item">
+          <span class="rr-value-k">O que você leva</span>
+          <p class="rr-value-v">A leitura do seu diagnóstico comentada por um especialista e um caminho claro pras frentes que mais pesam no seu posto.</p>
+        </li>
+        <li class="rr-value-item">
+          <span class="rr-value-k">Pra quem é</span>
+          <p class="rr-value-v">Só pra quem concluiu a análise. Grupo pequeno, então a sua vaga é limitada à próxima sessão.</p>
+        </li>
+      </ul>
+
+      <div class="rr-gate" id="gate">
+        <div class="rr-gate-chips">
+          <span class="rr-gate-chip rr-gate-chip-live"><span class="rr-gate-dot"></span>Ao vivo, toda terça</span>
+          <span class="rr-gate-chip">Próxima sessão: terça, ${escHtml(data)}, às 11h</span>
+        </div>
+        <h3 class="rr-gate-title">${first ? `${escHtml(first)}, garanta ` : "Garanta "}a sua vaga no próximo Raio-X</h3>
+        <p class="rr-gate-text">
+          Confirma o seu e-mail e o Raio-X entra direto na sua agenda. Rápido e simples:
+          basta entrar com a sua conta Google.
+        </p>
+        <label class="rr-field rr-field-dark" for="confirmEmail">
+          <span class="rr-field-label">Seu melhor e-mail</span>
+          <input
+            id="confirmEmail"
+            class="rr-input"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            placeholder="voce@empresa.com"
+            value="${escHtml(state.email)}"
+          >
+        </label>
+        <button class="rr-cta rr-cta-primary rr-cta-lg rr-cta-block" type="button" data-action="confirm-presence" id="btnConfirmPresence"${emailValid(state) ? "" : " disabled aria-disabled=\"true\""}>
+          Quero garantir minha vaga no próximo Raio-X
+        </button>
+        <span class="rr-gate-micro">Leva 30 segundos. Você entra com o Google e a sua vaga fica garantida.</span>
+        <p class="rr-gate-done" id="rrConfirmDone" aria-live="polite"></p>
+      </div>
+    </section>`;
 }
+
+/* ============================================================
+   SEÇÃO 3 · PONTOS DE MELHORIA (3 abertos + resto borrado)
+   O CTA fica logo após o 3º passo e SOBE pro bloco do Raio-X.
+   Os passos borrados são teaser permanente (não destravam).
+   ============================================================ */
+
+interface Step { block: BlockId; text: string; }
+
+function buildSteps(state: AppState): Step[] {
+  const ranked = rankedBlocks(state); // fraco -> forte: os primeiros pedem mais ação
+  return ranked.map((r) => ({ block: r.id, text: planFor(r.id).estaSemana }));
+}
+
+function stepCard(step: Step, index: number, locked: boolean): string {
+  return `
+    <li class="rr-step${locked ? " is-locked" : ""}" style="--accent:${PILLAR_ACCENT[step.block]}">
+      <span class="rr-step-num">${index + 1}</span>
+      <div class="rr-step-body">
+        <span class="rr-step-front">${escHtml(BLOCKS[step.block].name)}</span>
+        <p class="rr-step-text">${escHtml(step.text)}</p>
+      </div>
+    </li>`;
+}
+
+function pontosSection(state: AppState): string {
+  const ranked = rankedBlocks(state);
+  const weak = ranked[0];
+  const first = firstNameOf(state);
+  const steps = buildSteps(state);
+  const open = steps.slice(0, 3);
+  const locked = steps.slice(3);
+  const openHtml = open.map((s, i) => stepCard(s, i, false)).join("");
+  const lockedHtml = locked.map((s, i) => stepCard(s, i + open.length, true)).join("");
+
+  const intro = weak
+    ? `${first ? `${escHtml(first)}, como ${escHtml(roleWord(state))}, ` : ""}o que você respondeu mostra que ${escHtml(PROBLEM_COPY[weak.id])}`
+    : "";
+
+  return `
+    <section class="rr-steps" id="pontos">
+      <span class="rr-section-eyebrow">Seus pontos de melhoria</span>
+      <h2 class="rr-section-title">Por onde começar</h2>
+      ${intro ? `<p class="rr-section-sub">${intro}</p>` : ""}
+
+      <ol class="rr-steplist">${openHtml}</ol>
+
+      <div class="rr-apply">
+        <p class="rr-apply-line">Esses 3 você começa hoje. O plano completo das seis frentes você recebe no Raio-X.</p>
+        <button class="rr-cta rr-cta-primary rr-cta-lg" type="button" data-action="goto-raiox">
+          Quero aplicar isso agora
+        </button>
+      </div>
+
+      <ol class="rr-steplist rr-steplist-blur" aria-hidden="true">${lockedHtml}</ol>
+    </section>`;
+}
+
+/* ============================================================
+   SEÇÃO 4 · FALE COM ESPECIALISTA (só no fim)
+   ============================================================ */
+
+function specialistSection(): string {
+  return `
+    <footer class="rr-specialist">
+      <div class="rr-specialist-body">
+        <span class="rr-specialist-eyebrow">Já entendi o que preciso melhorar</span>
+        <h3 class="rr-specialist-title">Prefere falar direto com um especialista?</h3>
+        <p class="rr-specialist-text">
+          Se você já sabe onde o posto aperta e quer resolver agora, fale direto com
+          um Especialista ClubPetro pelo WhatsApp.
+        </p>
+      </div>
+      <button class="rr-cta rr-cta-ghost" type="button" data-action="cta-especialista">
+        Quero falar direto com um especialista do ClubPetro
+      </button>
+      <span class="rr-save" id="saveMsg"></span>
+    </footer>`;
+}
+
+/* ============================================================
+   Página
+   ============================================================ */
 
 export function ResultPage(state: AppState): string {
   const score = totalScore(state);
@@ -220,79 +273,40 @@ export function ResultPage(state: AppState): string {
     return frentistaResult(state, score);
   }
 
-  /* Dono e gerente: resultado -> botao revela plano -> plano -> Raio X -> ghost. */
-  const primarySlot = `
-    <div class="result-next" id="resultNext">
-      <p class="result-next-micro">
-        Você já viu onde está perdendo. Veja agora o que dá para fazer para
-        melhorar o resultado do seu posto.
-      </p>
-      <button class="btn btn-hero-primary btn-block btn-hero-xl" type="button" data-action="reveal-plan" id="btnRevealPlan">
-        <span>Quero aumentar meu resultado</span>
-      </button>
-    </div>
-  `;
-
   return `
-    <div class="shell stage">
-      <article class="result">
-        ${heroHeader(state, primarySlot)}
-        ${planSection(state)}
-        ${raioxBlock()}
-        <footer class="result-foot is-hidden" id="resultFoot" aria-hidden="true">
-          <button class="btn btn-ghost" type="button" data-action="cta-especialista">
-            <span>Prefere conversar agora? Falar com um Especialista ClubPetro</span>
-          </button>
-          <span class="result-foot-save" id="saveMsg"></span>
-        </footer>
+    <div class="shell stage rr">
+      <article class="rr-result">
+        ${hero(state, score)}
+        ${raioxSection(state)}
+        ${pontosSection(state)}
+        ${specialistSection()}
       </article>
     </div>
-
-    <div class="raiox-sticky is-hidden" id="raioxSticky" aria-hidden="true">
-      <button class="btn btn-primary btn-block" type="button" data-action="cta-raiox">
-        <span>Garantir minha vaga no Raio X</span>
-      </button>
-    </div>
-
     <span id="rScoreTarget" data-target="${score}" hidden></span>
   `;
 }
 
-/* Tela final do frentista (Bloco 2.4): sem Raio X, sem especialista.
-   Resultado em segunda pessoa, reconhecimento do papel na pista e um unico
-   CTA, de compartilhar o diagnostico com quem decide. */
+/* Tela final do frentista: mesmo hero claro, sem gate nem Raio-X. */
 function frentistaResult(state: AppState, score: number): string {
-  const primarySlot = `
-    <div class="result-next" id="resultNext">
-      <p class="result-next-micro">
-        Quem está na pista enxerga o posto de um jeito que ninguém mais vê.
-      </p>
-    </div>
-  `;
-  /* Link de compartilhamento fixo (Bloco 2.4). */
   const shareUrl =
     "https://wa.me/?text=Fiz%20um%20diagn%C3%B3stico%20r%C3%A1pido%20do%20posto%20e%20vale%20voc%C3%AA%20ver.%20Leva%204%20minutos%20e%20mostra%20onde%20d%C3%A1%20para%20melhorar%3A%20https%3A%2F%2Fdiagnostico-clubpetro.web.app%2F";
-
   return `
-    <div class="shell stage">
-      <article class="result result-frentista">
-        ${heroHeader(state, primarySlot)}
-
-        <section class="frentista-final anim-rise" style="animation-delay:120ms;">
-          <p class="frentista-recognition">
-            O que você respondeu mostra onde o dia a dia do seu posto aperta e
-            onde dá para melhorar. A sua visão de pista é o que falta para quem
-            decide enxergar isso. Leva esse retrato para o seu gerente ou dono:
-            é assim que o que você vê todo dia vira mudança de verdade.
+    <div class="shell stage rr">
+      <article class="rr-result">
+        ${hero(state, score)}
+        <section class="rr-frentista">
+          <p class="rr-frentista-text">
+            O que você respondeu mostra onde o dia a dia do seu posto aperta e onde dá
+            pra melhorar. A sua visão de pista é o que falta pra quem decide enxergar
+            isso. Leva esse retrato pro seu gerente ou dono.
           </p>
-          <a class="btn btn-primary btn-lg btn-block" href="${shareUrl}" target="_blank" rel="noopener noreferrer" data-action="share-diagnostico">
-            <span>Mostrar esse diagnóstico para o gerente ou dono</span>
+          <a class="rr-cta rr-cta-primary rr-cta-lg" href="${shareUrl}" target="_blank" rel="noopener noreferrer" data-action="share-diagnostico">
+            Mostrar esse diagnóstico pro meu gerente ou dono
           </a>
-          <span class="result-foot-save" id="saveMsg"></span>
+          <span class="rr-save" id="saveMsg"></span>
         </section>
       </article>
     </div>
-
     <span id="rScoreTarget" data-target="${score}" hidden></span>
   `;
 }
