@@ -77,35 +77,50 @@
   to   { opacity: calc(var(--o, .6) * 0.6); }
 }
 
-/* Halo atrás do vídeo da welcome: respira de leve para dar vida às bordas. */
-@keyframes welcomeHaloBreath {
-  from { opacity: 0.7; transform: scale(1); }
-  to   { opacity: 1;   transform: scale(1.05); }
-}
-
 /* Pulsar de brilho do CTA dominante da tela de score (P8). */
 @keyframes ctaPulse {
   0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 30px rgba(242,102,0,0.42); }
   50%      { box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 12px 40px rgba(242,102,0,0.64); }
 }
 
-/* Transicao entre perguntas: a coluna inteira desliza e esmaece como um todo,
-   na direcao da navegacao (avancar = entra pela direita, voltar = pela esquerda).
-   Movimento coeso e curto, sem atrapalhar a leitura nem reiniciar a midia. */
-.question.q-enter-fwd  { animation: qEnterFwd  360ms var(--ease-out) both; }
-.question.q-enter-back { animation: qEnterBack 360ms var(--ease-out) both; }
-@keyframes qEnterFwd {
-  from { opacity: 0; transform: translate3d(26px, 0, 0); }
+/* Transição entre perguntas: a coluna esmaece rápido e as opções entram em
+   CASCATA, na direção da navegação (avançar = da direita, voltar = da esquerda).
+   Cada card entra logo após o anterior, dando ritmo e sensação de avanço que
+   puxa pra concluir. A mídia (desktop) não é afetada: a animação é só na
+   .question e nos cards. */
+.question.q-enter-fwd,
+.question.q-enter-back { animation: qFade 280ms var(--ease-out) both; }
+@keyframes qFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* fill-mode 'backwards' (não 'both'): mantém o card escondido durante o delay da
+   cascata, mas NÃO trava o transform no fim. Assim os transforms de :hover,
+   :active (afundar no toque, RULES 4.2) e .is-selected voltam a funcionar depois
+   da entrada. A classe .q-enter-* fica no nó (não é removida), então 'both'
+   deixaria 'transform: none' latcheado o tempo todo. */
+.q-enter-fwd  .answer-card { animation: cardDealFwd  440ms var(--ease-out) backwards; }
+.q-enter-back .answer-card { animation: cardDealBack 440ms var(--ease-out) backwards; }
+@keyframes cardDealFwd {
+  from { opacity: 0; transform: translate3d(24px, 10px, 0) scale(.98); }
   to   { opacity: 1; transform: none; }
 }
-@keyframes qEnterBack {
-  from { opacity: 0; transform: translate3d(-26px, 0, 0); }
+@keyframes cardDealBack {
+  from { opacity: 0; transform: translate3d(-24px, 10px, 0) scale(.98); }
   to   { opacity: 1; transform: none; }
 }
+/* Cascata: escalonamento por posição do card no grid. */
+.answer-grid .answer-card:nth-child(1) { animation-delay: 40ms; }
+.answer-grid .answer-card:nth-child(2) { animation-delay: 90ms; }
+.answer-grid .answer-card:nth-child(3) { animation-delay: 140ms; }
+.answer-grid .answer-card:nth-child(4) { animation-delay: 190ms; }
+.answer-grid .answer-card:nth-child(5) { animation-delay: 240ms; }
+.answer-grid .answer-card:nth-child(6) { animation-delay: 290ms; }
+.answer-grid .answer-card:nth-child(7) { animation-delay: 340ms; }
+.answer-grid .answer-card:nth-child(8) { animation-delay: 390ms; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
+    animation-delay: 0ms !important;      /* zera o escalonamento da cascata */
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
     scroll-behavior: auto !important;

@@ -38,6 +38,7 @@ import {
   TRACK_VIDEO_BLOCKS,
   type VideoTrack,
 } from "./lib/trackVideo";
+import { playWhenAllowed } from "./lib/autoplay";
 import {
   showTrackImage,
   hideTrackImage,
@@ -113,11 +114,20 @@ function renderHeader(): string {
   });
 }
 
+/* No mobile não usamos mais a arte (vídeo/imagem) das trilhas: a pergunta ocupa
+   a tela inteira, os cards ganham profundidade e o foco é responder. A arte só
+   aparece no layout de duas colunas do desktop (>=960px, mesmo breakpoint do
+   .q-stage). Abaixo disso, as camadas retornam null e o palco vira coluna única. */
+function mediaAllowed(): boolean {
+  return window.matchMedia?.("(min-width: 960px)").matches ?? true;
+}
+
 /* Estado do vídeo da trilha (frentista ou gerente) para a pergunta atual:
    trilha, bloco e lado. Retorna null quando a trilha não tem vídeo (dono),
    é o S1 de roteamento, ou não é tela de pergunta: a camada fica escondida. */
 function currentTrackVideo(): { track: VideoTrack; block: number; side: "left" | "right" } | null {
   if (state.screen !== "question") return null;
+  if (!mediaAllowed()) return null;
   const track = currentTrack(state);
   if (track !== "frentista" && track !== "gerente") return null;
   const q = currentQuestion(state);
@@ -133,6 +143,7 @@ function currentTrackVideo(): { track: VideoTrack; block: number; side: "left" |
    tela de pergunta. Mesma logica de blocos do video. */
 function currentTrackImage(): { block: number; side: "left" | "right" } | null {
   if (state.screen !== "question") return null;
+  if (!mediaAllowed()) return null;
   if (currentTrack(state) !== "dono") return null;
   const q = currentQuestion(state);
   if (!q || q.id === "S1") return null;
@@ -220,6 +231,14 @@ function bindGlobalActions(): void {
       const isMulti = opt.dataset.multi === "1";
       return isMulti ? toggleMultiOption(idx) : selectOption(idx);
     }
+  });
+
+  // Ao cruzar o breakpoint da arte (960px) sem navegar (redimensionar no desktop,
+  // rotacionar tablet), re-renderiza a pergunta pra a arte da trilha aparecer/
+  // sumir e o fundo (creme no desktop, gelo no mobile) acompanhar. Sem isso, o
+  // estado fica preso até a próxima navegação.
+  window.matchMedia("(min-width: 960px)").addEventListener("change", () => {
+    if (state.screen === "question") render();
   });
 }
 function handleAction(action: string): void {
@@ -542,8 +561,9 @@ function afterAnswer(q: Question): void {
   }
 
   // Ao escolher o papel (S1), já pré-carrega o 1o vídeo da trilha, para ele
-  // estar pronto quando a primeira pergunta da trilha aparecer.
-  if (q.id === "S1") {
+  // estar pronto quando a primeira pergunta da trilha aparecer. No mobile a arte
+  // não é exibida, então não baixa nada (economia de dados).
+  if (q.id === "S1" && mediaAllowed()) {
     const t = currentTrack(state);
     if (t === "frentista" || t === "gerente") preloadTrackStart(t);
     else if (t === "dono") preloadDonoStart();
@@ -740,7 +760,7 @@ function onWelcomeRendered(): void {
     }
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce) { vid.removeAttribute("autoplay"); vid.pause(); }
-    else { void vid.play?.().catch(() => {}); }
+    else { playWhenAllowed(vid); }
   }
 
   const input = document.getElementById("welcomeName") as HTMLInputElement | null;

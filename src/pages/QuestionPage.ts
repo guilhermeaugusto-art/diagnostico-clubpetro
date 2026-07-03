@@ -31,6 +31,20 @@ function progressBar(currentIndex: number, totalSteps: number): string {
     </div>`;
 }
 
+/* Linha de estímulo à conclusão: muda conforme o avanço pra a pessoa sentir que
+   está perto do resultado e querer terminar. Só status, sem expor pontuação. */
+function progressHint(currentIndex: number, totalSteps: number): string {
+  const remaining = Math.max(0, totalSteps - currentIndex - 1);
+  const f = totalSteps > 0 ? currentIndex / totalSteps : 0;
+  let text: string;
+  if (remaining === 0) text = "Última pergunta pra ver seu resultado.";
+  else if (f >= 0.66) text = "Falta pouco pra ver seu resultado.";
+  else if (f >= 0.33) text = "Você já passou da metade.";
+  else text = "Leva poucos minutos pra ver seu resultado.";
+  const near = f >= 0.66 ? " is-near" : "";
+  return `<p class="q-progress-hint${near}">${text}</p>`;
+}
+
 /* Envolve o conteúdo da pergunta no palco. Na trilha do frentista, monta o
    layout em duas colunas com o slot do vídeo (preenchido pelo controlador, que
    re-anexa o vídeo persistente). Sem vídeo, mantém o palco simples de sempre. */
@@ -126,6 +140,7 @@ export function QuestionPage(p: QuestionPageProps): string {
   const inner = `
       <section class="question">
         ${progressBar(p.currentIndex, p.totalSteps)}
+        ${progressHint(p.currentIndex, p.totalSteps)}
         <div class="q-meta">
           <span class="q-step-tag">
             <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}
@@ -166,6 +181,7 @@ function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
   const inner = `
       <section class="question">
         ${progressBar(p.currentIndex, p.totalSteps)}
+        ${progressHint(p.currentIndex, p.totalSteps)}
         <div class="q-meta">
           <span class="q-step-tag">
             <b>${pad2(p.currentIndex + 1)}</b> / ${pad2(p.totalSteps)}

@@ -9,9 +9,9 @@
   border-bottom: 1px solid var(--border-soft);
   transition: background-color var(--dur-3) var(--ease);
 }
-/* Header acompanha o tom do paper-welcome quando welcome está visível */
+/* Header acompanha o tom do paper-welcome (gelo) quando a home está visível */
 body:has(.welcome) .cp-header {
-  background: rgba(236, 230, 234, 0.92);
+  background: rgba(243, 245, 247, 0.92);
 }
 .cp-header-row {
   display: grid;
@@ -157,10 +157,17 @@ body:has(.welcome) .cp-header {
   padding: var(--sp-4) var(--sp-5);
   padding-right: var(--sp-10); /* espaço para o check no canto direito */
   border-radius: var(--rd-md);
-  background: var(--surface);
-  /* Borda fina como base (via ::before), sombra mínima só pra descolar do paper.
-     Cartão editorial: definido pela borda, não por sombra mole. */
-  box-shadow: 0 1px 2px rgba(11, 18, 24, .03);
+  /* Superfície com leve gradiente vertical (topo mais claro): o card lê como uma
+     peça física iluminada de cima, não um retângulo chapado. */
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
+  /* Profundidade em camadas: contato curto + ambiente médio + realce interno no
+     topo. Sombras curtas e definidas (não glow mole) = 3D editorial, com a borda
+     fina (::before) ainda ancorando o cartão. */
+  box-shadow:
+    0 1px 1px rgba(20, 26, 40, .05),
+    0 2px 4px rgba(20, 26, 40, .05),
+    0 8px 16px -4px rgba(20, 26, 40, .07),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
   transition:
     transform var(--dur-2) var(--ease-out),
     box-shadow var(--dur-2) var(--ease),
@@ -173,28 +180,40 @@ body:has(.welcome) .cp-header {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* Hairline sempre presente: a borda fina é o que define o cartão. */
+  /* Hairline sempre presente: a borda fina ancora o cartão sobre o gelo. */
   border: 1px solid var(--border-medium);
   transition: border-color var(--dur-2) var(--ease), border-width var(--dur-1) var(--ease);
   pointer-events: none;
   z-index: 1;
 }
 .answer-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(11, 18, 24, .06);
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 3px rgba(20, 26, 40, .06),
+    0 6px 10px rgba(20, 26, 40, .07),
+    0 16px 28px -6px rgba(20, 26, 40, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
 }
 .answer-card:hover::before { border-color: var(--ink-200); }
 .answer-card:focus-visible::before { border-color: var(--cp-orange-500); }
 /* Seleção decidida: preenchimento de acento + borda laranja firme, sem glow.
-   Fica "travado", não flutuando. */
+   Fica "travado" (afunda de leve), não flutuando. */
 .answer-card.is-selected {
   background: var(--cp-orange-50);
-  box-shadow: none;
   transform: none;
+  box-shadow:
+    inset 0 1px 2px rgba(242, 102, 0, .10),
+    0 1px 1px rgba(20, 26, 40, .04);
 }
 .answer-card.is-selected::before { border-color: var(--cp-orange-500); border-width: 1.5px; }
-/* Toque: o card responde na hora (pressiona) para dar retorno imediato. */
-.answer-card:active { transform: scale(.985); }
+/* Toque: o card afunda na hora (pressiona) para dar retorno físico imediato. */
+.answer-card:active {
+  transform: translateY(0) scale(.99);
+  box-shadow:
+    0 1px 1px rgba(20, 26, 40, .06),
+    0 1px 2px rgba(20, 26, 40, .05),
+    inset 0 1px 0 rgba(255, 255, 255, .8);
+}
 
 .answer-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .answer-title {
@@ -321,12 +340,12 @@ body:has(.welcome) .cp-header {
 .question { max-width: 880px; margin-inline: auto; }
 /* Barra de progresso do quiz: fina, sempre no topo da pergunta. */
 .q-progress {
-  height: 5px;
+  height: 6px;
   width: 100%;
   border-radius: var(--rd-full);
   background: var(--paper-deep);
   overflow: hidden;
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-2);
 }
 .q-progress-fill {
   display: block;
@@ -335,6 +354,16 @@ body:has(.welcome) .cp-header {
   background: linear-gradient(90deg, var(--cp-orange-400), var(--cp-orange-500));
   transition: width var(--dur-4) var(--ease-out);
 }
+/* Estímulo à conclusão: status curto sob a barra, discreto, que fica laranja no
+   trecho final pra puxar pra terminar. */
+.q-progress-hint {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-500);
+}
+.q-progress-hint.is-near { color: var(--cp-orange-700); } /* AA: 6.18:1 sobre o gelo */
 .q-meta {
   display: flex;
   align-items: center;
@@ -533,40 +562,23 @@ body:has(.welcome) .cp-header {
   /* Acompanha a altura proporcional do slot 16:9 nos novos tamanhos. */
   min-height: 420px;
 }
-/* Halo laranja que respira atrás do vídeo: as bordas esfumaçadas do vídeo
-   passam a se dissolver neste brilho dinâmico da marca (e deixam o bokeh atrás
-   aparecer), em vez de um tom chapado fixo. */
-.welcome-visual::before {
-  content: "";
-  position: absolute;
-  inset: -4% -2%;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(58% 62% at 62% 48%,
-      rgba(242, 102, 0, 0.14) 0%,
-      rgba(255, 161, 50, 0.08) 45%,
-      rgba(242, 102, 0, 0) 76%);
-  filter: blur(20px);
-  animation: welcomeHaloBreath 9s ease-in-out infinite alternate;
-}
-@media (prefers-reduced-motion: reduce) {
-  .welcome-visual::before { animation: none; }
-}
+/* Halo desativado: o vídeo do hero agora é opaco (fundo gelo casado com a
+   página), então o halo só apareceria como um brilho laranja ao redor do
+   retângulo do vídeo, com cara de IA. Sem halo, a cena assenta limpa no gelo. */
+.welcome-visual::before { content: none; }
 @media (min-width: 1024px) { .welcome-visual { min-height: 500px; } }
 @media (min-width: 1280px) { .welcome-visual { min-height: 540px; } }
 .welcome-video-wrap {
   position: relative;
-  z-index: 1;                 /* acima do halo .welcome-visual::before */
+  z-index: 1;
   width: 100%;
-  /* Slot equilibrado: maior do que o original, menor do que a versão
-     anterior. Aspect 16:9 = mesmo do vídeo → cover não recorta. */
+  /* Slot com o aspecto real do vídeo (4:3), pra não recortar a cena. */
   max-width: 1100px;
-  aspect-ratio: 4 / 3;        /* aspecto real da imagem hero */
+  aspect-ratio: 4 / 3;
   border-radius: 0;
   overflow: visible;
-  /* Sem cor sólida: as bordas esfumaçadas do vídeo revelam o halo dinâmico e o
-     bokeh atrás, em vez de um retângulo de cor fixa. */
+  /* Sem cor sólida: o vídeo é opaco no mesmo gelo da página, então funde sem
+     revelar retângulo (o wrap não precisa pintar fundo). */
   background: transparent;
   margin-right: calc(-1 * var(--sp-8));
   margin-left: var(--sp-4);
@@ -1149,10 +1161,16 @@ body:has(.fimg-panel) {
   /* Imagem do dono: foco vertical por imagem (focusY, definido no controlador),
      para enquadrar a acao de cada cena, nao o topo. */
   .q-stage { gap: var(--sp-3); }
-  /* Mais definicao dos cards no mobile: branco sobre creme tem contraste baixo
-     e fica "lavado". Borda mais firme + leve sombra para os cartoes descolarem
-     do fundo, sem mudar a paleta da marca. */
-  .answer-card { box-shadow: 0 2px 8px rgba(11, 18, 24, .055); }
+  /* No mobile não há vídeo/imagem: o card é o protagonista. Profundidade em
+     camadas um pouco mais marcada que no desktop, pra o cartão descolar do gelo
+     com dimensão física (sem virar glow). */
+  .answer-card {
+    box-shadow:
+      0 1px 1px rgba(20, 26, 40, .05),
+      0 3px 6px rgba(20, 26, 40, .06),
+      0 12px 22px -6px rgba(20, 26, 40, .10),
+      inset 0 1px 0 rgba(255, 255, 255, .9);
+  }
   .answer-card::before { border-color: var(--border-strong); }
 }
 

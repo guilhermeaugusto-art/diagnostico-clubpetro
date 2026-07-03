@@ -32,9 +32,11 @@
   --paper:        #F6F7F9;
   --paper-warm:   #EDEDF1;
   --paper-deep:   #D6D8E1;
-  /* Welcome: cor base afinada às bordas do vídeo (fusão invisível tipo PNG
-     flutuante). Mantida quente de propósito para casar com o vídeo. */
-  --paper-welcome: rgb(235, 230, 233);
+  /* Gelo frio, puxado pro branco: fundo da home E das perguntas no mobile (onde
+     não há vídeo/imagem pra fundir). O vídeo do hero é recolorido nesse mesmo
+     tom pra fundir sem revelar retângulo. Desktop mantém o creme nas perguntas
+     porque lá a arte da trilha ainda funde no fundo. */
+  --paper-welcome: #F5F7FA;
   --surface:      #FFFFFF;
   --surface-alt:  #F6F7F9;
   --surface-deep: #1F2028;

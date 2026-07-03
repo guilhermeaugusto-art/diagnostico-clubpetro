@@ -29,6 +29,12 @@ body:has(.question) { background: #faf8f4; }
 /* Sem grão de papel nas perguntas: fundo 100% liso #FAF8F4 para o vídeo (mp4
    opaco com fundo #FAF8F4) fundir sem revelar retângulo. */
 body:has(.question)::before { opacity: 0; }
+/* Mobile: sem vídeo/imagem nas perguntas (removidos), a página não precisa mais
+   do creme de fusão, então usa o mesmo gelo da home. Fundo puxado pro branco,
+   com os cards em branco puro por cima ganhando profundidade. */
+@media (max-width: 959px) {
+  body:has(.question) { background: var(--paper-welcome); }
+}
 
 /* Grão de papel: textura analógica sutil que tira a cara de "plástico de IA".
    Fractal noise em SVG, fixo, atrás do conteúdo (#app cria seu próprio
@@ -152,13 +158,13 @@ body:has(.question) .cp-bokeh { opacity: 0; }
   .cp-bokeh i { animation: none; opacity: var(--o); transform: none; }
 }
 
-/* Welcome: cor base = média das bordas do vídeo (rgb 235,230,233).
-   Glow laranja sutil por cima dá vida sem criar contraste justo onde a
-   máscara do vídeo dissolve, mantendo a fusão "PNG flutuante". */
-/* Welcome usa o mesmo creme liso #FAF8F4 do resto do app. O video do hero ja
-   vem com esse fundo recolorido, entao funde sem revelar retangulo. */
+/* Welcome: fundo em tom gelo frio (--paper-welcome), só na home, pra tirar o
+   branco "muito claro". Os cards ficam em branco puro (--surface) por cima,
+   criando leve profundidade. O vídeo do hero é recolorido nesse mesmo gelo,
+   então funde no fundo sem revelar retângulo. As telas de pergunta seguem no
+   creme #FAF8F4 (regra body:has(.question)), intocadas. */
 body:has(.welcome) {
-  background: #faf8f4;
+  background: var(--paper-welcome);
 }
 
 /* Vertical rhythm desktop */

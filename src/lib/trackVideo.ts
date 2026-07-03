@@ -13,6 +13,8 @@
 
    So apresentacao: nao toca em pergunta, pontuacao, roteamento nem envio. */
 
+import { playWhenAllowed } from "./autoplay";
+
 export interface VideoBlock {
   src: string;
   side: "left" | "right";
@@ -137,7 +139,7 @@ function makePlayer(src: string): Player {
 
   return {
     el: wrap,
-    play() { if (active.paused) active.play().catch(() => {}); },
+    play() { if (active.paused) playWhenAllowed(active); },
     pause() { try { a.pause(); b.pause(); } catch { /* ignore */ } },
   };
 }
