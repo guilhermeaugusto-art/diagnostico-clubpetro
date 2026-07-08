@@ -1,0 +1,360 @@
+// diagnostico-esteira: reconciliador do funil do Diagnostico/Raio-X.
+// Roda por trigger (linha unica) e por cron (varredura ?sweep=1). Cada etapa tem
+// dedup por coluna e so marca apos 2xx — falha fica pendente e a proxima
+// varredura retenta. Fichas com duplicado_de preenchido sao ignoradas (a
+// canonica da pessoa e quem conta). Etapas:
+//   1) RD conversao fez-diagnostico-posto        (concluiu && !rd_enviado)
+//   2) RD conversao confirmou-raiox-posto        (confirmado && !rd_raiox_enviado)
+//   3) RD conversao fez-raiox-posto + tag        (participou && !rd_participou_enviado)
+//   4) RD evento OPPORTUNITY (funil default)     (participou && !rd_oportunidade_enviado)
+//   5) Kommo lead com tag raiox-realizado        (participou && !kommo_enviado)
+// ?dry=1 simula: nao chama RD/Kommo nem grava nada.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RD_CONV = "https://api.rd.services/platform/conversions";
+const RD_EVENTS = "https://api.rd.services/platform/events";
+const RD_AUTH = "https://api.rd.services/auth/token";
+const KOMMO_PIPELINE = 8166623;        // Pipe | Fidelidade
+const KOMMO_STATUS_FALLBACK = 65190271; // mesmo fallback do prosp-postos-kommo
+const CF_ORIGEM = 1266644;
+const CF_SUBORIGEM = 1266176;
+
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+const PILAR_LABEL: Record<string, string> = {
+  pessoas: "Pessoas", marca: "Marca", comercial: "Comercial",
+  fidelizacao: "Fidelizacao", dados: "Dados", resiliencia: "Resiliencia",
+};
+const RELACAO_LABEL: Record<string, string> = {
+  dono: "Dono(a) ou Diretor(a)", gerente: "Gerente ou Supervisor(a)",
+  outro: "Frentista", frentista: "Frentista",
+};
+
+function safeParse(s: unknown) { try { return JSON.parse(String(s)); } catch { return null; } }
+function asStr(v: unknown): string | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  return s ? s : undefined;
+}
+function dimensaoFraca(row: any): string | undefined {
+  const raw = row.pontuacao_pilares;
+  const obj = typeof raw === "string" ? safeParse(raw) : raw;
+  if (obj && typeof obj === "object") {
+    let worst: string | null = null; let min = Infinity;
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      const n = Number(v);
+      if (!Number.isNaN(n) && n < min) { min = n; worst = k; }
+    }
+    if (worst) return PILAR_LABEL[worst] ?? worst;
+  }
+  const dor = (row.dor_principal ?? "").toString().trim();
+  if (!dor) return undefined;
+  return dor.length > 80 ? dor.slice(0, 77) + "..." : dor;
+}
+function relacaoPosto(row: any): string | undefined {
+  const direto = (row.relacao_posto ?? "").toString().trim();
+  if (direto) return direto;
+  return RELACAO_LABEL[(row.papel ?? "").toString().trim().toLowerCase()];
+}
+function isFrentista(row: any) {
+  const p = (row.papel ?? "").toString().trim().toLowerCase();
+  return p === "outro" || p === "frentista";
+}
+function temEmail(row: any) {
+  return typeof row.email === "string" && row.email.includes("@");
+}
+function ehCliente(row: any) {
+  return (row.conhece ?? "").toString().trim().toLowerCase() === "cliente";
+}
+
+async function vmGet(keys: string[]) {
+  const { data, error } = await supabase.from("vm_app_keys").select("key,value").in("key", keys);
+  if (error) throw new Error("vm_app_keys: " + error.message);
+  const m: Record<string, string> = {};
+  for (const r of data || []) m[r.key] = r.value;
+  return m;
+}
+async function vmSet(key: string, value: string) {
+  await supabase.from("vm_app_keys").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
+}
+
+async function getRdPublicToken(): Promise<string | null> {
+  const { data } = await supabase.from("Armazena_Token_RD").select("Token")
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return data?.Token ? String(data.Token) : null;
+}
+async function rdConversion(token: string, payload: unknown) {
+  const res = await fetch(`${RD_CONV}?api_key=${token}`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event_type: "CONVERSION", event_family: "CDP", payload }),
+  });
+  return { ok: res.ok, status: res.status, text: (await res.text()).slice(0, 300) };
+}
+
+// ---- RD OAuth (marcar oportunidade) com refresh automatico em 401 ----
+let rdOauthCache: { access: string; refresh: string; clientId: string; clientSecret: string } | null = null;
+async function rdOauthLoad() {
+  if (rdOauthCache) return rdOauthCache;
+  const m = await vmGet(["RD_ACCESS_TOKEN", "RD_REFRESH_TOKEN", "RD_CLIENT_ID", "RD_CLIENT_SECRET"]);
+  rdOauthCache = { access: m.RD_ACCESS_TOKEN, refresh: m.RD_REFRESH_TOKEN, clientId: m.RD_CLIENT_ID, clientSecret: m.RD_CLIENT_SECRET };
+  return rdOauthCache;
+}
+async function rdOauthRefresh() {
+  const c = await rdOauthLoad();
+  const res = await fetch(RD_AUTH, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_id: c.clientId, client_secret: c.clientSecret, refresh_token: c.refresh }),
+  });
+  const d = await res.json();
+  if (!res.ok || !d.access_token) throw new Error("rd refresh falhou: " + JSON.stringify(d).slice(0, 200));
+  c.access = d.access_token;
+  if (d.refresh_token) c.refresh = d.refresh_token;
+  await vmSet("RD_ACCESS_TOKEN", c.access);
+  if (d.refresh_token) await vmSet("RD_REFRESH_TOKEN", c.refresh);
+  return c;
+}
+async function rdMarkOpportunity(email: string) {
+  let c = await rdOauthLoad();
+  const body = JSON.stringify({ event_type: "OPPORTUNITY", event_family: "CDP", payload: { funnel_name: "default", email } });
+  let res = await fetch(RD_EVENTS, {
+    method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + c.access }, body,
+  });
+  if (res.status === 401) {
+    c = await rdOauthRefresh();
+    res = await fetch(RD_EVENTS, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + c.access }, body,
+    });
+  }
+  return { ok: res.ok, status: res.status, text: (await res.text()).slice(0, 300) };
+}
+
+// ---- Kommo ----
+let kommoCache: { base: string; token: string } | null = null;
+async function kommoCreds() {
+  if (kommoCache) return kommoCache;
+  const m = await vmGet(["KOMMO_ACCESS_TOKEN", "KOMMO_SUBDOMAIN"]);
+  const sd = (m.KOMMO_SUBDOMAIN || "clubpetro").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const host = sd.includes(".") ? sd : sd + ".kommo.com";
+  kommoCache = { base: `https://${host}/api/v4`, token: m.KOMMO_ACCESS_TOKEN };
+  return kommoCache;
+}
+async function kfetch(path: string, init?: RequestInit) {
+  const { base, token } = await kommoCreds();
+  const res = await fetch(base + path, {
+    ...(init || {}),
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token, ...((init || {}).headers || {}) },
+  });
+  const text = await res.text();
+  let json: any = null;
+  if (text) { try { json = JSON.parse(text); } catch { /* html de erro */ } }
+  return { ok: res.ok, status: res.status, json, text: text.slice(0, 300) };
+}
+let kommoMetaCache: { statusId: number; origemEnum: number | null; suborigem: { type: string; id?: number } | null } | null = null;
+async function kommoMeta() {
+  if (kommoMetaCache) return kommoMetaCache;
+  let statusId = KOMMO_STATUS_FALLBACK;
+  const pl = await kfetch(`/leads/pipelines/${KOMMO_PIPELINE}`);
+  const sts = (pl.json?._embedded?.statuses || [])
+    .filter((s: any) => s.id !== 142 && s.id !== 143 && s.type !== 1)
+    .sort((a: any, b: any) => (a.sort || 0) - (b.sort || 0));
+  if (sts.length) statusId = sts[0].id;
+  let origemEnum: number | null = null;
+  const fo = await kfetch(`/leads/custom_fields/${CF_ORIGEM}`);
+  const eo = (fo.json?.enums || []).find((e: any) => /inbound/i.test(e.value || ""));
+  if (eo) origemEnum = eo.id;
+  let suborigem: { type: string; id?: number } | null = null;
+  const fs = await kfetch(`/leads/custom_fields/${CF_SUBORIGEM}`);
+  if (fs.json) {
+    if (["text", "textarea"].includes(fs.json.type)) suborigem = { type: "text" };
+    else {
+      const es = (fs.json.enums || []).find((e: any) => /diagn|raio/i.test(e.value || ""));
+      if (es) suborigem = { type: "enum", id: es.id };
+    }
+  }
+  kommoMetaCache = { statusId, origemEnum, suborigem };
+  return kommoMetaCache;
+}
+async function kommoFindLead(row: any): Promise<any | null> {
+  for (const q of [row.email, row.telefone]) {
+    const qq = (q ?? "").toString().trim();
+    if (qq.length < 5) continue;
+    const d = await kfetch(`/leads?query=${encodeURIComponent(qq)}&with=contacts`);
+    const lead = d.json?._embedded?.leads?.[0];
+    if (lead) return lead;
+  }
+  return null;
+}
+async function kommoEnsureTag(leadId: number) {
+  const d = await kfetch(`/leads/${leadId}`);
+  const tags = (d.json?._embedded?.tags || []).map((t: any) => ({ name: t.name }));
+  if (tags.some((t: any) => t.name === "raiox-realizado")) return { ok: true, status: 200, text: "tag ja presente" };
+  tags.push({ name: "raiox-realizado" });
+  return await kfetch(`/leads/${leadId}`, { method: "PATCH", body: JSON.stringify({ _embedded: { tags } }) });
+}
+function notaKommo(row: any): string {
+  const partes = [
+    `Participou do Raio-X do Posto (diagnostico ClubPetro).`,
+    row.relacao_posto ? `Relacao com o posto: ${row.relacao_posto}` : null,
+    row.score !== null && row.score !== undefined ? `Score do diagnostico: ${row.score} (${row.nivel ?? "sem nivel"})` : null,
+    row.interesse ? `Frente de interesse: ${row.interesse}` : null,
+    row.telefone ? `Telefone: ${row.telefone}` : null,
+    row.email ? `E-mail: ${row.email}` : null,
+    row.pdf_comercial_url ? `PDF comercial: ${row.pdf_comercial_url}` : null,
+  ].filter(Boolean);
+  return partes.join("\n");
+}
+async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; detalhe: string }> {
+  const existente = await kommoFindLead(row);
+  if (existente?.id) {
+    const r = await kommoEnsureTag(existente.id);
+    if (!r.ok) return { ok: false, detalhe: `tag em lead existente ${existente.id}: HTTP ${r.status} ${r.text}` };
+    await kfetch(`/leads/${existente.id}/notes`, {
+      method: "POST",
+      body: JSON.stringify([{ note_type: "common", params: { text: notaKommo(row) } }]),
+    });
+    return { ok: true, leadId: existente.id, detalhe: "lead existente atualizado com tag" };
+  }
+  const meta = await kommoMeta();
+  const cf: any[] = [];
+  if (meta.origemEnum) cf.push({ field_id: CF_ORIGEM, values: [{ enum_id: meta.origemEnum }] });
+  if (meta.suborigem?.type === "text") cf.push({ field_id: CF_SUBORIGEM, values: [{ value: "diagnostico-raiox" }] });
+  else if (meta.suborigem?.type === "enum") cf.push({ field_id: CF_SUBORIGEM, values: [{ enum_id: meta.suborigem.id }] });
+  const contactCf: any[] = [];
+  if (row.telefone) contactCf.push({ field_code: "PHONE", values: [{ value: String(row.telefone), enum_code: "MOB" }] });
+  if (temEmail(row)) contactCf.push({ field_code: "EMAIL", values: [{ value: row.email, enum_code: "WORK" }] });
+  const body = [{
+    name: `${row.nome || row.email || "Lead"} - Raio-X do Posto`,
+    pipeline_id: KOMMO_PIPELINE,
+    status_id: meta.statusId,
+    ...(cf.length ? { custom_fields_values: cf } : {}),
+    _embedded: {
+      tags: [{ name: "raiox-realizado" }],
+      contacts: [{
+        name: row.nome || row.email || "Lead Diagnostico",
+        ...(contactCf.length ? { custom_fields_values: contactCf } : {}),
+      }],
+    },
+  }];
+  const r = await kfetch(`/leads/complex`, { method: "POST", body: JSON.stringify(body) });
+  const leadId = Array.isArray(r.json) ? r.json[0]?.id : r.json?._embedded?.leads?.[0]?.id;
+  if (!r.ok || !leadId) return { ok: false, detalhe: `criar lead: HTTP ${r.status} ${r.text}` };
+  await kfetch(`/leads/${leadId}/notes`, {
+    method: "POST",
+    body: JSON.stringify([{ note_type: "common", params: { text: notaKommo(row) } }]),
+  });
+  return { ok: true, leadId, detalhe: "lead criado" };
+}
+
+async function marcar(id: string, patch: Record<string, unknown>) {
+  await supabase.from("diagnostico_respostas").update(patch).eq("id", id);
+}
+
+Deno.serve(async (req) => {
+  // Chamado por trigger/cron com o Bearer do service role (mesmo padrao dos jobs existentes)
+  const auth = req.headers.get("authorization") || "";
+  if (!auth.includes(SERVICE_ROLE)) {
+    return new Response(JSON.stringify({ erro: "nao autorizado" }), { status: 401 });
+  }
+  try {
+    const url = new URL(req.url);
+    const dry = url.searchParams.get("dry") === "1";
+
+    let rows: any[] = [];
+    let modo = "sweep";
+    if (req.method === "POST") {
+      const p = await req.json().catch(() => null);
+      const rid = p?.record?.id;
+      if (rid) {
+        modo = "webhook";
+        const { data } = await supabase.from("diagnostico_respostas").select("*").eq("id", rid).limit(1);
+        rows = data || [];
+      }
+    }
+    if (modo === "sweep") {
+      const { data, error } = await supabase.from("diagnostico_respostas").select("*").limit(1000);
+      if (error) throw new Error(error.message);
+      rows = data || [];
+    }
+
+    const rdToken = await getRdPublicToken();
+    const acoes: any[] = [];
+    const erros: any[] = [];
+    const simular = (lead: string, etapa: string) => acoes.push({ lead, etapa, status: "dry" });
+
+    for (const row of rows) {
+      if (row.duplicado_de) continue; // ficha duplicada: quem conta e a canonica
+      const jobTitle = relacaoPosto(row);
+      try {
+        // 1) fez-diagnostico-posto
+        if (row.concluiu === true && row.rd_enviado !== true && temEmail(row) && !isFrentista(row) && rdToken) {
+          if (dry) { simular(row.nome, "fez-diagnostico"); } else {
+            const r = await rdConversion(rdToken, {
+              conversion_identifier: "fez-diagnostico-posto",
+              email: row.email, name: row.nome ?? undefined, job_title: jobTitle,
+              cf_score_diagnostico: asStr(row.score), cf_nivel_diagnostico: asStr(row.nivel),
+              cf_dimensao_fraca: dimensaoFraca(row), cf_frente_interesse: asStr(row.interesse),
+              tags: ["diagnostico-realizado"],
+            });
+            if (r.ok) await marcar(row.id, { rd_enviado: true, rd_enviado_em: new Date().toISOString() });
+            (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-diagnostico", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
+          }
+        }
+        // 2) confirmou-raiox-posto
+        if ((row.raiox_status || "").toLowerCase() === "confirmado" && row.rd_raiox_enviado !== true && temEmail(row) && !isFrentista(row) && rdToken) {
+          if (dry) { simular(row.nome, "confirmou-raiox"); } else {
+            const r = await rdConversion(rdToken, {
+              conversion_identifier: "confirmou-raiox-posto", email: row.email,
+              job_title: jobTitle, tags: ["raiox-confirmado"],
+            });
+            if (r.ok) await marcar(row.id, { rd_raiox_enviado: true });
+            (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "confirmou-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
+          }
+        }
+        // 3) fez-raiox-posto + tag raiox-realizado
+        if (row.participou_raiox === true && row.rd_participou_enviado !== true && temEmail(row) && rdToken) {
+          if (dry) { simular(row.nome, "fez-raiox"); } else {
+            const r = await rdConversion(rdToken, {
+              conversion_identifier: "fez-raiox-posto", email: row.email,
+              name: row.nome ?? undefined, job_title: jobTitle, tags: ["raiox-realizado"],
+            });
+            if (r.ok) await marcar(row.id, { rd_participou_enviado: true });
+            (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
+          }
+        }
+        // 4) OPORTUNIDADE no RD (participou, nao-cliente, nao-frentista)
+        if (row.participou_raiox === true && row.rd_oportunidade_enviado !== true && temEmail(row) && !isFrentista(row) && !ehCliente(row)) {
+          if (dry) { simular(row.nome, "rd-oportunidade"); } else {
+            const r = await rdMarkOpportunity(row.email);
+            if (r.ok) await marcar(row.id, { rd_oportunidade_enviado: true, rd_oportunidade_em: new Date().toISOString() });
+            (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "rd-oportunidade", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
+          }
+        }
+        // 5) Kommo (participou, nao-cliente, nao-frentista, com contato)
+        if (row.participou_raiox === true && row.kommo_enviado !== true && !isFrentista(row) && !ehCliente(row) && (temEmail(row) || row.telefone)) {
+          if (dry) { simular(row.nome, "kommo"); } else {
+            const r = await kommoPush(row);
+            if (r.ok) {
+              await marcar(row.id, { kommo_enviado: true, kommo_lead_id: r.leadId ?? null, kommo_enviado_em: new Date().toISOString(), kommo_erro: null });
+              acoes.push({ lead: row.nome, etapa: "kommo", detalhe: r.detalhe, kommo_lead_id: r.leadId });
+            } else {
+              await marcar(row.id, { kommo_erro: r.detalhe.slice(0, 500) });
+              erros.push({ lead: row.nome, etapa: "kommo", erro: r.detalhe });
+            }
+          }
+        }
+      } catch (e) {
+        erros.push({ lead: row.nome, etapa: "exception", erro: String(e).slice(0, 300) });
+      }
+    }
+
+    const resumo = { modo, dry, linhas_avaliadas: rows.length, acoes, erros, quando: new Date().toISOString() };
+    if (!dry && (acoes.length || erros.length)) {
+      await supabase.from("diagnostico_esteira_log").insert({ resumo });
+    }
+    return new Response(JSON.stringify(resumo, null, 2), { headers: { "Content-Type": "application/json" } });
+  } catch (e) {
+    return new Response(JSON.stringify({ erro: String(e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+  }
+});
