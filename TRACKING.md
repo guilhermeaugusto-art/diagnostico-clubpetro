@@ -24,6 +24,9 @@ Eventos gravados em `diagnostic_events` durante o fluxo do usuário.
 |---|---|---|
 | `contact_form_submitted` | Envia WhatsApp+email | phone_length, has_email |
 | `diagnostic_completed` | Idem | — |
+| `conversao_diagnostico` | **Conversão oficial p/ GTM**: dispara UMA vez em `submitLead()` (lead deixou contato e foi pro RD/Kommo) | score, trilha (sem PII) |
+
+> **GTM:** todos os eventos desta página entram no `dataLayer` (o site carrega GTM `GTM-MKSG5N5R`, não gtag.js — `window.gtag` não existe aqui). Para trackear a conversão, criar no GTM um acionador **Evento personalizado** com o nome `conversao_diagnostico` e ligar as tags (GA4/Google Ads/Meta) nele.
 
 ### Resultado
 | Evento | Quando | Metadata |

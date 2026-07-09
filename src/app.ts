@@ -1056,6 +1056,10 @@ async function submitLead(): Promise<void> {
     state.diagId,
   );
 
+  // Evento ÚNICO de conversão para o GTM (trigger de Evento Personalizado
+  // "conversao_diagnostico"). Sem PII: só score e trilha.
+  track("conversao_diagnostico", { score, trilha }, state.diagId);
+
   // ============== Edge function RD (best-effort) ==============
   const blockPctsObj: Record<string, number> = {};
   BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
