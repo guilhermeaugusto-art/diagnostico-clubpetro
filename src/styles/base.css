@@ -6,6 +6,11 @@
 @media (min-width: 1024px) { :root { font-size: 13.92px; } } /* 16 × 0.87 */
 @media (min-width: 1600px) { :root { font-size: 14.4px; } }  /* 16 × 0.90 */
 
+/* Trava de segurança contra rolagem horizontal: clip no html impede o iOS de
+   expandir a viewport quando algum elemento vaza da largura (o que lê como
+   "zoom" na entrada). O clip não cria contexto de rolagem, só corta. */
+html { overflow-x: hidden; overflow-x: clip; }
+
 body {
   font-family: var(--font-sans);
   color: var(--ink-900);
