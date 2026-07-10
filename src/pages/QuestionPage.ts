@@ -1,4 +1,4 @@
-import { BLOCKS } from "../data/blocks";
+﻿import { BLOCKS } from "../data/blocks";
 import type { Question } from "../data/questions";
 import { AnswerCard } from "../components/AnswerCard";
 import { Button } from "../components/Button";
@@ -13,10 +13,6 @@ interface QuestionPageProps {
   openText?: string;            // para perguntas type: "open"
   plural?: boolean;             // dois ou mais postos: liga o plural no texto
   barsHtml?: string;            // gráfico de barras por pilar (durante as respostas)
-  videoSide?: "left" | "right";        // trilha com vídeo: lado do painel (desktop)
-  videoBlock?: number;                 // índice do bloco de vídeo, para a máscara por cena
-  videoTrack?: "frentista" | "gerente"; // trilha do vídeo, para casar o creme do fundo
-  imageSide?: "left" | "right";        // trilha do dono (imagem em blocos): lado do painel
 }
 
 /* Barra de progresso do quiz: fina, sempre visível no topo da pergunta.
@@ -45,30 +41,10 @@ function progressHint(currentIndex: number, totalSteps: number): string {
   return `<p class="q-progress-hint${near}">${text}</p>`;
 }
 
-/* Envolve o conteúdo da pergunta no palco. Na trilha do frentista, monta o
-   layout em duas colunas com o slot do vídeo (preenchido pelo controlador, que
-   re-anexa o vídeo persistente). Sem vídeo, mantém o palco simples de sempre. */
-function frameStage(inner: string, p: QuestionPageProps): string {
-  if (p.videoSide) {
-    return `
-    <div class="shell stage">
-      <div class="q-stage q-stage-${p.videoSide}">
-        <div class="fvideo-panel" id="fvideoMount" data-fb="${p.videoBlock ?? 0}" data-track="${p.videoTrack ?? "frentista"}" aria-hidden="true"></div>
-        ${inner}
-      </div>
-    </div>
-  `;
-  }
-  if (p.imageSide) {
-    return `
-    <div class="shell stage">
-      <div class="q-stage q-stage-${p.imageSide}">
-        <div class="fimg-panel" id="fimgMount" aria-hidden="true"></div>
-        ${inner}
-      </div>
-    </div>
-  `;
-  }
+/* Envolve o conteúdo da pergunta no palco: coluna única centralizada.
+   As artes laterais das trilhas (vídeo/imagem) foram removidas do desktop,
+   o foco é a pergunta. */
+function frameStage(inner: string): string {
   return `
     <div class="shell stage">
       ${inner}
@@ -172,7 +148,7 @@ export function QuestionPage(p: QuestionPageProps): string {
         </div>
       </section>
   `;
-  return frameStage(inner, p);
+  return frameStage(inner);
 }
 
 /* Pergunta de texto aberto: enunciado + textarea + Continuar.
@@ -224,5 +200,5 @@ function renderOpenQuestion(p: QuestionPageProps, blockName: string): string {
         </div>
       </section>
   `;
-  return frameStage(inner, p);
+  return frameStage(inner);
 }

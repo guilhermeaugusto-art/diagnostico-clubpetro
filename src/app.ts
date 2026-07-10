@@ -30,22 +30,7 @@ import {
   isPluralPosto,
 } from "./lib/engine";
 import { buildRoutingPayload } from "./lib/routing";
-import {
-  showTrackVideo,
-  hideTrackVideo,
-  videoBlockFor,
-  preloadTrackStart,
-  TRACK_VIDEO_BLOCKS,
-  type VideoTrack,
-} from "./lib/trackVideo";
 import { playWhenAllowed } from "./lib/autoplay";
-import {
-  showTrackImage,
-  hideTrackImage,
-  imageBlockFor,
-  preloadDonoStart,
-  DONO_IMAGE_BLOCKS,
-} from "./lib/trackImage";
 import { track } from "./lib/tracking";
 import { uuid, maskPhone, phoneDigitsOnly, escHtml } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
@@ -114,44 +99,6 @@ function renderHeader(): string {
   });
 }
 
-/* No mobile não usamos mais a arte (vídeo/imagem) das trilhas: a pergunta ocupa
-   a tela inteira, os cards ganham profundidade e o foco é responder. A arte só
-   aparece no layout de duas colunas do desktop (>=960px, mesmo breakpoint do
-   .q-stage). Abaixo disso, as camadas retornam null e o palco vira coluna única. */
-function mediaAllowed(): boolean {
-  return window.matchMedia?.("(min-width: 960px)").matches ?? true;
-}
-
-/* Estado do vídeo da trilha (frentista ou gerente) para a pergunta atual:
-   trilha, bloco e lado. Retorna null quando a trilha não tem vídeo (dono),
-   é o S1 de roteamento, ou não é tela de pergunta: a camada fica escondida. */
-function currentTrackVideo(): { track: VideoTrack; block: number; side: "left" | "right" } | null {
-  if (state.screen !== "question") return null;
-  if (!mediaAllowed()) return null;
-  const track = currentTrack(state);
-  if (track !== "frentista" && track !== "gerente") return null;
-  const q = currentQuestion(state);
-  if (!q || q.id === "S1") return null;
-  const blocks = TRACK_VIDEO_BLOCKS[track];
-  const total = Math.max(1, visibleQuestions(state).length - 1); // exclui o S1
-  const block = videoBlockFor(blocks, state.cursor - 1, total);  // cursor 0 = S1
-  return { track, block, side: blocks[block].side };
-}
-
-/* Estado da imagem em blocos da trilha do DONO para a pergunta atual: bloco e
-   lado. Retorna null fora da trilha do dono, no S1 de roteamento ou fora de
-   tela de pergunta. Mesma logica de blocos do video. */
-function currentTrackImage(): { block: number; side: "left" | "right" } | null {
-  if (state.screen !== "question") return null;
-  if (!mediaAllowed()) return null;
-  if (currentTrack(state) !== "dono") return null;
-  const q = currentQuestion(state);
-  if (!q || q.id === "S1") return null;
-  const total = Math.max(1, visibleQuestions(state).length - 1); // exclui o S1
-  const block = imageBlockFor(DONO_IMAGE_BLOCKS, state.cursor - 1, total);
-  return { block, side: DONO_IMAGE_BLOCKS[block].side };
-}
-
 /* ============== Body ============== */
 
 function renderBody(): string {
@@ -181,8 +128,6 @@ function renderBody(): string {
       const selectedIndexes =
         a && a.kind === "multi" ? a.selectedIndexes : [];
       const openText = a && a.kind === "text" ? a.text : "";
-      const fv = currentTrackVideo();
-      const fi = currentTrackImage();
       return QuestionPage({
         question: q,
         currentIndex: state.cursor,
@@ -191,10 +136,6 @@ function renderBody(): string {
         selectedIndexes,
         openText,
         plural: isPluralPosto(state),
-        videoSide: fv?.side,
-        videoBlock: fv?.block,
-        videoTrack: fv?.track,
-        imageSide: fi?.side,
       });
     }
     case "transition":
@@ -210,8 +151,6 @@ function render(): void {
   if (state.screen === "question") onQuestionRendered();
   if (state.screen === "transition") onTransitionRendered();
   if (state.screen === "result") onResultRendered();
-  // Fora das perguntas, as camadas de arte das trilhas ficam escondidas.
-  if (state.screen !== "question") { hideTrackVideo(); hideTrackImage(); }
 }
 
 /* ============== Eventos globais ============== */
@@ -560,15 +499,6 @@ function afterAnswer(q: Question): void {
     persistAnswer(state.diagId, q.id, a);
   }
 
-  // Ao escolher o papel (S1), já pré-carrega o 1o vídeo da trilha, para ele
-  // estar pronto quando a primeira pergunta da trilha aparecer. No mobile a arte
-  // não é exibida, então não baixa nada (economia de dados).
-  if (q.id === "S1" && mediaAllowed()) {
-    const t = currentTrack(state);
-    if (t === "frentista" || t === "gerente") preloadTrackStart(t);
-    else if (t === "dono") preloadDonoStart();
-  }
-
   // Sinal de checkpoint: recalcula sempre que todos os checkpoints estão
   // respondidos, inclusive quando a pessoa volta e corrige uma resposta. Só
   // grava/dispara o evento quando o valor de fato muda, evitando payload RD e
@@ -722,24 +652,8 @@ function onQuestionRendered(): void {
     });
   }
 
-  // Camada de vídeo da trilha (frentista/gerente): re-anexa o vídeo persistente
-  // no slot (sem reiniciar) e faz crossfade só quando muda de bloco. Fora dessas
-  // trilhas, some.
-  const tv = currentTrackVideo();
-  const mount = document.getElementById("fvideoMount");
-  if (tv && mount) showTrackVideo(mount, TRACK_VIDEO_BLOCKS[tv.track], tv.block);
-  else hideTrackVideo();
-
-  // Camada de imagem em blocos da trilha do dono: re-anexa a imagem persistente
-  // (sem recriar) e faz crossfade + morph de cor so quando muda de bloco.
-  const ti = currentTrackImage();
-  const imgMount = document.getElementById("fimgMount");
-  if (ti && imgMount) showTrackImage(imgMount, DONO_IMAGE_BLOCKS, ti.block);
-  else hideTrackImage();
-
   // Transicao direcional: a coluna da pergunta entra deslizando conforme a
-  // navegacao (avancar pela direita, voltar pela esquerda). A midia, persistente,
-  // nao e afetada (a animacao e so na .question).
+  // navegacao (avancar pela direita, voltar pela esquerda).
   const qEl = document.querySelector<HTMLElement>(".question");
   if (qEl) qEl.classList.add(navDir === "back" ? "q-enter-back" : "q-enter-fwd");
   navDir = "fwd";
@@ -798,7 +712,12 @@ function onWelcomeRendered(): void {
       if (e.key === "Enter") { e.preventDefault(); startDiagnostic(); }
     });
   }
-  setTimeout(() => input.focus(), 200);
+  // Autofoco só no desktop: no iPhone o foco programático dispara o zoom
+  // automático do Safari e a página já abre ampliada. No toque, a pessoa
+  // decide quando abrir o teclado.
+  if (window.matchMedia?.("(min-width: 960px)").matches) {
+    setTimeout(() => input.focus(), 200);
+  }
 }
 
 /* ============== Portão de e-mail das trilhas comerciais ==============

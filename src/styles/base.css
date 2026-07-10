@@ -21,20 +21,13 @@ body {
   transition: background-color var(--dur-3) var(--ease);
 }
 
-/* Fundo do diagnostico (telas de pergunta): creme #FAF8F4 uniforme.
-   Os videos das trilhas ja vem com o fundo recolorido nesse mesmo #FAF8F4,
-   entao fundem na pagina sem caixa (regra body:has(.fvideo-panel) em
-   components.css). */
-body:has(.question) { background: #faf8f4; }
-/* Sem grão de papel nas perguntas: fundo 100% liso #FAF8F4 para o vídeo (mp4
-   opaco com fundo #FAF8F4) fundir sem revelar retângulo. */
+/* Fundo do diagnostico (telas de pergunta): o mesmo gelo claro da home.
+   Sem as artes de video/imagem das trilhas, o creme de fusao #FAF8F4 saiu:
+   fundo puxado pro branco, com os cards em branco puro por cima ganhando
+   profundidade. */
+body:has(.question) { background: var(--paper-welcome); }
+/* Sem grão de papel nas perguntas: fundo 100% liso, cards limpos. */
 body:has(.question)::before { opacity: 0; }
-/* Mobile: sem vídeo/imagem nas perguntas (removidos), a página não precisa mais
-   do creme de fusão, então usa o mesmo gelo da home. Fundo puxado pro branco,
-   com os cards em branco puro por cima ganhando profundidade. */
-@media (max-width: 959px) {
-  body:has(.question) { background: var(--paper-welcome); }
-}
 
 /* Grão de papel: textura analógica sutil que tira a cara de "plástico de IA".
    Fractal noise em SVG, fixo, atrás do conteúdo (#app cria seu próprio
@@ -67,8 +60,8 @@ body::before {
   transition: opacity 700ms var(--ease);
 }
 body:has(.welcome) .cp-orbs { opacity: 1; }
-/* No diagnóstico (perguntas), fundo liso #FAF8F4: sem orbs, para o vídeo fundir
-   como PNG flutuante e não haver manchas claras sobrepostas. */
+/* No diagnóstico (perguntas), fundo liso: sem orbs, sem manchas claras
+   competindo com os cards. */
 body:has(.question) .cp-orbs { opacity: 0; }
 
 .cp-orb {
