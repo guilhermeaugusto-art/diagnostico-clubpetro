@@ -1573,10 +1573,19 @@ a.btn { text-decoration: none; }
 
 /* ============================================================
    ILUSTRAÇÕES FUNDIDAS (hero da home + resultado)
-   Miolo sólido, beirada esfumada por máscara: a imagem assenta no
-   fundo da página sem retângulo nem moldura (encontro suave), a
-   mesma fusão de PNG flutuante das artes antigas das trilhas.
+   Encontro natural em duas camadas, em ELEMENTOS separados de
+   propósito: máscara e blend no mesmo elemento se anulam (a máscara
+   isola o grupo e o multiply passa a compor contra fundo vazio).
+   - o WRAPPER multiplica com a página: o quase-branco do fundo da
+     ilustração vira a cor exata da página em qualquer tom/breakpoint,
+     mantendo traço e laranja intactos;
+   - a IMG leva a máscara que esfuma as bordas do recorte (onde o
+     crop fatia a cena), pra não sobrar linha de corte.
    ============================================================ */
+.welcome-hero-wrap,
+.rr-illus {
+  mix-blend-mode: multiply;
+}
 .welcome-hero,
 .rr-illus img {
   -webkit-mask-image:
