@@ -864,6 +864,26 @@ body:has(.question) .cp-header {
   .q-nav { gap: var(--sp-3); }
   .q-nav .btn { min-height: 52px; }
 
+  /* Multi-select: o Continuar vive numa barra fixa no pé da tela, sempre
+     visível enquanto a pessoa marca as opções (sem caçar o botão no fim da
+     lista). A barra quebra as extremidades (full-bleed), com hairline e
+     gelo translúcido por cima do conteúdo que rola por baixo. */
+  .question-multi .q-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    margin-inline: calc(50% - 50vw);
+    margin-top: var(--sp-5);
+    padding: var(--sp-3) var(--sp-5) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+    background: rgba(236, 239, 244, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-medium);
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+  .question-multi .q-nav .btn-primary { flex: 1; min-width: 0; }
+
   /* CONTACT mobile: tudo full-width, inputs com touch confortável */
 
   /* RESULT mobile: hero empilhado, radar reduzido, todos labels visíveis */

@@ -119,8 +119,9 @@ export function QuestionPage(p: QuestionPageProps): string {
 
   const grouping = q.type === "segmentation-multi" ? "checkbox" : "radio";
 
+  const isMultiQ = q.type === "segmentation-multi";
   const inner = `
-      <section class="question${isBento ? " question-bento" : ""}">
+      <section class="question${isBento ? " question-bento" : ""}${isMultiQ ? " question-multi" : ""}">
         ${progressBar(p.currentIndex, p.totalSteps)}
         ${progressHint(p.currentIndex, p.totalSteps)}
         <div class="q-meta">

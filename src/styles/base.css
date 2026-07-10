@@ -20,7 +20,10 @@ body {
     radial-gradient(1200px 600px at 80% -10%, rgba(242,102,0,.03), transparent 60%),
     radial-gradient(900px 500px at -10% 10%, rgba(31,32,40,.02), transparent 60%),
     #faf8f4;
+  /* clip corta o vazamento horizontal SEM criar contexto de rolagem: com
+     hidden, position sticky (barra do Continuar no multi) deixa de grudar. */
   overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
   min-height: 100dvh;
   transition: background-color var(--dur-3) var(--ease);

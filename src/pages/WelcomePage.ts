@@ -100,7 +100,10 @@ export function WelcomePage(p: WelcomePageProps): string {
           ${ctaArea}
         </div>
 
-        <aside class="welcome-visual anim-fade delay-2" aria-hidden="true">
+        <!-- Sem anim-fade aqui de propósito: animação de opacity isola o grupo
+             no Chromium e anula o mix-blend-mode que funde a ilustração no
+             fundo da página (a borda voltava a aparecer branca). -->
+        <aside class="welcome-visual" aria-hidden="true">
           <div class="welcome-hero-wrap">
             <img class="welcome-hero" src="/home-hero.webp" alt="" width="1600" height="1096" fetchpriority="high" decoding="async">
           </div>
