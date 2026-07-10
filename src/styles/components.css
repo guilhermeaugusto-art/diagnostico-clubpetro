@@ -18,6 +18,17 @@ body:has(.welcome) .cp-header {
 body:has(.question) .cp-header {
   background: rgba(245, 247, 250, 0.92);
 }
+/* Mobile: header em gelo metálico (gradiente frio, topo claro assentando num
+   tom mais aço) pra se diferenciar do gelo da página (#ECEFF4 no mobile), com
+   hairline mais firme fechando a faixa. Sem glow, só temperatura. */
+@media (max-width: 720px) {
+  .cp-header,
+  body:has(.welcome) .cp-header,
+  body:has(.question) .cp-header {
+    background: linear-gradient(180deg, rgba(238, 241, 247, 0.97), rgba(221, 227, 237, 0.97));
+    border-bottom: 1px solid var(--border-medium);
+  }
+}
 .cp-header-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -570,60 +581,29 @@ body:has(.question) .cp-header {
   background: transparent;
   box-shadow: none;
   padding: 0;
-  /* Acompanha a altura proporcional do slot 16:9 nos novos tamanhos. */
-  min-height: 420px;
+  min-width: 0;
 }
-/* Halo desativado: o vídeo do hero agora é opaco (fundo gelo casado com a
-   página), então o halo só apareceria como um brilho laranja ao redor do
-   retângulo do vídeo, com cara de IA. Sem halo, a cena assenta limpa no gelo. */
 .welcome-visual::before { content: none; }
-@media (min-width: 1024px) { .welcome-visual { min-height: 500px; } }
-@media (min-width: 1280px) { .welcome-visual { min-height: 540px; } }
-.welcome-video-wrap {
+/* Hero do welcome: ilustração da equipe do posto (o vídeo em loop saiu).
+   Sem moldura: a máscara .img-fade dissolve as bordas no fundo da página,
+   encontro suave, sem retângulo. O aspecto vem da própria imagem (1600x1096). */
+.welcome-hero-wrap {
   position: relative;
   z-index: 1;
   width: 100%;
-  /* Slot com o aspecto real do vídeo (4:3), pra não recortar a cena. */
-  max-width: 1100px;
-  aspect-ratio: 4 / 3;
-  border-radius: 0;
-  overflow: visible;
-  /* Sem cor sólida: o vídeo é opaco no mesmo gelo da página, então funde sem
-     revelar retângulo (o wrap não precisa pintar fundo). */
+  /* A ilustração acompanha o texto, não domina: teto de largura no desktop. */
+  max-width: 600px;
+  aspect-ratio: 1600 / 1096;
   background: transparent;
-  margin-right: calc(-1 * var(--sp-8));
-  margin-left: var(--sp-4);
 }
-@media (min-width: 1024px) {
-  .welcome-video-wrap {
-    margin-right: calc(-1 * var(--sp-16));
-    margin-left: var(--sp-6);
-    max-width: 1240px;
-  }
-}
-@media (min-width: 1280px) {
-  .welcome-video-wrap {
-    margin-right: calc(-1 * var(--sp-20));
-    max-width: 1360px;
-  }
-}
-/* Hero do welcome: vídeo em loop (mp4/webm) da cena isometrica do posto, com o
-   fundo ja recolorido no creme #FAF8F4 pra fundir na pagina sem caixa. O poster
-   (welcome-hero.webp) e o fallback usam a mesma classe. object-fit: contain
-   mostra a cena INTEIRA, sem cortar elementos das bordas. Sem drop-shadow: o
-   video e opaco, entao a sombra viraria um retangulo. */
 .welcome-hero {
   position: relative;
   z-index: 2;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   display: block;
-  background: transparent;
-}
-@media (min-width: 960px) {
-  .welcome-video-wrap { max-width: 100%; }
 }
 
 /* ============ TRANSITION ============ */
@@ -820,17 +800,21 @@ body:has(.question) .cp-header {
      Ritmo vertical apertado pra colocar título + nome + CTA acima da dobra. */
   .welcome { gap: var(--sp-6); }
   .welcome-main { order: 1; }
-  .welcome-visual { order: 2; min-height: 0; justify-content: center; }
+  .welcome-visual { order: 2; min-height: 0; display: block; }
   .welcome-main > * + * { margin-top: var(--sp-4); }
   .welcome-main .display { margin-top: var(--sp-3); font-size: clamp(1.875rem, 9vw, 2.5rem); line-height: 1.05; }
   .welcome-main .lede { margin-top: var(--sp-3); font-size: var(--fs-15); line-height: 1.55; }
-  .welcome-video-wrap {
-    margin-right: 0;
-    margin-left: 0;
-    max-width: 100%;
-    aspect-ratio: 4 / 3;
-    /* No mobile a imagem vira hero secundário, ocupando a largura toda. */
+  /* No mobile a ilustração fecha as duas extremidades da tela (full-bleed):
+     as margens negativas anulam o padding do shell até a borda da viewport.
+     Faixa baixa (a cena inteira não precisa aparecer), com as bordas
+     esfumadas pela máscara dissolvendo na página. */
+  .welcome-hero-wrap {
+    width: auto;
+    max-width: none;
+    margin-inline: calc(50% - 50vw);
+    aspect-ratio: 15 / 8;
   }
+  .welcome-hero { object-position: 50% 22%; }
   .welcome-form { max-width: 100%; gap: var(--sp-4); }
   .welcome-field-input { font-size: 16px; padding: var(--sp-3) var(--sp-4); min-height: 52px; }
   .welcome-field-label { font-size: var(--fs-12); }
@@ -1585,6 +1569,77 @@ a.btn { text-decoration: none; }
     flex: 1;
     justify-content: center;
   }
+}
+
+/* ============================================================
+   ILUSTRAÇÕES FUNDIDAS (hero da home + resultado)
+   Miolo sólido, beirada esfumada por máscara: a imagem assenta no
+   fundo da página sem retângulo nem moldura (encontro suave), a
+   mesma fusão de PNG flutuante das artes antigas das trilhas.
+   ============================================================ */
+.welcome-hero,
+.rr-illus img {
+  -webkit-mask-image:
+    radial-gradient(135% 135% at 50% 45%, #000 70%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    radial-gradient(135% 135% at 50% 45%, #000 70%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+          mask-composite: intersect;
+}
+
+.rr-illus { margin: 0; min-width: 0; }
+.rr-illus img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Problema (dono preocupado): acompanha o parágrafo da frente mais fraca. */
+.rr-pontos-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: center;
+}
+.rr-illus-pain {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+}
+.rr-illus-pain img { object-position: 50% 22%; }
+
+/* Plano (gerente lendo as frentes do posto): acompanha a lista de passos. */
+.rr-steps-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: center;
+  margin-top: var(--sp-6);
+}
+.rr-steps-row .rr-steplist { margin-top: 0; }
+.rr-illus-plan {
+  width: 100%;
+  max-width: 400px;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+}
+.rr-illus-plan img { object-position: 50% 45%; }
+
+/* Desktop: texto manda na coluna larga, ilustração acompanha na estreita.
+   Zig-zag editorial: a dor entra à direita do parágrafo, o plano à esquerda
+   da lista, pra não formar uma coluna de imagens do mesmo lado. */
+@media (min-width: 900px) {
+  .rr-pontos-intro { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: var(--sp-10); }
+  .rr-illus-pain { max-width: 420px; margin-inline: 0; }
+  .rr-steps-row { grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr); gap: var(--sp-10); }
+  .rr-steps-row .rr-steplist { order: 2; }
+  .rr-illus-plan { order: 1; max-width: 360px; margin-inline: 0; aspect-ratio: 4 / 5; }
 }
 
 /* Desktop: dono vira a coluna alta da esquerda (duas linhas), gerente e

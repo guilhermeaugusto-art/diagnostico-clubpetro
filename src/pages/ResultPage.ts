@@ -211,9 +211,20 @@ function pontosSection(state: AppState): string {
     <section class="rr-steps" id="pontos">
       <span class="rr-section-eyebrow">Seus pontos de melhoria</span>
       <h2 class="rr-section-title">Por onde começar</h2>
-      ${intro ? `<p class="rr-section-sub">${intro}</p>` : ""}
 
-      <ol class="rr-steplist">${openHtml}</ol>
+      <div class="rr-pontos-intro">
+        ${intro ? `<p class="rr-section-sub">${intro}</p>` : ""}
+        <figure class="rr-illus rr-illus-pain" aria-hidden="true">
+          <img src="/resultado/dono-preocupado.webp" alt="" loading="lazy" decoding="async">
+        </figure>
+      </div>
+
+      <div class="rr-steps-row">
+        <ol class="rr-steplist">${openHtml}</ol>
+        <figure class="rr-illus rr-illus-plan" aria-hidden="true">
+          <img src="/resultado/gerente-frentes.webp" alt="" loading="lazy" decoding="async">
+        </figure>
+      </div>
 
       <div class="rr-apply">
         <p class="rr-apply-line">Esses 3 você começa hoje. O plano completo das seis frentes você recebe no Raio-X.</p>

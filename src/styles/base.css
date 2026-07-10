@@ -158,11 +158,17 @@ body:has(.question) .cp-bokeh { opacity: 0; }
 
 /* Welcome: fundo em tom gelo frio (--paper-welcome), só na home, pra tirar o
    branco "muito claro". Os cards ficam em branco puro (--surface) por cima,
-   criando leve profundidade. O vídeo do hero é recolorido nesse mesmo gelo,
-   então funde no fundo sem revelar retângulo. As telas de pergunta seguem no
-   creme #FAF8F4 (regra body:has(.question)), intocadas. */
+   criando leve profundidade. As perguntas usam o mesmo gelo (regra
+   body:has(.question) acima). */
 body:has(.welcome) {
   background: var(--paper-welcome);
+}
+/* Mobile: gelo um degrau mais fundo e metálico. O #F5F7FA lia como branco
+   total na tela pequena; com o fundo mais frio, os cards brancos e o header
+   metálico ganham separação real. */
+@media (max-width: 720px) {
+  body:has(.welcome),
+  body:has(.question) { background: #ECEFF4; }
 }
 
 /* Vertical rhythm desktop */

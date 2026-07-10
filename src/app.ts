@@ -30,7 +30,6 @@ import {
   isPluralPosto,
 } from "./lib/engine";
 import { buildRoutingPayload } from "./lib/routing";
-import { playWhenAllowed } from "./lib/autoplay";
 import { track } from "./lib/tracking";
 import { uuid, maskPhone, phoneDigitsOnly, escHtml } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
@@ -660,23 +659,6 @@ function onQuestionRendered(): void {
 }
 
 function onWelcomeRendered(): void {
-  // Vídeo do hero. O WebM tem canal alpha (fundo transparente de verdade), que
-  // Chrome/Firefox/Android renderizam. Safari e iOS (todos WebKit) NÃO suportam
-  // alpha em WebM e mostrariam um retângulo preto, então nesses casos removemos
-  // o WebM e caímos no mp4 (mesmo creme do fundo, funde sem caixa).
-  const vid = document.getElementById("welcomeHeroVideo") as HTMLVideoElement | null;
-  if (vid) {
-    const ua = navigator.userAgent;
-    const isApple = /iP(hone|ad|od)/.test(ua) || (/Safari/.test(ua) && !/Chrome|Chromium|Android|CriOS|FxiOS|Edg/.test(ua));
-    if (isApple) {
-      vid.querySelector('source[type="video/webm"]')?.remove();
-      vid.load();
-    }
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) { vid.removeAttribute("autoplay"); vid.pause(); }
-    else { playWhenAllowed(vid); }
-  }
-
   const input = document.getElementById("welcomeName") as HTMLInputElement | null;
   const phoneEl = document.getElementById("welcomePhone") as HTMLInputElement | null;
   const btn = document.getElementById("btnStartDiag") as HTMLButtonElement | null;

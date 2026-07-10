@@ -10,7 +10,8 @@ interface WelcomePageProps {
 
 /* Tela inicial:
    - Coluna esquerda: copy consultiva + campo nome obrigatório + CTA primário.
-   - Coluna direita: vídeo em loop como elemento visual principal, sem moldura.
+   - Coluna direita: ilustração da equipe do posto (o vídeo em loop saiu; a
+     imagem estática carrega leve e cumpre o mesmo papel visual).
    - Banner de retomada substitui o CTA quando há sessão.
    - Removido: aside escuro com chips das frentes, qualquer menção a "sem login". */
 export function WelcomePage(p: WelcomePageProps): string {
@@ -100,20 +101,8 @@ export function WelcomePage(p: WelcomePageProps): string {
         </div>
 
         <aside class="welcome-visual anim-fade delay-2" aria-hidden="true">
-          <div class="welcome-video-wrap" id="welcomeVideoWrap">
-            <video
-              class="welcome-hero"
-              id="welcomeHeroVideo"
-              autoplay
-              muted
-              loop
-              playsinline
-              preload="auto"
-              poster="/welcome-hero.webp">
-              <source src="/welcome-hero.webm" type="video/webm">
-              <source src="/welcome-hero.mp4" type="video/mp4">
-              <img class="welcome-hero" src="/welcome-hero.webp" alt="" decoding="async">
-            </video>
+          <div class="welcome-hero-wrap">
+            <img class="welcome-hero" src="/home-hero.webp" alt="" width="1600" height="1096" fetchpriority="high" decoding="async">
           </div>
         </aside>
       </section>
