@@ -46,6 +46,13 @@ export interface NoScoreOption {
   label: string;
   desc: string;
   value: string;
+  /* Bento da tela de papel (S1): ilustração da trilha no card e marcação do
+     card destaque. Fora do S1 os cards seguem só texto (RULES 4.2).
+     imageFocus: ponto da ilustração que deve ficar no quadro (object-position),
+     no mesmo espírito do focusY das imagens da trilha do dono. */
+  image?: string;
+  imageFocus?: string;
+  featured?: boolean;
 }
 
 interface BaseQuestion {
@@ -115,13 +122,20 @@ export const QUESTIONS: Question[] = [
     options: [
       { label: "Dono ou sócio.",
         desc: "A decisão final passa por mim.",
-        value: "dono" },
+        value: "dono",
+        image: "/papel/papel-dono.webp",
+        imageFocus: "45% 10%",
+        featured: true },
       { label: "Gerente.",
         desc: "Toco a operação no dia a dia.",
-        value: "gerente" },
+        value: "gerente",
+        image: "/papel/papel-gerente.webp",
+        imageFocus: "46% 24%" },
       { label: "Outro papel no posto.",
-        desc: "Frentista, administrativo, financeiro ou outra frente.",
-        value: "outro" },
+        desc: "Frentista, administrativo ou financeiro.",
+        value: "outro",
+        image: "/papel/papel-frentista.webp",
+        imageFocus: "42% 12%" },
     ],
   },
 

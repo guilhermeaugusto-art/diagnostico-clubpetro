@@ -90,7 +90,7 @@ liberar a análise nas trilhas comerciais.)
 
 4.1 **Card.** Sempre tem: background, sombra ou borda sutil, padding mínimo, radius do design system. Nunca tem só borda chapada.
 
-4.2 **AnswerCard.** Título + descrição opcional + indicador de seleção. Sem ícone: os ícones foram removidos por somarem carga visual sem ajudar a decisão. O card inteiro é área de toque (mínimo confortável para o polegar) e responde ao toque.
+4.2 **AnswerCard.** Título + descrição opcional + indicador de seleção. Sem ícone: os ícones foram removidos por somarem carga visual sem ajudar a decisão. O card inteiro é área de toque (mínimo confortável para o polegar) e responde ao toque. **Exceção (revisto em 09/07/2026):** a tela de papel (S1) usa a variante bento do AnswerCard, com a ilustração da trilha em cada card (dono em destaque). A imagem situa o papel e não substitui o texto; as demais perguntas seguem só texto.
 
 4.3 **Botão primário.** Apenas para a ação principal. Inclui seta direita quando avança fluxo.
 

@@ -96,6 +96,9 @@ export function QuestionPage(p: QuestionPageProps): string {
     ? "Marque todas que se aplicam"
     : "Resposta única";
 
+  // Opções com ilustração (tela de papel, S1) viram a grade bento.
+  const isBento = q.options.some((opt: any) => !!opt.image);
+
   const opts = q.options
     .map((opt: any, i: number) => {
       const isMulti = q.type === "segmentation-multi";
@@ -108,6 +111,9 @@ export function QuestionPage(p: QuestionPageProps): string {
         desc: applyForms(opt.desc ?? "", pl),
         selected,
         multi: isMulti,
+        image: opt.image,
+        imageFocus: opt.imageFocus,
+        featured: !!opt.featured,
       });
     })
     .join("");
@@ -138,7 +144,7 @@ export function QuestionPage(p: QuestionPageProps): string {
   const grouping = q.type === "segmentation-multi" ? "checkbox" : "radio";
 
   const inner = `
-      <section class="question">
+      <section class="question${isBento ? " question-bento" : ""}">
         ${progressBar(p.currentIndex, p.totalSteps)}
         ${progressHint(p.currentIndex, p.totalSteps)}
         <div class="q-meta">
@@ -149,7 +155,7 @@ export function QuestionPage(p: QuestionPageProps): string {
         </div>
         <h2 class="q-title">${applyForms(q.text, pl)}</h2>
         ${context}
-        <div class="answer-grid"
+        <div class="answer-grid${isBento ? " answer-grid-bento" : ""}"
              role="${grouping === "checkbox" ? "group" : "radiogroup"}"
              aria-label="Alternativas">
           ${opts}
