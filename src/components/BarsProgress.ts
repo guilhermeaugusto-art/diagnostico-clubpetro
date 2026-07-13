@@ -12,6 +12,15 @@ import { blockScores } from "../lib/scoring";
 import { currentQuestion } from "../lib/engine";
 import type { AppState } from "../lib/state";
 
+/* Amortecimento demonstrativo: a barra mostra ~70% do valor real, então nunca
+   enche por completo durante as respostas. O gráfico é ilustrativo; barra cheia
+   lia como "tá tudo ótimo" e esvaziava o resultado (pedido de 13/07/2026).
+   O número real segue intacto em blockScores/totalScore. */
+export function barsDisplayPct(pct: number): number {
+  const v = Math.max(0, Math.min(100, pct || 0));
+  return Math.round(v * 0.7);
+}
+
 export function BarsProgress(state: AppState): string {
   const bs = blockScores(state);
   // Pilar da pergunta atual: fica destacado para a pessoa entender qual barra
@@ -22,7 +31,7 @@ export function BarsProgress(state: AppState): string {
   // Só os pilares que a trilha realmente pontua: evita barra sempre zerada
   // (ex.: a trilha do frentista não tem pergunta do pilar "dados").
   const items = BLOCK_ORDER.filter((b) => (bs[b]?.possible ?? 0) > 0).map((b) => {
-    const v = Math.max(0, Math.min(100, bs[b].pct || 0));
+    const v = barsDisplayPct(bs[b].pct);
     const cls = b === active ? "bars-item is-active" : "bars-item";
     return `
       <div class="${cls}" data-block="${b}">

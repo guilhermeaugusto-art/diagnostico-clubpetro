@@ -330,8 +330,10 @@ body:has(.question) .cp-header {
   height: var(--v, 0%);
   background: linear-gradient(180deg, var(--cp-orange-400), var(--cp-orange-500));
   border-radius: var(--rd-full);
-  /* Preenchimento que "caminha" devagar até a nova altura, sem pulo. */
-  transition: height 950ms cubic-bezier(0.33, 0, 0.2, 1), filter 320ms var(--ease);
+  /* Preenchimento que "caminha" devagar até a nova altura, sem pulo. O delay
+     de 400ms segura a subida um instante depois da resposta: junto com o
+     amortecimento de valor (barsDisplayPct), tira a sensação de "enchi tudo". */
+  transition: height 1400ms cubic-bezier(0.33, 0, 0.2, 1) 400ms, filter 320ms var(--ease);
   will-change: height;
 }
 .bars-name {
@@ -569,9 +571,9 @@ body:has(.question) .cp-header {
   gap: var(--sp-3) var(--sp-4);
 }
 
-/* Vídeo principal: visual da tela inicial, sem moldura aparente, sem caixa preta.
-   O fundo da página recebe um tom acinzentado-quente (--paper-welcome) que casa
-   com o background do próprio vídeo, dando sensação de elemento PNG nativo. */
+/* Visual principal da tela inicial: sem moldura aparente, sem caixa.
+   A fusão vai do fundo para a imagem (filtro cpHeroFuse + multiply no wrap):
+   é a cor da página que entra na arte, nunca o fundo da arte que vaza. */
 .welcome-visual {
   position: relative;
   display: flex;
@@ -585,14 +587,15 @@ body:has(.question) .cp-header {
 }
 .welcome-visual::before { content: none; }
 /* Hero do welcome: ilustração da equipe do posto (o vídeo em loop saiu).
-   Sem moldura: a máscara .img-fade dissolve as bordas no fundo da página,
-   encontro suave, sem retângulo. O aspecto vem da própria imagem (1600x1096). */
+   Sem moldura: a mask-image (bloco "ILUSTRAÇÕES FUNDIDAS") dissolve as bordas
+   no fundo da página, encontro suave, sem retângulo. O aspecto vem da própria
+   imagem (1600x1096). */
 .welcome-hero-wrap {
   position: relative;
   z-index: 1;
   width: 100%;
   /* A ilustração acompanha o texto, não domina: teto de largura no desktop. */
-  max-width: 600px;
+  max-width: 520px;
   aspect-ratio: 1600 / 1096;
   background: transparent;
 }
@@ -604,6 +607,11 @@ body:has(.question) .cp-header {
   object-fit: cover;
   object-position: center;
   display: block;
+  /* Fusão do FUNDO para a imagem: o filtro (index.html) leva o fundo quente
+     da arte ao branco puro; o multiply do wrapper transforma esse branco na
+     cor exata da página. Sem ele, o creme da arte multiplicava mais escuro
+     que o gelo e sobrava um retângulo com bordas visíveis. */
+  filter: url(#cpHeroFuse);
 }
 
 /* ============ TRANSITION ============ */
@@ -653,11 +661,6 @@ body:has(.question) .cp-header {
 }
 
 /* ============ RESULT ============ */
-.result {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-12);
-}
 
 /* Hero do resultado: gradiente azul ClubPetro + glow reativo por urgência.
    --urgency-accent e --urgency-glow são definidas inline pelo ResultPage. */
@@ -864,21 +867,10 @@ body:has(.question) .cp-header {
   .q-nav { gap: var(--sp-3); }
   .q-nav .btn { min-height: 52px; }
 
-  /* Multi-select: o Continuar vive numa barra fixa no pé da tela, sempre
-     visível enquanto a pessoa marca as opções (sem caçar o botão no fim da
-     lista). A barra quebra as extremidades (full-bleed), com hairline e
-     gelo translúcido por cima do conteúdo que rola por baixo. */
+  /* Multi-select: Voltar e Continuar vivem ACIMA da lista (ver QuestionPage),
+     visíveis de cara, sem caçar o botão no fim. Continuar toma a largura
+     restante pro polegar. */
   .question-multi .q-nav {
-    position: sticky;
-    bottom: 0;
-    z-index: 6;
-    margin-inline: calc(50% - 50vw);
-    margin-top: var(--sp-5);
-    padding: var(--sp-3) var(--sp-5) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
-    background: rgba(236, 239, 244, 0.94);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border-medium);
     justify-content: space-between;
     flex-wrap: nowrap;
   }
@@ -891,12 +883,6 @@ body:has(.question) .cp-header {
   .radar-chart .radar-label { font-size: 11px; }
   .radar-chart .radar-label-val { font-size: 12px; }
 
-  /* Sections mais juntas */
-  .result > section + section { margin-top: var(--sp-10); }
-  .result { gap: var(--sp-8); }
-
-  /* H2/headers responsivos das seções do resultado */
-  .h2 { font-size: clamp(1.5rem, 6vw, 1.875rem); line-height: 1.2; }
 }
 
 /* Pequeno extra para celulares estreitos (iPhone SE etc) */
@@ -904,7 +890,6 @@ body:has(.question) .cp-header {
   .shell { padding-inline: var(--sp-3); }
   .stage { padding-block: var(--sp-4) var(--sp-10); }
   .display { font-size: clamp(1.625rem, 9vw, 2.125rem); }
-  .h2 { font-size: var(--fs-22); }
   .welcome-main .lede { font-size: var(--fs-14); }
   .answer-grid { gap: var(--sp-3); }
   .answer-card { padding: var(--sp-4); padding-right: var(--sp-10); min-height: 60px; }
@@ -1064,12 +1049,6 @@ a.btn { text-decoration: none; }
 .rr-cta-primary:hover { box-shadow: 0 12px 28px rgba(242,102,0,.34); transform: translateY(-1px); }
 .rr-cta-lg { font-size: var(--fs-18); padding: 17px 30px; }
 .rr-cta-block { width: 100%; }
-.rr-cta-ghost {
-  background: transparent;
-  color: var(--ink-700);
-  border: 1.5px solid var(--border-strong);
-}
-.rr-cta-ghost:hover { border-color: var(--cp-orange-500); color: var(--cp-orange-600); }
 .rr-cta[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
 
 .rr-eyebrow {
@@ -1228,7 +1207,6 @@ a.btn { text-decoration: none; }
 .rr-step-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rr-step-front { font-family: var(--font-ui); font-size: var(--fs-12); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
 .rr-step-text { font-size: var(--fs-15); line-height: 1.55; color: var(--ink-700); }
-.rr-field { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
 .rr-field-label { font-size: var(--fs-13); font-weight: 600; color: var(--ink-700); }
 .rr-input {
   width: 100%;
@@ -1406,17 +1384,6 @@ a.btn { text-decoration: none; }
   .rr-bar { grid-template-columns: 72px 1fr 26px; }
 }
 
-/* ---------- SEÇÃO 4 · Gate de e-mail DENTRO do bloco escuro do Raio-X ---------- */
-.rr-field-dark { width: 100%; }
-.rr-field-dark .rr-field-label { color: rgba(255,255,255,.72); }
-.rr-field-dark .rr-input {
-  background: rgba(255,255,255,.08);
-  border-color: var(--border-on-dark);
-  color: #fff;
-}
-.rr-field-dark .rr-input::placeholder { color: rgba(255,255,255,.42); }
-.rr-field-dark .rr-input:focus { border-color: var(--cp-orange-400); background: rgba(255,255,255,.12); }
-
 /* ============================================================
    CARD DE GARANTIR VAGA (rr-gate) — dentro do bloco escuro do Raio-X.
    Redesenho: painel elevado com acento laranja, chips de sessão,
@@ -1452,7 +1419,6 @@ a.btn { text-decoration: none; }
   letter-spacing: -0.02em; color: #fff;
 }
 .rr-gate-text { font-size: var(--fs-15); line-height: 1.55; color: rgba(255,255,255,.82); max-width: 54ch; }
-.rr-gate .rr-field { width: 100%; margin-top: var(--sp-1); }
 .rr-gate-micro { font-size: var(--fs-13); line-height: 1.5; color: rgba(255,255,255,.55); }
 .rr-gate-done:empty { display: none; }
 .rr-gate-done {

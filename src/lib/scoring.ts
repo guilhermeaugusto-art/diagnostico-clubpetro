@@ -40,10 +40,12 @@ export function blockScores(state: AppState): Record<BlockId, BlockScore> {
    1) Média ponderada das frentes (pesos da spec).
    2) Penalidade global por dispersão: postos com frentes muito desiguais sofrem
       desconto, porque desbalanço = risco real na operação.
-   3) Curva de teto: a partir de 70 a nota cresce com retorno decrescente, para que
-      80+ só saia quando praticamente todas as frentes estão de fato altas.
+   3) Curva de teto: a partir de 62 a nota cresce com retorno decrescente, para
+      que acima de 70 só saia quando praticamente todas as frentes estão altas
+      e equilibradas (base ponderada precisa passar de ~76).
    4) Penalidade por respostas vagas (sinaliza falta de gestão).
-   Objetivo: a maioria fica abaixo de 70, e o teto natural fica em torno de 80. */
+   Objetivo (recalibrado em 13/07/2026, notas estavam saindo altas): a maioria
+   fica na casa dos 50-60, e o teto duro é 80 (topo da faixa mais alta). */
 export function totalScore(state: AppState): number {
   const bs = blockScores(state);
   let weighted = 0;
@@ -70,11 +72,11 @@ export function totalScore(state: AppState): number {
 
   let calibrated = base - dispersionPenalty - vaguePenalty;
 
-  if (calibrated > 70) {
-    const over = calibrated - 70;
-    calibrated = 70 + Math.pow(over, 0.82);
+  if (calibrated > 62) {
+    const over = calibrated - 62;
+    calibrated = 62 + Math.pow(over, 0.78);
   }
-  if (calibrated > 85) calibrated = 85;
+  if (calibrated > 80) calibrated = 80;
   if (calibrated < 0) calibrated = 0;
 
   return Math.round(calibrated);
@@ -86,9 +88,6 @@ export function emailValid(state: AppState): boolean {
 }
 export function nameValid(state: AppState): boolean {
   return state.name.trim().length >= 2;
-}
-export function contactValid(state: AppState): boolean {
-  return phoneValid(state) && emailValid(state) && nameValid(state);
 }
 
 /* Frentes ordenadas da mais fraca para a mais forte. */

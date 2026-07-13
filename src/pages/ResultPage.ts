@@ -110,7 +110,7 @@ function hero(state: AppState, score: number): string {
 
       <div class="rr-hero-radar">
         <span class="rr-radar-label">As suas 6 frentes</span>
-        <div class="rr-radar-chart">${RadarChart({ state, width: 460, theme: "paper" })}</div>
+        <div class="rr-radar-chart">${RadarChart({ state, width: 460 })}</div>
         <div class="rr-bars">${radarBars(state)}</div>
       </div>
     </header>`;

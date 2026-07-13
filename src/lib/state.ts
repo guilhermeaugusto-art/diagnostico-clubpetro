@@ -55,7 +55,6 @@ export interface AppState {
   phone: string;
   email: string;
   signal: SignalTier | null;
-  signalLocked: boolean;
   startedAt: string | null;
   finishedAt: string | null;
   diagId: string | null;
@@ -74,7 +73,6 @@ export function freshState(): AppState {
     phone: "",
     email: "",
     signal: null,
-    signalLocked: false,
     startedAt: null,
     finishedAt: null,
     diagId: null,

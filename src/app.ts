@@ -35,7 +35,6 @@ import { uuid, maskPhone, phoneDigitsOnly, escHtml } from "./lib/format";
 import { captureContext, type RequestContext } from "./lib/context";
 import {
   createSession,
-  setSessionName,
   setSessionContact,
   completeSession,
   markRdSent,
@@ -46,7 +45,6 @@ import {
   uploadReports,
   markReportFailed,
   resetLocalAnswers,
-  flushEvents,
 } from "./lib/api";
 import { buildReportContent } from "./lib/reportContent";
 import { urgencyFor } from "./data/urgency";
@@ -56,7 +54,7 @@ import { buildResultRecommendations } from "./data/recommendations";
 let bootContext: RequestContext | null = null;
 
 import { Header } from "./components/Header";
-import { BarsProgress } from "./components/BarsProgress";
+import { BarsProgress, barsDisplayPct } from "./components/BarsProgress";
 import { WelcomePage } from "./pages/WelcomePage";
 import { QuestionPage } from "./pages/QuestionPage";
 import { TransitionPage } from "./pages/TransitionPage";
@@ -171,13 +169,6 @@ function bindGlobalActions(): void {
     }
   });
 
-  // Ao cruzar o breakpoint da arte (960px) sem navegar (redimensionar no desktop,
-  // rotacionar tablet), re-renderiza a pergunta pra a arte da trilha aparecer/
-  // sumir e o fundo (creme no desktop, gelo no mobile) acompanhar. Sem isso, o
-  // estado fica preso até a próxima navegação.
-  window.matchMedia("(min-width: 960px)").addEventListener("change", () => {
-    if (state.screen === "question") render();
-  });
 }
 function handleAction(action: string): void {
   switch (action) {
@@ -191,7 +182,6 @@ function handleAction(action: string): void {
     case "goto-raiox":     return gotoRaiox();
     case "unlock-results": return submitResultGate();
     case "confirm-presence": return confirmPresence();
-    case "cta-whatsapp":   return ctaEspecialista();
     case "cta-especialista": return ctaEspecialista();
     case "rescue-confirm": return rescueConfirm();
     case "rescue-close":   return closeExitRescue();
@@ -509,7 +499,6 @@ function afterAnswer(q: Question): void {
       saveState(state);
       track("diag_signal", { signal: state.signal, diag_id: state.diagId }, state.diagId);
     }
-    state.signalLocked = true;
   }
 }
 
@@ -540,7 +529,7 @@ function updateBarsLive(): void {
   BLOCK_ORDER.forEach((b) => {
     const el = document.querySelector<HTMLElement>(`.bars-fill[data-block="${b}"]`);
     if (!el) return;
-    const v = Math.max(0, Math.min(100, bs[b].pct || 0));
+    const v = barsDisplayPct(bs[b].pct);
     const prev = Number(el.dataset.target ?? "NaN");
     const changed = prev !== v;
     el.dataset.target = String(v);
@@ -566,8 +555,8 @@ function nextStep(): void {
   const leavingS1 = state.cursor === 0;
   if (nextCursor < list.length) {
     // Continua nas perguntas: atualiza só o corpo e preserva o nó das barras,
-    // para que a transição de preenchimento (950ms) rode contínua através da
-    // troca de pergunta, sem o corte seco do innerHTML completo.
+    // para que a transição de preenchimento (lenta e com delay, ver .bars-fill)
+    // rode contínua através da troca de pergunta, sem o corte seco do innerHTML.
     state.cursor = nextCursor;
     navDir = "fwd";
     saveState(state);
@@ -783,7 +772,8 @@ function unlockResults(): void {
   document.body.style.overflow = "";
   const article = document.querySelector<HTMLElement>(".rr-result");
   if (article) article.classList.remove("is-gated");
-  if (raioxConfirmed) restoreConfirmedUI();
+  // Retomada já convertida: mostra a linha de confirmação; senão arma o resgate.
+  if (raioxConfirmed) revealConfirmed();
   else setupExitRescue();
 }
 
@@ -833,12 +823,6 @@ function onResultRendered(): void {
       showResultGate();
     }
   }
-}
-
-/* Restaura a UI confirmada quando a pessoa volta ao resultado já convertida
-   (retomada de sessão): desembaça os passos e mostra a linha de confirmação. */
-function restoreConfirmedUI(): void {
-  revealConfirmed();
 }
 
 function animateScore(el: HTMLElement, target: number, dur: number, delay: number): void {
@@ -1170,8 +1154,6 @@ export function boot(): void {
       },
       state.diagId,
     );
-    // Flush final dos eventos pendentes
-    if (state.diagId) flushEvents(state.diagId);
   });
   bindGlobalActions();
   render();

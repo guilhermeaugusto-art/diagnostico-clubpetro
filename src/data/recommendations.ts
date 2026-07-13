@@ -5,14 +5,12 @@
    Copy obedece à Seção 1. */
 
 import type { BlockId } from "./blocks";
-import type { AnyIcon } from "../lib/renderIcon";
 
 export interface Recommendation {
   id: string;
   block: BlockId;
   title: string;
   desc: string;
-  icon: AnyIcon;
   impact: string;
   priority: number;
 }
@@ -22,82 +20,68 @@ export const RECOMMENDATIONS: Recommendation[] = [
   { id: "R-P-1", block: "pessoas", priority: 9,
     title: "Escala da semana num quadro simples, com folga prevista",
     desc: "Monte a escala da semana num quadro ou planilha simples, prevendo folgas e horários de pico, e deixe visível para a equipe. Reduz incêndio e prepara o posto para a mudança de jornada.",
-    icon: "asset:projetos",
     impact: "Operação mais previsível no dia a dia" },
   { id: "R-P-2", block: "pessoas", priority: 8,
     title: "Plano de retenção do frentista em 90 dias",
     desc: "Roteiro semanal de feedback, premiação por tempo de casa e treinamento curto. Segura quem já entende o posto.",
-    icon: "asset:frentista",
     impact: "Menos rotatividade, mais atendimento" },
 
   /* --- Marca e experiência --- */
   { id: "R-M-1", block: "marca", priority: 8,
     title: "Foto a 200 metros, checklist de fachada",
     desc: "Lista do que o cliente novo vê primeiro: totem, pintura, identidade, iluminação. Resolução em ordem de impacto.",
-    icon: "asset:posto",
     impact: "Imagem que convida o cliente novo" },
   { id: "R-M-2", block: "marca", priority: 6,
     title: "Diferencial além do preço, mapeado com a equipe",
     desc: "Mapa do que o seu posto entrega que o concorrente não entrega. Construído na pista, validado no cliente fiel.",
-    icon: "asset:marca",
     impact: "Sai da disputa só por preço" },
 
   /* --- Comercial e margem --- */
   { id: "R-C-1", block: "comercial", priority: 10,
     title: "Margem por litro acompanhada toda semana",
     desc: "Planilha pronta para registrar custo, preço e margem por tipo de combustível. 10 minutos por semana, decisão saindo do escuro.",
-    icon: "asset:margem",
     impact: "Margem visível, decisão informada" },
   { id: "R-C-2", block: "comercial", priority: 8,
     title: "Comissão da pista numa tabela clara",
     desc: "Tabela pronta para aditivado, lubrificante e itens da loja. Equipe vê o quanto ganha a mais e passa a oferecer.",
-    icon: "asset:real",
     impact: "Mais margem na pista por venda de aditivado" },
   { id: "R-C-3", block: "comercial", priority: 7,
     title: "Script de aditivado na pista",
     desc: "Três frases prontas para o frentista oferecer aditivado sem soar empurrado. Aplicado por turno, medido no fim do dia.",
-    icon: "asset:bomba",
     impact: "Mais aditivado vendido na pista" },
 
   /* --- Cliente e fidelização --- */
   { id: "R-F-1", block: "fidelizacao", priority: 10,
     title: "Programa de fidelização rodando em 7 dias",
     desc: "Cadastro do cliente no caixa, acúmulo por litro abastecido, oferta direta no WhatsApp. Sem investimento em equipamento novo.",
-    icon: "asset:qualidade",
     impact: "Recorrência mensurável" },
   { id: "R-F-2", block: "fidelizacao", priority: 8,
     title: "Cadastro do cliente fiel direto no WhatsApp",
     desc: "Frentista pede o telefone no caixa, registra com dois cliques. Em 30 dias você tem base própria para campanha.",
-    icon: "whatsapp",
     impact: "Base do posto, não do fornecedor" },
   { id: "R-F-3", block: "fidelizacao", priority: 7,
     title: "Campanha de reativação de inativos do mês",
     desc: "Mensagem padrão para quem não voltou em 21 dias. Um disparo por semana, benefício pequeno e claro.",
-    icon: "asset:atendimento",
     impact: "Traz de volta parte dos clientes inativos" },
 
   /* --- Dados e digital --- */
   { id: "R-D-1", block: "dados", priority: 9,
     title: "Painel diário do posto num lugar só",
     desc: "Litros, ticket médio, mix e meta da equipe num lugar só. Três minutos por dia, decisão com o número na mão.",
-    icon: "asset:dados-analise",
     impact: "Decisão baseada em dado" },
   { id: "R-D-2", block: "dados", priority: 7,
     title: "Revisão de taxas de cartão e fatia de Pix",
     desc: "Roteiro para abrir e renegociar contratos de adquirência, e para incentivar Pix sem perder caixa.",
-    icon: "asset:gestao",
     impact: "Menos custo de receber" },
 
   /* --- Resiliência e mercado --- */
   { id: "R-R-1", block: "resiliencia", priority: 7,
     title: "Plano de fôlego de caixa para 90 dias",
     desc: "Mapa simples de entradas e saídas, com regra para fechar a primeira fuga de margem identificada no diagnóstico.",
-    icon: "asset:equipe-mercado",
     impact: "Caixa protegido no curto prazo" },
   { id: "R-R-2", block: "resiliencia", priority: 5,
     title: "Conformidade e qualidade, checklist do mês",
     desc: "Itens críticos de ANP, qualidade do combustível e operação. Roda em meia hora por mês.",
-    icon: "asset:diagnostico",
     impact: "Risco regulatório mapeado" },
 ];
 

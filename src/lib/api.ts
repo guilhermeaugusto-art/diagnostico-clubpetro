@@ -34,15 +34,6 @@ function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   });
 }
 
-/* ============== Eventos (telemetria) ==============
-   A telemetria granular por evento NÃO é persistida (o modelo enxuto não tem
-   coluna/tabela de eventos). `bufferEvent` é um no-op mantido só por compat com
-   os call sites; o buffer local e `snapshotEvents` foram removidos (código morto
-   F02). O tracking real vai por GTM/Meta em tracking.ts. */
-export function bufferEvent(_name: string, _category?: string, _metadata?: Record<string, unknown>): void {
-  /* no-op */
-}
-
 /* ============== Create / Upsert ============== */
 
 export async function createSession(id: string, _version: string, _context: RequestContext): Promise<void> {
@@ -73,13 +64,7 @@ async function updateRow(id: string, patch: Record<string, unknown>): Promise<vo
 
 /* ============== Lead ============== */
 
-export async function setSessionName(id: string, name: string): Promise<void> {
-  bufferEvent("name_submitted", "lifecycle", { name });
-  await updateRow(id, { nome: name });
-}
-
 export async function setSessionContact(id: string, name: string, email: string, phone: string): Promise<void> {
-  bufferEvent("contact_form_submitted", "lifecycle", { has_email: !!email, has_phone: !!phone });
   await updateRow(id, {
     nome:     name,
     email:    email,
@@ -180,12 +165,6 @@ export async function persistAnswer(
     patch.servicos_extras = answer.values;
   }
 
-  bufferEvent("answer_selected", "answer", {
-    question_id: questionId,
-    dimension: dim,
-    is_multi: answer.kind === "multi",
-  });
-
   await updateRow(sessionId, patch);
 }
 
@@ -224,12 +203,6 @@ export interface ResultSnapshot {
 }
 
 export async function persistResult(sessionId: string, r: ResultSnapshot): Promise<void> {
-  bufferEvent("result_viewed", "result", {
-    score: r.overall_score,
-    level: r.score_range_label,
-    urgency: r.urgency_tone,
-  });
-
   // Mantém a estrutura no jsonb `respostas` com score por frente + meta extra.
   const respostasMeta = {
     ...localRespostas,
@@ -296,7 +269,6 @@ export async function uploadReports(sessionId: string, comercial: Blob, cliente:
   const clientePath   = await uploadPdf(sessionId, cliente, "cliente.pdf");
   const comercialUrl = publicUrl(comercialPath);
   const clienteUrl   = publicUrl(clientePath);
-  bufferEvent("report_generated", "report", { comercial: comercialPath, cliente: clientePath });
   const now = new Date().toISOString();
   await updateRow(sessionId, {
     pdf_status: (comercialPath || clientePath) ? "gerado" : "erro",
@@ -312,7 +284,6 @@ export async function uploadReports(sessionId: string, comercial: Blob, cliente:
 }
 
 export async function markReportFailed(sessionId: string, _error: string): Promise<void> {
-  bufferEvent("report_generation_failed", "report", { error: _error });
   await updateRow(sessionId, {
     pdf_status: "erro",
   });
@@ -327,7 +298,6 @@ export async function markReportFailed(sessionId: string, _error: string): Promi
    O cron `?sync=confirmados` segue marcando participou_raiox para quem de fato
    aceita o convite (presenca real). */
 export async function persistAgendouRaiox(sessionId: string): Promise<void> {
-  bufferEvent("rayx_agendou", "rayx", {});
   await updateRow(sessionId, {
     agendou_raiox: true,
     raiox_status: "confirmado",
@@ -338,16 +308,9 @@ export async function persistAgendouRaiox(sessionId: string): Promise<void> {
 }
 
 export async function persistSpecialistCta(sessionId: string, score: number): Promise<void> {
-  bufferEvent("specialist_cta_clicked", "cta", { score_total: score });
   // Marca no banco que a pessoa acionou o contato direto com o especialista.
   await updateRow(sessionId, {
     contato_especialista: true,
     contato_especialista_em: new Date().toISOString(),
   });
-}
-
-/* Flush sem efeito no modelo enxuto (não tem coluna `events`). Mantido pra
-   compat com o app.ts que chama no pagehide. */
-export async function flushEvents(_sessionId: string): Promise<void> {
-  return;
 }

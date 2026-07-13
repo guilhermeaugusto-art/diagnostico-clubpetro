@@ -120,6 +120,22 @@ export function QuestionPage(p: QuestionPageProps): string {
   const grouping = q.type === "segmentation-multi" ? "checkbox" : "radio";
 
   const isMultiQ = q.type === "segmentation-multi";
+
+  // Na tela multi (serviços), Voltar e Continuar ficam ACIMA da lista: a pessoa
+  // enxerga a saída da tela enquanto marca, sem caçar o botão no fim. As demais
+  // telas mantêm a navegação embaixo.
+  const navHtml = `
+        <div class="q-nav">
+          ${Button({
+            variant: "ghost",
+            label: "Voltar",
+            iconLeft: "arrowBack",
+            dataAction: "back",
+            disabled: p.currentIndex === 0,
+          })}
+          ${continueBtn}
+        </div>`;
+
   const inner = `
       <section class="question${isBento ? " question-bento" : ""}${isMultiQ ? " question-multi" : ""}">
         ${progressBar(p.currentIndex, p.totalSteps)}
@@ -132,21 +148,13 @@ export function QuestionPage(p: QuestionPageProps): string {
         </div>
         <h2 class="q-title">${applyForms(q.text, pl)}</h2>
         ${context}
+        ${isMultiQ ? navHtml : ""}
         <div class="answer-grid${isBento ? " answer-grid-bento" : ""}"
              role="${grouping === "checkbox" ? "group" : "radiogroup"}"
              aria-label="Alternativas">
           ${opts}
         </div>
-        <div class="q-nav">
-          ${Button({
-            variant: "ghost",
-            label: "Voltar",
-            iconLeft: "arrowBack",
-            dataAction: "back",
-            disabled: p.currentIndex === 0,
-          })}
-          ${continueBtn}
-        </div>
+        ${isMultiQ ? "" : navHtml}
       </section>
   `;
   return frameStage(inner);

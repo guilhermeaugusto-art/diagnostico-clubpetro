@@ -27,13 +27,6 @@ export function trackFromS1Value(v: string | null | undefined): TrackId | null {
 
 /* --- Tipos auxiliares --------------------------------------------------- */
 
-export type QuestionType =
-  | "segmentation-single"
-  | "segmentation-multi"
-  | "score"
-  | "qualify"
-  | "open";
-
 export interface ScoreOption {
   label: string;
   desc: string;

@@ -1,6 +1,5 @@
 // Public, client-safe config. Supabase anon key is by design exposed (RLS protects it).
 export const CONFIG = {
-  CLUBPETRO_WHATSAPP: "5531992697762",
   /* WhatsApp do especialista para o CTA de contato direto do resultado.
      Número: +55 35 99839-4401. */
   WHATSAPP_ESPECIALISTA: "5535998394401",
@@ -17,6 +16,4 @@ export const CONFIG = {
   STATE_TTL_DAYS: 7,
   TRANSITION_MS: 5500,
   VERSION: "v5",
-  /* Label exibido na barra superior (oculto do usuário; a versão fica só em payloads). */
-  PUBLIC_LABEL: "Diagnóstico",
 } as const;

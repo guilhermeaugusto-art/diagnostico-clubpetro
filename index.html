@@ -51,6 +51,20 @@ fbq('track', 'PageView');
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <div id="app"></div>
+<!-- Filtro de fusão do hero da home: a arte tem fundo quente (rgb 251,249,245)
+     e a página é gelo frio. O feComponentTransfer clareia cada canal na medida
+     exata pra esse fundo virar branco puro; com o multiply do wrapper, branco
+     vira a cor exata da página. Resultado: o fundo da página assume a área da
+     arte (fusão do fundo para a imagem), a arte nunca impõe seu retângulo. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="cpHeroFuse" color-interpolation-filters="sRGB">
+    <feComponentTransfer>
+      <feFuncR type="linear" slope="1.0159"/>
+      <feFuncG type="linear" slope="1.0241"/>
+      <feFuncB type="linear" slope="1.0408"/>
+    </feComponentTransfer>
+  </filter>
+</svg>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

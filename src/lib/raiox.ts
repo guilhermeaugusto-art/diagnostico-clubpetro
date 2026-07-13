@@ -28,11 +28,6 @@ export function dataProximaSessao(): string {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}`;
 }
 
-/* Texto curto do link do Meet (sem o https://), para exibir abaixo do botao. */
-export function meetLabel(): string {
-  return CONFIG.RAIOX_MEET_URL.replace(/^https?:\/\//, "");
-}
-
 /* Link "salvar na agenda" do Google Calendar, com o evento do Raio X JA
    pre-preenchido (titulo, proxima terca 11h America/Sao_Paulo, sala do Meet).
    Ao abrir, a pessoa cai direto na tela de criar evento NA AGENDA DELA e e so

@@ -10,8 +10,6 @@ import type { AppState } from "../lib/state";
 interface RadarChartProps {
   state: AppState;
   width?: number;
-  /* "paper" remove o glow e usa rótulos em tinta; "dark" mantém o legado. */
-  theme?: "paper" | "dark";
 }
 
 /* Ordem VISUAL dos vértices (não toca em dados nem pontuação): Fidelização
@@ -21,7 +19,7 @@ const RADAR_ORDER: BlockId[] = [
   "fidelizacao", "resiliencia", "dados", "comercial", "marca", "pessoas",
 ];
 
-export function RadarChart({ state, width = 480, theme = "paper" }: RadarChartProps): string {
+export function RadarChart({ state, width = 480 }: RadarChartProps): string {
   const bs = blockScores(state);
   /* ViewBox proporcional, generoso o suficiente para acomodar os labels
      externos sem cortar. Padding interno = labelGap. */
@@ -121,7 +119,7 @@ export function RadarChart({ state, width = 480, theme = "paper" }: RadarChartPr
   }).join("");
 
   return `
-    <div class="radar-chart radar-chart--${theme}" aria-label="Gráfico de radar das seis frentes" role="img">
+    <div class="radar-chart radar-chart--paper" aria-label="Gráfico de radar das seis frentes" role="img">
       <svg viewBox="0 0 ${vbW} ${vbH}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
         <g class="radar-grid">
           <polygon points="${ringPolygon(1)}" />
