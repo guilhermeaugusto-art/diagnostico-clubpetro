@@ -132,7 +132,16 @@ Deno.serve(async (req) => {
       for (const L of (leads || [])) {
         const nT = norm(L.nome || "").split(/[^a-z0-9]+/).filter(Boolean);
         const first = nT[0] || "";
-        let bate = first.length >= 3 && !STOP.has(first) && dnT.includes(first);
+        // Primeiro nome bate exato OU por prefixo com no maximo 1 letra de
+        // diferenca (lado curto com 5+): cobre grafia truncada tipo "Jonhso"
+        // vs "jonhson" SEM colar radicais de nomes distintos (Claudia vs
+        // Claudiana tem 2 letras de diferenca e continua separado).
+        const casaToken = (t: string) =>
+          t === first ||
+          (Math.abs(t.length - first.length) <= 1 &&
+            Math.min(t.length, first.length) >= 5 &&
+            (t.startsWith(first) || first.startsWith(t)));
+        let bate = first.length >= 3 && !STOP.has(first) && dnT.some(casaToken);
         if (!bate) {
           const em = norm(L.email || "");
           for (const t of dnT) if (t.length >= 4 && em.includes(t)) { bate = true; break; }
