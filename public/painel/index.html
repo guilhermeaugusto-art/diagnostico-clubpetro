@@ -263,6 +263,7 @@
       <div class="f-field"><span class="f-lb" id="lb-status">Status (age na tabela)</span>
         <div class="seg" role="group" aria-labelledby="lb-status" id="seg-status">
           <button type="button" data-v="todos" class="active" aria-pressed="true">Todos</button>
+          <button type="button" data-v="participou" aria-pressed="false">Participou</button>
           <button type="button" data-v="confirmou" aria-pressed="false">Confirmou</button>
           <button type="button" data-v="agendou" aria-pressed="false">Agendou</button>
           <button type="button" data-v="sem_agendar" aria-pressed="false">Sem agendar</button>
@@ -371,9 +372,10 @@
     dados: "painel simples para decidir com o número na mão",
     resiliencia: "plano de fôlego de caixa e resposta à guerra de preço"
   };
-  var ST_RANK = { confirmou: 3, agendou: 2, sem_agendar: 1, abandonou: 0 };
+  var ST_RANK = { participou: 4, confirmou: 3, agendou: 2, sem_agendar: 1, abandonou: 0 };
   var ST_CHIP = {
-    confirmou: '<span class="chip ok">Confirmou</span>',
+    participou: '<span class="chip ok">Participou</span>',
+    confirmou: '<span class="chip">Confirmou</span>',
     agendou: '<span class="chip">Agendou</span>',
     sem_agendar: '<span class="chip">Sem agendar</span>',
     abandonou: '<span class="chip">Não finalizou</span>'
@@ -394,6 +396,7 @@
   });
 
   function statusRow(r){
+    if (r.participou_raiox) return "participou";
     if (!r.concluiu) return "abandonou";
     if (r.agendou_raiox) return confirmouRow(r) ? "confirmou" : "agendou";
     return "sem_agendar";
@@ -500,7 +503,7 @@
       mql: pessoas.filter(function(r){ return r.mql && r.email; }).length,
       ag: ag.length,
       agLista: ag,
-      conf: ag.filter(confirmouRow).length,
+      conf: pessoas.filter(function(r){ return r.participou_raiox; }).length,
       cli: pessoas.filter(function(r){ return r.conhece === "cliente"; }).length
     };
   }
@@ -624,7 +627,8 @@
 
     if (state.q && pessoas.length === 1){
       var r = pessoas[0], st = statusRow(r);
-      var acaoP = st === "confirmou" ? "Presença confirmada: preparar a conversa do Raio X com a frente fraca dela como pauta."
+      var acaoP = st === "participou" ? "Já participou do Raio X: conversa de fechamento com um Especialista, usando a frente fraca como pauta."
+        : st === "confirmou" ? "Presença confirmada: preparar a conversa do Raio X com a frente fraca dela como pauta."
         : st === "agendou" ? "Agendou e ainda não confirmou: vale um toque no WhatsApp antes da sessão."
         : st === "sem_agendar" ? "Concluiu sem agendar: oferecer a vaga do Raio X diretamente."
         : "Não finalizou o diagnóstico: resgatar pelo telefone e ajudar a concluir.";
@@ -646,7 +650,7 @@
     if (fA.comecaram > 0) etapas.push({ rot: "Começaram para Terminaram", pct: pc(fA.terminaram, fA.comecaram), perda: fA.comecaram - fA.terminaram, un: "sessão(ões) sem concluir", acao: "resgatar quem deixou telefone no meio do caminho e revisar onde o questionário perde a pessoa." });
     if (fA.terminaram > 0) etapas.push({ rot: "Terminaram para MQL", pct: pc(fA.mql, fA.terminaram), perda: fA.terminaram - fA.mql, un: "conclusão(ões) que não viraram contato", acao: "perfil Outro ou sem e-mail: decidir se vale abordagem por telefone." });
     if (fA.mql > 0) etapas.push({ rot: "MQL para agendamento", pct: pc(fA.ag, fA.mql), perda: fA.mql - fA.ag, un: "MQL(s) sem agenda", acao: "MQL esfria rápido: contato direto oferecendo a vaga do Raio X." });
-    if (fA.ag > 0) etapas.push({ rot: "Agendamento para confirmação", pct: pc(fA.conf, fA.ag), perda: fA.ag - fA.conf, un: "agendado(s) sem confirmação", acao: "rodar a confirmação por WhatsApp antes da sessão." });
+    if (fA.ag > 0) etapas.push({ rot: "Agendamento para participação", pct: pc(fA.conf, fA.ag), perda: fA.ag - fA.conf, un: "agendado(s) que não participaram", acao: "confirmar presença por WhatsApp antes da sessão e recontatar quem faltou." });
     if (etapas.length){
       var pior = etapas.reduce(function(a, b){ return b.pct < a.pct ? b : a; });
       itens.push("<b>Gargalo do recorte: " + pior.rot + " (" + pior.pct + "%).</b> São " + pior.perda + " " + pior.un + " paradas nessa etapa. Próximo passo: " + pior.acao);
@@ -695,7 +699,7 @@
         { rot: "conclusões", a: fA.terminaram, b: fB.terminaram },
         { rot: "MQLs", a: fA.mql, b: fB.mql },
         { rot: "agendamentos", a: fA.ag, b: fB.ag },
-        { rot: "confirmações", a: fA.conf, b: fB.conf }
+        { rot: "participações", a: fA.conf, b: fB.conf }
       ].filter(function(m){ return m.b > 0; });
       if (movs.length){
         var txt = movs.map(function(m){
@@ -743,7 +747,7 @@
       '<div class="kpi"><b>0</b><span>Terminaram</span><span class="delta-l">' + kpiDelta(fA.terminaram, fB, "terminaram", pc(fA.terminaram, fA.comecaram) + "% das sessões") + '</span></div>' +
       '<div class="kpi"><b>0</b><span>Viraram MQL</span><span class="delta-l">' + kpiDelta(fA.mql, fB, "mql", pc(fA.mql, fA.terminaram) + "% de conversão") + '</span></div>' +
       '<div class="kpi"><b>0</b><span>Marcaram o Raio X</span><span class="delta-l">' + kpiDelta(fA.ag, fB, "ag", pc(fA.ag, fA.mql) + "% dos MQLs") + '</span></div>' +
-      '<div class="kpi"><b>0</b><span>Confirmaram</span><span class="delta-l">' + kpiDelta(fA.conf, fB, "conf", pc(fA.conf, fA.ag) + "% dos agendados") + '</span></div>' +
+      '<div class="kpi"><b>0</b><span>Participaram do Raio X</span><span class="delta-l">' + kpiDelta(fA.conf, fB, "conf", pc(fA.conf, fA.ag) + "% dos agendados") + '</span></div>' +
       '<div class="kpi"><b>0</b><span>Já são clientes</span><span class="delta-l">' + kpiDelta(fA.cli, fB, "cli", "no período filtrado") + '</span></div>';
     var bs = kpisEl.querySelectorAll(".kpi b");
     for (var i = 0; i < bs.length; i++){
@@ -765,7 +769,7 @@
       bar("Terminaram", pc(fA.terminaram, fA.comecaram) + "% de conversão" + (fB ? deltaHtml(fA.terminaram, fB.terminaram) : ""), fA.terminaram, w(fA.terminaram), cv("terminaram"), cw("terminaram")) +
       bar("Viraram MQL", pc(fA.mql, fA.terminaram) + "% de conversão" + (fB ? deltaHtml(fA.mql, fB.mql) : ""), fA.mql, w(fA.mql), cv("mql"), cw("mql")) +
       bar("Marcaram o Raio X", pc(fA.ag, fA.mql) + "% de conversão" + (fB ? deltaHtml(fA.ag, fB.ag) : ""), fA.ag, w(fA.ag), cv("ag"), cw("ag")) +
-      bar("Confirmaram presença", pc(fA.conf, fA.ag) + "% até agora" + (fB ? deltaHtml(fA.conf, fB.conf) : ""), fA.conf, w(fA.conf), cv("conf"), cw("conf")) +
+      bar("Participaram do Raio X", pc(fA.conf, fA.ag) + "% dos agendados" + (fB ? deltaHtml(fA.conf, fB.conf) : ""), fA.conf, w(fA.conf), cv("conf"), cw("conf")) +
       '<p class="f-total">Conversão ponta a ponta (começou e marcou o Raio X): <strong>' + pc(fA.ag, fA.comecaram) + '%</strong>' + (fB ? ' - no período de comparação foi ' + pc(fB.ag, fB.comecaram) + '%' : '') + '.</p>';
     anima(funEl);
 

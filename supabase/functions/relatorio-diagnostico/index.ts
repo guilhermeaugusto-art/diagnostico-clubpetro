@@ -1,4 +1,5 @@
-// API de dados do painel do Diagnóstico de Saúde do Posto - v13.
+// API de dados do painel do Diagnóstico de Saúde do Posto - v14
+// (v14: + participou_raiox no shape; o KPI virou "Participaram do Raio X").
 //
 // A PÁGINA do painel vive em https://diagnostico-clubpetro.web.app/painel/
 // (public/painel/index.html, deployada com o app no Firebase Hosting).
@@ -54,7 +55,7 @@ Deno.serve(async (req) => {
 
   const { data: rows, error } = await supabase
     .from("diagnostico_respostas")
-    .select("nome, telefone, email, papel, conhece, score, concluiu, mql, agendou_raiox, raiox_observacao, interesse, pontuacao_pilares, pdf_comercial_url, respostas, created_at")
+    .select("nome, telefone, email, papel, conhece, score, concluiu, mql, agendou_raiox, participou_raiox, raiox_observacao, interesse, pontuacao_pilares, pdf_comercial_url, respostas, created_at")
     .order("created_at", { ascending: false })
     .limit(1000);
   if (error) {

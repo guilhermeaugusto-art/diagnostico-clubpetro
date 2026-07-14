@@ -6,7 +6,7 @@
 -- runtime), cai automaticamente para esta RPC, que vive NO BANCO e devolve o
 -- mesmo shape. A mesma chave de integration_secrets é o portão: chave errada
 -- devolve NULL. security definer para ler as tabelas sem abrir grants ao anon.
--- Aplicada em produção em 14/07/2026 via MCP.
+-- Aplicada em produção em 14/07/2026 via MCP (revisada no mesmo dia: + participou_raiox).
 -- =============================================================================
 
 create or replace function public.relatorio_diagnostico_dados(chave text)
@@ -25,8 +25,8 @@ as $$
       select jsonb_agg(t)
       from (
         select nome, telefone, email, papel, conhece, score, concluiu, mql,
-               agendou_raiox, raiox_observacao, interesse, pontuacao_pilares,
-               pdf_comercial_url, respostas, created_at
+               agendou_raiox, participou_raiox, raiox_observacao, interesse,
+               pontuacao_pilares, pdf_comercial_url, respostas, created_at
         from diagnostico_respostas
         order by created_at desc
         limit 1000
