@@ -328,6 +328,8 @@
   var DIA_MS = 86400000;
   var KEY = new URLSearchParams(location.search).get("key") || "";
   var FN = "https://azmtxhjtqodtaeoshrye.supabase.co/functions/v1/relatorio-diagnostico";
+  var RPC = "https://azmtxhjtqodtaeoshrye.supabase.co/rest/v1/rpc/relatorio_diagnostico_dados";
+  var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0";
   var RM = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function brtDate(iso){ return new Date(new Date(iso).getTime() - BRT_MS); }
@@ -948,11 +950,23 @@
     var p = function(n){ return (n<10?"0":"")+n; };
     document.getElementById("stamp").textContent = "dados de " + p(ag.getUTCHours()) + ":" + p(ag.getUTCMinutes()) + " (Brasília)";
   }
+  function buscarFuncao(){
+    return fetch(FN + "?key=" + encodeURIComponent(KEY) + "&format=json", { cache: "no-store" })
+      .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); });
+  }
+  // Rota reserva: RPC direto no banco (PostgREST). Se a Edge Function
+  // cair, o painel segue vivo por aqui, sem ninguem precisar mexer.
+  function buscarBanco(){
+    return fetch(RPC, { method: "POST", cache: "no-store",
+      headers: { apikey: ANON, Authorization: "Bearer " + ANON, "Content-Type": "application/json" },
+      body: JSON.stringify({ chave: KEY }) })
+      .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function(d){ if (!d) throw new Error("chave invalida"); return d; });
+  }
   var maxCriado = RAW.length ? RAW[0].created_at : "";
   var timerBadge = null;
   function buscar(){
-    fetch(FN + "?key=" + encodeURIComponent(KEY) + "&format=json", { cache: "no-store" })
-      .then(function(r){ if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+    buscarFuncao().catch(function(){ return buscarBanco(); })
       .then(function(dados){
         var novos = dados.filter(function(r){ return maxCriado && r.created_at > maxCriado; }).length;
         if (dados.length) maxCriado = dados[0].created_at;
