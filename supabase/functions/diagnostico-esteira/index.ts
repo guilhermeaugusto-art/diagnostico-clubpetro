@@ -8,6 +8,8 @@
 //   3) RD conversao fez-raiox-posto + tag        (participou && !rd_participou_enviado)
 //   4) RD evento OPPORTUNITY (funil default)     (participou && !rd_oportunidade_enviado)
 //   5) Kommo lead com tag raiox-realizado        (participou && !kommo_enviado)
+//      - match de lead existente APENAS por contato exato (email/telefone);
+//        sem match, cria "{Nome} - Raio X" no pipeline Fidelidade (v3, 14/07).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -17,6 +19,7 @@ const RD_CONV = "https://api.rd.services/platform/conversions";
 const RD_EVENTS = "https://api.rd.services/platform/events";
 const RD_AUTH = "https://api.rd.services/auth/token";
 const KOMMO_PIPELINE = 8166623;        // Pipe | Fidelidade
+const KOMMO_PIPELINE_PROSPECCAO = 8437139; // base fria (Leads BDMP/Prolife): nunca reaproveitar
 const KOMMO_STATUS_FALLBACK = 65190271; // mesmo fallback do prosp-postos-kommo
 const CF_ORIGEM = 1266644;
 const CF_SUBORIGEM = 1266176;
@@ -176,13 +179,44 @@ async function kommoMeta() {
   kommoMetaCache = { statusId, origemEnum, suborigem };
   return kommoMetaCache;
 }
+function digitosFone(v: unknown): string {
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.length >= 12 && d.startsWith("55")) d = d.slice(2);
+  return d;
+}
+/* Match EXATO por contato (e-mail ou telefone), nunca pela busca fuzzy de
+   leads: a query solta do Kommo casava "olecramutima@..." com o card frio
+   "AUTO POSTO MUTIMA" do BDMP e a tag caía em prospecção (incidente de
+   14/07/2026). Sem match exato, cria lead novo "{Nome} - Raio X". */
 async function kommoFindLead(row: any): Promise<any | null> {
-  for (const q of [row.email, row.telefone]) {
-    const qq = (q ?? "").toString().trim();
-    if (qq.length < 5) continue;
-    const d = await kfetch(`/leads?query=${encodeURIComponent(qq)}&with=contacts`);
-    const lead = d.json?._embedded?.leads?.[0];
-    if (lead) return lead;
+  const alvoEmail = (row.email ?? "").toString().trim().toLowerCase();
+  const alvoFone = digitosFone(row.telefone);
+  for (const q of [alvoEmail, alvoFone]) {
+    if (!q || q.length < 5) continue;
+    const d = await kfetch(`/contacts?query=${encodeURIComponent(q)}&with=leads&limit=10`);
+    for (const c of d.json?._embedded?.contacts || []) {
+      let exato = false;
+      for (const f of c.custom_fields_values || []) {
+        if (f.field_code === "EMAIL" && alvoEmail) {
+          for (const v of f.values || []) {
+            if (String(v.value ?? "").trim().toLowerCase() === alvoEmail) exato = true;
+          }
+        }
+        if (f.field_code === "PHONE" && alvoFone) {
+          for (const v of f.values || []) {
+            if (digitosFone(v.value) === alvoFone) exato = true;
+          }
+        }
+      }
+      if (!exato) continue;
+      // O mesmo contato pode ter varios leads: pega o primeiro que NAO seja
+      // da base fria de prospeccao (la os e-mails dos postos apontam para
+      // outras pessoas e o card nao e da pessoa que fez o Raio-X).
+      for (const l of c._embedded?.leads || []) {
+        const ld = await kfetch(`/leads/${l.id}`);
+        if (ld.json?.id && ld.json.pipeline_id !== KOMMO_PIPELINE_PROSPECCAO) return ld.json;
+      }
+    }
   }
   return null;
 }
@@ -225,7 +259,7 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
   if (row.telefone) contactCf.push({ field_code: "PHONE", values: [{ value: String(row.telefone), enum_code: "MOB" }] });
   if (temEmail(row)) contactCf.push({ field_code: "EMAIL", values: [{ value: row.email, enum_code: "WORK" }] });
   const body = [{
-    name: `${row.nome || row.email || "Lead"} - Raio-X do Posto`,
+    name: `${row.nome || row.email || "Lead"} - Raio X`,
     pipeline_id: KOMMO_PIPELINE,
     status_id: meta.statusId,
     ...(cf.length ? { custom_fields_values: cf } : {}),
