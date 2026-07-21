@@ -12,7 +12,8 @@
 //        ignorando a base fria de prospeccao; sem match, cria
 //        "{Nome} - Raio X" no pipeline Fidelidade (v5, 14/07).
 //      - card PERDIDO de quem participou reabre no inicio do funil (v8, 21/07).
-//      - relacao com o posto vai na nota E no Cargo do contato (v9, 21/07).
+//      - relacao com o posto: sempre na nota e no SELECT "Relação com o
+//        Posto" do contato (so preenche se vazio) (v10, 21/07).
 // Antes das etapas, a varredura marca duplicado_de automaticamente (mesma
 // pessoa refez o quiz): mesmo e-mail E mesmo primeiro nome (v6, 21/07).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
@@ -28,6 +29,7 @@ const KOMMO_PIPELINE_PROSPECCAO = 8437139; // base fria (Leads BDMP/Prolife): nu
 const KOMMO_STATUS_FALLBACK = 65190271; // mesmo fallback do prosp-postos-kommo
 const CF_ORIGEM = 1266644;
 const CF_SUBORIGEM = 1266176;
+const CF_CONTATO_RELACAO = 1265854; // select "Relação com o Posto" no CONTATO
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -224,12 +226,44 @@ async function kommoFindLead(row: any): Promise<any | null> {
       // outras pessoas e o card nao e da pessoa que fez o Raio-X).
       for (const l of c._embedded?.leads || []) {
         const ld = await kfetch(`/leads/${l.id}`);
-        if (ld.json?.id && ld.json.pipeline_id !== KOMMO_PIPELINE_PROSPECCAO) return ld.json;
+        if (ld.json?.id && ld.json.pipeline_id !== KOMMO_PIPELINE_PROSPECCAO) {
+          return { ...ld.json, _contatoId: c.id }; // contato do match: alvo do select de relacao
+        }
       }
     }
   }
   return null;
 }
+// "Relação com o Posto" e um SELECT no contato: resolve o enum pelo rotulo
+// (os valores do quiz batem 1:1 com as opcoes do campo). Cache por execucao.
+let relacaoEnumsCache: { id: number; value: string }[] | null | undefined;
+async function kommoEnumRelacao(row: any): Promise<number | null> {
+  const alvo = nrmDedup(relacaoPosto(row) || "");
+  if (!alvo) return null;
+  if (relacaoEnumsCache === undefined) {
+    const d = await kfetch(`/contacts/custom_fields/${CF_CONTATO_RELACAO}`);
+    relacaoEnumsCache = Array.isArray(d.json?.enums) ? d.json.enums : null;
+  }
+  for (const e of relacaoEnumsCache || []) if (nrmDedup(e.value) === alvo) return e.id;
+  return null;
+}
+// Preenche o select no contato SE estiver vazio (escolha manual do comercial
+// nunca e sobrescrita).
+async function kommoGarantirRelacao(contatoId: number | null | undefined, row: any) {
+  if (!contatoId) return;
+  const en = await kommoEnumRelacao(row);
+  if (!en) return;
+  const d = await kfetch(`/contacts/${contatoId}`);
+  if (!d.json?.id) return;
+  const jaTem = (d.json.custom_fields_values || []).some((f: any) =>
+    f.field_id === CF_CONTATO_RELACAO && (f.values || []).length);
+  if (jaTem) return;
+  await kfetch(`/contacts/${contatoId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ custom_fields_values: [{ field_id: CF_CONTATO_RELACAO, values: [{ enum_id: en }] }] }),
+  });
+}
+
 async function kommoEnsureTag(leadId: number) {
   const d = await kfetch(`/leads/${leadId}`);
   const tags = (d.json?._embedded?.tags || []).map((t: any) => ({ name: t.name }));
@@ -276,6 +310,7 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
     }
     const r = await kommoEnsureTag(existente.id);
     if (!r.ok) return { ok: false, detalhe: `tag em lead existente ${existente.id}: HTTP ${r.status} ${r.text}` };
+    await kommoGarantirRelacao(existente._contatoId, row);
     await kfetch(`/leads/${existente.id}/notes`, {
       method: "POST",
       body: JSON.stringify([{ note_type: "common", params: { text: notaKommo(row) } }]),
@@ -290,10 +325,10 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
   const contactCf: any[] = [];
   if (row.telefone) contactCf.push({ field_code: "PHONE", values: [{ value: String(row.telefone), enum_code: "MOB" }] });
   if (temEmail(row)) contactCf.push({ field_code: "EMAIL", values: [{ value: row.email, enum_code: "WORK" }] });
-  // relacao com o posto vira o Cargo do contato (campo nativo POSITION):
-  // estruturado no Kommo, nao so texto de nota
-  const relCargo = relacaoPosto(row);
-  if (relCargo) contactCf.push({ field_code: "POSITION", values: [{ value: relCargo }] });
+  // relacao com o posto vai no SELECT proprio do contato ("Relação com o
+  // Posto"), como o comercial usa — nao no Cargo, que e campo livre deles
+  const enRel = await kommoEnumRelacao(row);
+  if (enRel) contactCf.push({ field_id: CF_CONTATO_RELACAO, values: [{ enum_id: enRel }] });
   const body = [{
     name: `${row.nome || row.email || "Lead"} - Raio X`,
     pipeline_id: KOMMO_PIPELINE,
@@ -473,8 +508,13 @@ Deno.serve(async (req) => {
             row.ultima_participacao_raiox && row.kommo_enviado_em &&
             Date.parse(row.ultima_participacao_raiox) > Date.parse(row.kommo_enviado_em)) {
           if (dry) { simular(row.nome, "kommo-reabrir?"); } else {
-            const ld = await kfetch(`/leads/${row.kommo_lead_id}`);
+            const ld = await kfetch(`/leads/${row.kommo_lead_id}?with=contacts`);
             if (ld.json?.id) {
+              // toque de reconciliacao: garante o select de relacao no contato
+              // principal do card (preenche so se estiver vazio)
+              const cts = ld.json?._embedded?.contacts || [];
+              const contatoId = (cts.find((c: any) => c.is_main) || cts[0])?.id;
+              await kommoGarantirRelacao(contatoId, row);
               if (ld.json.status_id === 143) {
                 const rb = await kommoReabrir(Number(row.kommo_lead_id));
                 if (rb.ok) {
