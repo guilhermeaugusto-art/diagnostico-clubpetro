@@ -126,35 +126,52 @@ Deno.serve(async (req) => {
       if (pes.segundos < MIN_SEGUNDOS) continue;
 
       const dnT = toks(pes.displayName);
+      // Match em NIVEIS de confianca — empate so trava se for no mesmo nivel:
+      //   3 = nome completo (primeiro nome + sobrenome batem no nome do Meet)
+      //   2 = primeiro nome bate
+      //   1 = so o email contem um token do nome do Meet
+      // Sem isso, "Bianca Salim" (lead "Bianca", nivel 2) empatava com o lead
+      // do Ozinaldo so porque o email dele contem "bianca" (nivel 1) — e a
+      // pessoa ficava no revisar para sempre.
+      // Token casa exato OU por prefixo com no maximo 1 letra de diferenca
+      // (lado curto com 5+): cobre grafia truncada tipo "Jonhso" vs "jonhson"
+      // SEM colar radicais de nomes distintos (Claudia vs Claudiana tem 2
+      // letras de diferenca e continua separado).
+      const casa = (a: string, b: string) =>
+        a === b ||
+        (Math.abs(a.length - b.length) <= 1 &&
+          Math.min(a.length, b.length) >= 5 &&
+          (a.startsWith(b) || b.startsWith(a)));
+      const nivelLinha = (L: any): number => {
+        const nT = toks(L.nome || "");
+        const first = nT[0] || "";
+        const primeiroBate = first.length >= 3 && dnT.some((d) => casa(d, first));
+        if (primeiroBate) {
+          const acertos = nT.filter((t) => dnT.some((d) => casa(d, t))).length;
+          return acertos >= 2 ? 3 : 2;
+        }
+        const em = norm(L.email || "");
+        for (const t of dnT) if (t.length >= 4 && em.includes(t)) return 1;
+        return 0;
+      };
+
       // Candidatos agrupados por PESSOA (email/telefone), nao por linha — e dentro
       // de cada pessoa preferimos a linha mais completa (concluiu > email).
-      const porPessoa = new Map<string, any[]>();
+      const porPessoa = new Map<string, { linhas: any[]; nivel: number }>();
       for (const L of (leads || [])) {
-        const nT = norm(L.nome || "").split(/[^a-z0-9]+/).filter(Boolean);
-        const first = nT[0] || "";
-        // Primeiro nome bate exato OU por prefixo com no maximo 1 letra de
-        // diferenca (lado curto com 5+): cobre grafia truncada tipo "Jonhso"
-        // vs "jonhson" SEM colar radicais de nomes distintos (Claudia vs
-        // Claudiana tem 2 letras de diferenca e continua separado).
-        const casaToken = (t: string) =>
-          t === first ||
-          (Math.abs(t.length - first.length) <= 1 &&
-            Math.min(t.length, first.length) >= 5 &&
-            (t.startsWith(first) || first.startsWith(t)));
-        let bate = first.length >= 3 && !STOP.has(first) && dnT.some(casaToken);
-        if (!bate) {
-          const em = norm(L.email || "");
-          for (const t of dnT) if (t.length >= 4 && em.includes(t)) { bate = true; break; }
-        }
-        if (bate) {
-          const k = pessoaChave(L);
-          if (!porPessoa.has(k)) porPessoa.set(k, []);
-          porPessoa.get(k)!.push(L);
-        }
+        const nv = nivelLinha(L);
+        if (!nv) continue;
+        const k = pessoaChave(L);
+        const g = porPessoa.get(k) ?? { linhas: [], nivel: 0 };
+        g.linhas.push(L);
+        g.nivel = Math.max(g.nivel, nv);
+        porPessoa.set(k, g);
       }
+      const topo = Math.max(0, ...[...porPessoa.values()].map((g) => g.nivel));
+      const finalistas = [...porPessoa.values()].filter((g) => g.nivel === topo);
 
-      if (porPessoa.size === 1) {
-        const linhas = [...porPessoa.values()][0];
+      if (finalistas.length === 1) {
+        const linhas = finalistas[0].linhas;
         linhas.sort((a: any, b: any) =>
           (b.concluiu === true ? 4 : 0) + ((b.email || "").includes("@") ? 2 : 0)
           - (a.concluiu === true ? 4 : 0) - ((a.email || "").includes("@") ? 2 : 0));
@@ -180,9 +197,9 @@ Deno.serve(async (req) => {
             }
           }
         }
-        marcados.push({ meet: pes.displayName, min, lead: candInfo.nome, email: candInfo.email, rd_enviado: rdSent });
+        marcados.push({ meet: pes.displayName, min, lead: candInfo.nome, email: candInfo.email, nivel: topo, rd_enviado: rdSent });
       } else {
-        revisar.push({ meet: pes.displayName, min, candidatos: porPessoa.size });
+        revisar.push({ meet: pes.displayName, min, candidatos: porPessoa.size, empate_no_nivel: finalistas.length > 1 ? topo : 0 });
       }
     }
 
