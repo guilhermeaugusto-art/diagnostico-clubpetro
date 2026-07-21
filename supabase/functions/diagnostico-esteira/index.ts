@@ -8,8 +8,11 @@
 //   3) RD conversao fez-raiox-posto + tag        (participou && !rd_participou_enviado)
 //   4) RD evento OPPORTUNITY (funil default)     (participou && !rd_oportunidade_enviado)
 //   5) Kommo lead com tag raiox-realizado        (participou && !kommo_enviado)
-//      - match de lead existente APENAS por contato exato (email/telefone);
-//        sem match, cria "{Nome} - Raio X" no pipeline Fidelidade (v3, 14/07).
+//      - match de lead existente APENAS por contato exato (email/telefone),
+//        ignorando a base fria de prospeccao; sem match, cria
+//        "{Nome} - Raio X" no pipeline Fidelidade (v5, 14/07).
+// Antes das etapas, a varredura marca duplicado_de automaticamente (mesma
+// pessoa refez o quiz): mesmo e-mail E mesmo primeiro nome (v6, 21/07).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -285,6 +288,16 @@ async function marcar(id: string, patch: Record<string, unknown>) {
   await supabase.from("diagnostico_respostas").update(patch).eq("id", id);
 }
 
+// ---- Dedup de fichas (mesma pessoa refez o quiz) ----
+function nrmDedup(s: unknown) {
+  return String(s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+// canonica = ficha mais completa (envios ja feitos > concluiu); empate: mais antiga
+function notaFicha(r: any) {
+  return (r.kommo_enviado === true ? 8 : 0) + (r.rd_oportunidade_enviado === true ? 4 : 0) +
+    (r.concluiu === true ? 2 : 0) + (r.rd_enviado === true ? 1 : 0);
+}
+
 Deno.serve(async (req) => {
   // Chamado por trigger/cron com o Bearer do service role (mesmo padrao dos jobs existentes)
   const auth = req.headers.get("authorization") || "";
@@ -307,7 +320,8 @@ Deno.serve(async (req) => {
       }
     }
     if (modo === "sweep") {
-      const { data, error } = await supabase.from("diagnostico_respostas").select("*").limit(1000);
+      const { data, error } = await supabase.from("diagnostico_respostas").select("*")
+        .order("created_at", { ascending: true }).limit(1000);
       if (error) throw new Error(error.message);
       rows = data || [];
     }
@@ -316,6 +330,58 @@ Deno.serve(async (req) => {
     const acoes: any[] = [];
     const erros: any[] = [];
     const simular = (lead: string, etapa: string) => acoes.push({ lead, etapa, status: "dry" });
+
+    // Dedup automatico: a MESMA pessoa refez o quiz — mesmo e-mail E mesmo
+    // primeiro nome — e a linha nova dispararia RD/Kommo em dobro (incidente
+    // Bianca, 21/07). O primeiro nome no criterio e obrigatorio: casais dividem
+    // e-mail (Carla e Cristiano, posto3palmeiras@) e NAO podem ser fundidos.
+    // Canonica = ficha mais completa; a duplicata ganha duplicado_de e o loop
+    // de etapas abaixo ja a ignora.
+    if (modo === "sweep" && !dry) {
+      const grupos = new Map<string, any[]>();
+      for (const r of rows) {
+        if (r.duplicado_de) continue;
+        const em = nrmDedup(r.email);
+        const pn = nrmDedup(r.nome).split(/\s+/)[0] || "";
+        if (!em.includes("@") || !pn) continue;
+        const k = em + "|" + pn;
+        if (!grupos.has(k)) grupos.set(k, []);
+        grupos.get(k)!.push(r);
+      }
+      for (const g of grupos.values()) {
+        if (g.length < 2) continue;
+        g.sort((a, b) => notaFicha(b) - notaFicha(a) || String(a.created_at).localeCompare(String(b.created_at)));
+        const canonica = g[0];
+        for (const dup of g.slice(1)) {
+          await marcar(dup.id, { duplicado_de: canonica.id });
+          dup.duplicado_de = canonica.id;
+          acoes.push({ lead: dup.nome, etapa: "dedup", detalhe: "duplicata de " + canonica.id });
+        }
+      }
+    }
+
+    // Webhook tambem deduplica (restrito a linha recebida): o trigger de
+    // participou_raiox chega ANTES do proximo sweep, e sem esta checagem as
+    // etapas 3-5 disparariam RD/Kommo em dobro na janela de corrida (<10min).
+    if (modo === "webhook" && !dry && rows.length && !rows[0].duplicado_de) {
+      const r0 = rows[0];
+      const pn = nrmDedup(r0.nome).split(/\s+/)[0] || "";
+      if (temEmail(r0) && pn) {
+        // ilike sem % = igualdade case-insensitive; escapa curingas do e-mail
+        const padrao = String(r0.email).replace(/([%_\\])/g, "\\$1");
+        const { data: irm } = await supabase.from("diagnostico_respostas")
+          .select("*").ilike("email", padrao).is("duplicado_de", null).neq("id", r0.id);
+        const grupo = [r0, ...(irm || []).filter((x: any) => (nrmDedup(x.nome).split(/\s+/)[0] || "") === pn)];
+        if (grupo.length > 1) {
+          grupo.sort((a, b) => notaFicha(b) - notaFicha(a) || String(a.created_at).localeCompare(String(b.created_at)));
+          for (const dup of grupo.slice(1)) {
+            await marcar(dup.id, { duplicado_de: grupo[0].id });
+            if (dup.id === r0.id) r0.duplicado_de = grupo[0].id;
+            acoes.push({ lead: dup.nome, etapa: "dedup", detalhe: "duplicata de " + grupo[0].id });
+          }
+        }
+      }
+    }
 
     for (const row of rows) {
       if (row.duplicado_de) continue; // ficha duplicada: quem conta e a canonica

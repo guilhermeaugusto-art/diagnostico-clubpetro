@@ -89,7 +89,9 @@ Deno.serve(async (req) => {
     } while (pageToken);
     recs = recs.filter((r) => (r.startTime || "") >= cutoff);
 
-    const pessoas = new Map<string, { displayName: string; segundos: number; ultima: string; interno: boolean }>();
+    // sess = segundos POR conferenceRecord (chave = startTime da sessao): alimenta
+    // raiox_participacoes, que e o que permite ao BI contar presenca por semana.
+    const pessoas = new Map<string, { chave: string; displayName: string; segundos: number; ultima: string; interno: boolean; sess: Record<string, number> }>();
     for (const rec of recs) {
       const recId = rec.name.split("/")[1];
       let pt: string | undefined;
@@ -100,14 +102,21 @@ Deno.serve(async (req) => {
         for (const p of d.participants || []) {
           const su = p.signedinUser, au = p.anonymousUser, ph = p.phoneUser;
           const uid = su ? su.user.split("/")[1] : null;
-          const dn = su ? su.displayName : au ? au.displayName : ph ? ph.displayName : "?";
+          // "|| ?": displayName ausente nao pode virar undefined (viola o NOT NULL
+          // de raiox_participacoes.meet_nome e derrubaria o lote inteiro do upsert)
+          const dn = (su ? su.displayName : au ? au.displayName : ph ? ph.displayName : null) || "?";
           const seg = p.earliestStartTime && p.latestEndTime
             ? Math.max(0, (new Date(p.latestEndTime).getTime() - new Date(p.earliestStartTime).getTime()) / 1000) : 0;
           const interno = (uid && INTERNOS_ID.has(uid)) || INTERNOS_NOME.includes(norm(dn).trim());
           const key = uid ? "u:" + uid : "n:" + norm(dn).trim();
           const cur = pessoas.get(key);
-          if (!cur) pessoas.set(key, { displayName: dn, segundos: seg, ultima: p.latestEndTime || rec.endTime, interno });
-          else { cur.segundos += seg; if ((p.latestEndTime || "") > cur.ultima) cur.ultima = p.latestEndTime; }
+          if (!cur) {
+            pessoas.set(key, { chave: key, displayName: dn, segundos: seg, ultima: p.latestEndTime || rec.endTime, interno, sess: { [rec.startTime]: seg } });
+          } else {
+            cur.segundos += seg;
+            cur.sess[rec.startTime] = (cur.sess[rec.startTime] || 0) + seg;
+            if ((p.latestEndTime || "") > cur.ultima) cur.ultima = p.latestEndTime;
+          }
         }
         pt = d.nextPageToken;
       } while (pt);
@@ -118,12 +127,67 @@ Deno.serve(async (req) => {
       .select("id,nome,email,telefone,concluiu,rd_participou_enviado,participou_raiox,ultima_participacao_raiox")
       .not("nome", "is", null)
       .is("duplicado_de", null);
+    const leadById = new Map<string, any>((leads || []).map((L: any) => [L.id, L]));
+
+    // Fichas que viraram duplicata: conciliacao antiga pode apontar para elas;
+    // sem resolver a corrente ate a canonica o nivel 4 morre para sempre
+    // (leadById so tem canonicas) e a presenca fica atribuida a ficha morta.
+    const { data: dups } = await supabase.from("diagnostico_respostas")
+      .select("id,duplicado_de").not("duplicado_de", "is", null);
+    const dupPara = new Map<string, string>((dups || []).map((d: any) => [d.id, d.duplicado_de]));
+    const resolveCanonica = (id: string): string => {
+      let c = id;
+      for (let i = 0; i < 5 && dupPara.has(c); i++) c = dupPara.get(c)!;
+      return c;
+    };
+
+    // Conciliacoes: nome do Meet (normalizado) -> ficha. O sync grava as suas
+    // ('auto') e humanos gravam as dificeis ('manual'). Duplo uso:
+    //  (a) match direto e estavel entre rodadas;
+    //  (b) desempate — ficha conciliada MANUALMENTE com outro nome sai da
+    //      disputa. So a manual exclui: a mesma pessoa pode entrar no Meet com
+    //      display diferente entre semanas, e uma conc 'auto' do nome antigo
+    //      excluiria a ficha CERTA e casaria o nome novo com outra pessoa.
+    const { data: concs } = await supabase.from("raiox_conciliacoes").select("meet_nome_norm,resposta_id,origem");
+    const concPorNome = new Map<string, string>();
+    const nomesPorResposta = new Map<string, Set<string>>();
+    const concsRepontar: { nome: string; para: string }[] = [];
+    for (const c of concs || []) {
+      const rid = resolveCanonica(c.resposta_id);
+      if (rid !== c.resposta_id) concsRepontar.push({ nome: c.meet_nome_norm, para: rid });
+      concPorNome.set(c.meet_nome_norm, rid);
+      if (c.origem === "manual") {
+        if (!nomesPorResposta.has(rid)) nomesPorResposta.set(rid, new Set());
+        nomesPorResposta.get(rid)!.add(c.meet_nome_norm);
+      }
+    }
+    const novasConcs: { meet_nome_norm: string; resposta_id: string; origem: string }[] = [];
+
     const marcados: any[] = [], revisar: any[] = [], internos: any[] = [];
+    // participacao por sessao de TODO externo (mesmo sem match): vira historico
+    // em raiox_participacoes; resposta_id preenchido quando ha ficha conciliada
+    const partRows: any[] = [];
+    const agoraIso = new Date().toISOString();
+    const registraParticipacoes = (pes: any, respostaId: string | null) => {
+      for (const [ini, seg] of Object.entries(pes.sess)) {
+        const s = Math.round(Number(seg));
+        if (!(s > 0)) continue;
+        partRows.push({
+          meet_chave: pes.chave, sessao_inicio: ini, meet_nome: pes.displayName,
+          segundos: s, resposta_id: respostaId, atualizado_em: agoraIso,
+        });
+      }
+    };
 
     for (const pes of pessoas.values()) {
       const min = Math.round(pes.segundos / 60);
       if (pes.interno) { internos.push({ nome: pes.displayName, min }); continue; }
-      if (pes.segundos < MIN_SEGUNDOS) continue;
+      const nomeNorm = norm(pes.displayName).trim();
+      if (pes.segundos < MIN_SEGUNDOS) {
+        // abaixo do minimo nao marca ficha, mas o historico por sessao fica
+        registraParticipacoes(pes, concPorNome.get(nomeNorm) ?? null);
+        continue;
+      }
 
       const dnT = toks(pes.displayName);
       // Match em NIVEIS de confianca — empate so trava se for no mesmo nivel:
@@ -168,7 +232,24 @@ Deno.serve(async (req) => {
         porPessoa.set(k, g);
       }
       const topo = Math.max(0, ...[...porPessoa.values()].map((g) => g.nivel));
-      const finalistas = [...porPessoa.values()].filter((g) => g.nivel === topo);
+      let finalistas = [...porPessoa.values()].filter((g) => g.nivel === topo);
+      let nivelFinal = topo;
+
+      // Conciliacao existente vence tudo (nivel 4): match direto e estavel.
+      const concId = concPorNome.get(nomeNorm);
+      if (concId && leadById.has(concId)) {
+        finalistas = [{ linhas: [leadById.get(concId)], nivel: 4 }];
+        nivelFinal = 4;
+      } else if (finalistas.length > 1) {
+        // Desempate: ficha ja conciliada com OUTRO nome do Meet sai da disputa.
+        const livres = finalistas.filter((g) =>
+          g.linhas.some((L: any) => {
+            const donos = nomesPorResposta.get(L.id);
+            return !donos || donos.has(nomeNorm);
+          })
+        );
+        if (livres.length === 1) finalistas = livres;
+      }
 
       if (finalistas.length === 1) {
         const linhas = finalistas[0].linhas;
@@ -176,12 +257,20 @@ Deno.serve(async (req) => {
           (b.concluiu === true ? 4 : 0) + ((b.email || "").includes("@") ? 2 : 0)
           - (a.concluiu === true ? 4 : 0) - ((a.email || "").includes("@") ? 2 : 0));
         const candInfo = linhas[0];
+        registraParticipacoes(pes, candInfo.id);
+        if (nivelFinal !== 4) {
+          novasConcs.push({ meet_nome_norm: nomeNorm, resposta_id: candInfo.id, origem: "auto" });
+        }
         let rdSent = candInfo.rd_participou_enviado === true;
         if (!dryRun) {
           // UPDATE condicional: so grava quando ha novidade (nao re-dispara os
           // triggers da tabela todo dia para o mesmo participante).
           const jaMarcado = candInfo.participou_raiox === true;
-          const maisRecente = pes.ultima && (!candInfo.ultima_participacao_raiox || pes.ultima > candInfo.ultima_participacao_raiox);
+          // comparar INSTANTES: o Meet manda '...Z' e o PostgREST '...+00:00';
+          // como string, 'Z' > '+' e o mesmo instante contava como "mais recente"
+          const ultimaMs = candInfo.ultima_participacao_raiox ? Date.parse(candInfo.ultima_participacao_raiox) : NaN;
+          const novaMs = pes.ultima ? Date.parse(pes.ultima) : NaN;
+          const maisRecente = Number.isFinite(novaMs) && (!Number.isFinite(ultimaMs) || novaMs > ultimaMs);
           if (!jaMarcado || maisRecente) {
             await supabase.from("diagnostico_respostas").update({
               participou_raiox: true,
@@ -197,20 +286,43 @@ Deno.serve(async (req) => {
             }
           }
         }
-        marcados.push({ meet: pes.displayName, min, lead: candInfo.nome, email: candInfo.email, nivel: topo, rd_enviado: rdSent });
+        marcados.push({ meet: pes.displayName, min, lead: candInfo.nome, email: candInfo.email, nivel: nivelFinal, rd_enviado: rdSent });
       } else {
+        registraParticipacoes(pes, null);
         revisar.push({ meet: pes.displayName, min, candidatos: porPessoa.size, empate_no_nivel: finalistas.length > 1 ? topo : 0 });
       }
     }
 
     const relatorio = {
       dry_run: dryRun, desde: cutoff, sessoes: recs.length,
-      total_no_meet: pessoas.size, marcados, revisar, internos,
+      total_no_meet: pessoas.size, participacoes: partRows.length,
+      conciliacoes_novas: novasConcs.length, marcados, revisar, internos,
     };
 
-    // Persistir o relatorio (o pg_net descarta a resposta HTTP do cron; sem
-    // isso a lista "revisar" some sem ninguem ver).
+    // Persistir historico por sessao + conciliacoes + relatorio (o pg_net
+    // descarta a resposta HTTP do cron; sem isso a lista "revisar" some sem
+    // ninguem ver). Erros de gravacao entram no relatorio: um lote que falha
+    // em silencio deixaria o BI sem as sessoes da rodada.
     if (!dryRun) {
+      const errosGravacao: string[] = [];
+      // conciliacao que apontava para ficha que virou duplicata: repontar para a canonica
+      for (const rp of concsRepontar) {
+        const { error } = await supabase.from("raiox_conciliacoes")
+          .update({ resposta_id: rp.para }).eq("meet_nome_norm", rp.nome);
+        if (error) errosGravacao.push("repontar " + rp.nome + ": " + error.message);
+      }
+      if (novasConcs.length) {
+        // ignoreDuplicates: conciliacao manual nunca e sobrescrita pela 'auto'
+        const { error } = await supabase.from("raiox_conciliacoes")
+          .upsert(novasConcs, { onConflict: "meet_nome_norm", ignoreDuplicates: true });
+        if (error) errosGravacao.push("conciliacoes: " + error.message);
+      }
+      for (let i = 0; i < partRows.length; i += 500) {
+        const { error } = await supabase.from("raiox_participacoes")
+          .upsert(partRows.slice(i, i + 500), { onConflict: "meet_chave,sessao_inicio" });
+        if (error) errosGravacao.push("participacoes lote " + i + ": " + error.message);
+      }
+      if (errosGravacao.length) (relatorio as any).erros_gravacao = errosGravacao;
       await supabase.from("raiox_presenca_log").insert({ relatorio });
     }
 
