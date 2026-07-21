@@ -12,6 +12,7 @@
 //        ignorando a base fria de prospeccao; sem match, cria
 //        "{Nome} - Raio X" no pipeline Fidelidade (v5, 14/07).
 //      - card PERDIDO de quem participou reabre no inicio do funil (v8, 21/07).
+//      - relacao com o posto vai na nota E no Cargo do contato (v9, 21/07).
 // Antes das etapas, a varredura marca duplicado_de automaticamente (mesma
 // pessoa refez o quiz): mesmo e-mail E mesmo primeiro nome (v6, 21/07).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
@@ -237,9 +238,12 @@ async function kommoEnsureTag(leadId: number) {
   return await kfetch(`/leads/${leadId}`, { method: "PATCH", body: JSON.stringify({ _embedded: { tags } }) });
 }
 function notaKommo(row: any): string {
+  // relacaoPosto (nao o campo cru): cai para o papel (dono/gerente/frentista)
+  // quando relacao_posto esta vazio — antes a relacao sumia da nota
+  const rel = relacaoPosto(row);
   const partes = [
     `Participou do Raio-X do Posto (diagnostico ClubPetro).`,
-    row.relacao_posto ? `Relacao com o posto: ${row.relacao_posto}` : null,
+    rel ? `Relacao com o posto: ${rel}` : null,
     row.score !== null && row.score !== undefined ? `Score do diagnostico: ${row.score} (${row.nivel ?? "sem nivel"})` : null,
     row.interesse ? `Frente de interesse: ${row.interesse}` : null,
     row.telefone ? `Telefone: ${row.telefone}` : null,
@@ -286,6 +290,10 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
   const contactCf: any[] = [];
   if (row.telefone) contactCf.push({ field_code: "PHONE", values: [{ value: String(row.telefone), enum_code: "MOB" }] });
   if (temEmail(row)) contactCf.push({ field_code: "EMAIL", values: [{ value: row.email, enum_code: "WORK" }] });
+  // relacao com o posto vira o Cargo do contato (campo nativo POSITION):
+  // estruturado no Kommo, nao so texto de nota
+  const relCargo = relacaoPosto(row);
+  if (relCargo) contactCf.push({ field_code: "POSITION", values: [{ value: relCargo }] });
   const body = [{
     name: `${row.nome || row.email || "Lead"} - Raio X`,
     pipeline_id: KOMMO_PIPELINE,
@@ -474,7 +482,8 @@ Deno.serve(async (req) => {
                   await kfetch(`/leads/${row.kommo_lead_id}/notes`, {
                     method: "POST",
                     body: JSON.stringify([{ note_type: "common", params: {
-                      text: `Participou de novo do Raio-X em ${String(row.ultima_participacao_raiox).slice(0, 10)} — card reaberto automaticamente (estava perdido).`,
+                      text: `Participou de novo do Raio-X em ${String(row.ultima_participacao_raiox).slice(0, 10)} — card reaberto automaticamente (estava perdido).`
+                        + (relacaoPosto(row) ? `\nRelacao com o posto: ${relacaoPosto(row)}` : ""),
                     } }]),
                   });
                   if (temEmail(row)) await rdMarkOpportunity(row.email);
