@@ -11,6 +11,7 @@
 //      - match de lead existente APENAS por contato exato (email/telefone),
 //        ignorando a base fria de prospeccao; sem match, cria
 //        "{Nome} - Raio X" no pipeline Fidelidade (v5, 14/07).
+//      - card PERDIDO de quem participou reabre no inicio do funil (v8, 21/07).
 // Antes das etapas, a varredura marca duplicado_de automaticamente (mesma
 // pessoa refez o quiz): mesmo e-mail E mesmo primeiro nome (v6, 21/07).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
@@ -73,6 +74,11 @@ function temEmail(row: any) {
 }
 function ehCliente(row: any) {
   return (row.conhece ?? "").toString().trim().toLowerCase() === "cliente";
+}
+// Pessoal interno (Familia Pires trabalha no ClubPetro) nao vira oportunidade
+// nem card no Kommo — regra do dono (21/07). Conversoes RD comuns continuam.
+function ehFamiliaPires(row: any) {
+  return typeof row.email === "string" && row.email.trim().toLowerCase().endsWith("@familiapires.com.br");
 }
 
 async function vmGet(keys: string[]) {
@@ -242,16 +248,35 @@ function notaKommo(row: any): string {
   ].filter(Boolean);
   return partes.join("\n");
 }
+// Card PERDIDO (status 143) de quem participou volta ao INICIO do pipeline
+// Fidelidade — regra do dono (21/07): perdido no passado nao segura o lead
+// fora; se participou do Raio-X, e prospeccao ativa de novo.
+async function kommoReabrir(leadId: number): Promise<{ ok: boolean; detalhe: string }> {
+  const meta = await kommoMeta();
+  const r = await kfetch(`/leads/${leadId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ pipeline_id: KOMMO_PIPELINE, status_id: meta.statusId }),
+  });
+  if (!r.ok) return { ok: false, detalhe: `reabrir lead ${leadId}: HTTP ${r.status} ${r.text}` };
+  return { ok: true, detalhe: "lead perdido reaberto no inicio do funil" };
+}
+
 async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; detalhe: string }> {
   const existente = await kommoFindLead(row);
   if (existente?.id) {
+    let detalhe = "lead existente atualizado com tag";
+    if (existente.status_id === 143) {
+      const rb = await kommoReabrir(existente.id);
+      if (!rb.ok) return { ok: false, detalhe: rb.detalhe };
+      detalhe = rb.detalhe;
+    }
     const r = await kommoEnsureTag(existente.id);
     if (!r.ok) return { ok: false, detalhe: `tag em lead existente ${existente.id}: HTTP ${r.status} ${r.text}` };
     await kfetch(`/leads/${existente.id}/notes`, {
       method: "POST",
       body: JSON.stringify([{ note_type: "common", params: { text: notaKommo(row) } }]),
     });
-    return { ok: true, leadId: existente.id, detalhe: "lead existente atualizado com tag" };
+    return { ok: true, leadId: existente.id, detalhe };
   }
   const meta = await kommoMeta();
   const cf: any[] = [];
@@ -423,16 +448,48 @@ Deno.serve(async (req) => {
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
-        // 4) OPORTUNIDADE no RD (participou, nao-cliente, nao-frentista)
-        if (row.participou_raiox === true && row.rd_oportunidade_enviado !== true && temEmail(row) && !isFrentista(row) && !ehCliente(row)) {
+        // 4) OPORTUNIDADE no RD (participou, nao-cliente, nao-frentista, nao-interno)
+        if (row.participou_raiox === true && row.rd_oportunidade_enviado !== true && temEmail(row) && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row)) {
           if (dry) { simular(row.nome, "rd-oportunidade"); } else {
             const r = await rdMarkOpportunity(row.email);
             if (r.ok) await marcar(row.id, { rd_oportunidade_enviado: true, rd_oportunidade_em: new Date().toISOString() });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "rd-oportunidade", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
-        // 5) Kommo (participou, nao-cliente, nao-frentista, com contato)
-        if (row.participou_raiox === true && row.kommo_enviado !== true && !isFrentista(row) && !ehCliente(row) && (temEmail(row) || row.telefone)) {
+        // 5b) Card ja enviado + PARTICIPOU DE NOVO depois do envio: se o card
+        // esta perdido, reabre no inicio do funil (tag + nota) e re-marca a
+        // oportunidade no RD. kommo_enviado_em avanca apos a checagem para nao
+        // reconsultar o Kommo a cada varredura.
+        if (row.participou_raiox === true && row.kommo_enviado === true && row.kommo_lead_id &&
+            !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row) &&
+            row.ultima_participacao_raiox && row.kommo_enviado_em &&
+            Date.parse(row.ultima_participacao_raiox) > Date.parse(row.kommo_enviado_em)) {
+          if (dry) { simular(row.nome, "kommo-reabrir?"); } else {
+            const ld = await kfetch(`/leads/${row.kommo_lead_id}`);
+            if (ld.json?.id) {
+              if (ld.json.status_id === 143) {
+                const rb = await kommoReabrir(Number(row.kommo_lead_id));
+                if (rb.ok) {
+                  await kommoEnsureTag(Number(row.kommo_lead_id));
+                  await kfetch(`/leads/${row.kommo_lead_id}/notes`, {
+                    method: "POST",
+                    body: JSON.stringify([{ note_type: "common", params: {
+                      text: `Participou de novo do Raio-X em ${String(row.ultima_participacao_raiox).slice(0, 10)} — card reaberto automaticamente (estava perdido).`,
+                    } }]),
+                  });
+                  if (temEmail(row)) await rdMarkOpportunity(row.email);
+                  acoes.push({ lead: row.nome, etapa: "kommo-reaberto", kommo_lead_id: row.kommo_lead_id });
+                } else {
+                  erros.push({ lead: row.nome, etapa: "kommo-reaberto", erro: rb.detalhe });
+                }
+              }
+              // checado (reaberto ou nao estava perdido): avanca o marco
+              await marcar(row.id, { kommo_enviado_em: new Date().toISOString() });
+            }
+          }
+        }
+        // 5) Kommo (participou, nao-cliente, nao-frentista, nao-interno, com contato)
+        if (row.participou_raiox === true && row.kommo_enviado !== true && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row) && (temEmail(row) || row.telefone)) {
           if (dry) { simular(row.nome, "kommo"); } else {
             const r = await kommoPush(row);
             if (r.ok) {
