@@ -13,7 +13,9 @@
 //        "{Nome} - Raio X" no pipeline Fidelidade (v5, 14/07).
 //      - card PERDIDO de quem participou reabre no inicio do funil (v8, 21/07).
 //      - relacao com o posto: sempre na nota e no SELECT "Relação com o
-//        Posto" do contato (so preenche se vazio) (v10, 21/07).
+//        Posto" do contato; "Nao se aplica" conta como vazio (v11, 21/07).
+//      - contato exato so casa se o primeiro nome OU o telefone baterem:
+//        e-mail de casal nao cola duas pessoas num card (v12, 22/07).
 // Antes das etapas, a varredura marca duplicado_de automaticamente (mesma
 // pessoa refez o quiz): mesmo e-mail E mesmo primeiro nome (v6, 21/07).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
@@ -221,6 +223,22 @@ async function kommoFindLead(row: any): Promise<any | null> {
         }
       }
       if (!exato) continue;
+      // Contato exato != mesma PESSOA: casais dividem e-mail (Carla e
+      // Cristiano, posto3palmeiras@) e a Carla acabava colada no card do
+      // marido, invisivel para o comercial (incidente 21-22/07). Alem do
+      // contato exato, o primeiro nome precisa aparecer no nome do contato OU
+      // o telefone bater; senao, segue e cria card proprio.
+      const pn = nrmDedup(row.nome || "").split(/\s+/)[0] || "";
+      const nomeBate = pn.length >= 3 && nrmDedup(c.name || "").includes(pn);
+      let foneBate = false;
+      if (alvoFone) {
+        for (const f of c.custom_fields_values || []) {
+          if (f.field_code === "PHONE") {
+            for (const v of f.values || []) if (digitosFone(v.value) === alvoFone) foneBate = true;
+          }
+        }
+      }
+      if (!nomeBate && !foneBate) continue;
       // O mesmo contato pode ter varios leads: pega o primeiro que NAO seja
       // da base fria de prospeccao (la os e-mails dos postos apontam para
       // outras pessoas e o card nao e da pessoa que fez o Raio-X).
@@ -247,17 +265,18 @@ async function kommoEnumRelacao(row: any): Promise<number | null> {
   for (const e of relacaoEnumsCache || []) if (nrmDedup(e.value) === alvo) return e.id;
   return null;
 }
-// Preenche o select no contato SE estiver vazio (escolha manual do comercial
-// nunca e sobrescrita).
+// Preenche o select no contato. Valor real escolhido pelo comercial (Dono,
+// Gerente...) nunca e sobrescrito; vazio ou "Nao se aplica" (default de fluxo
+// antigo — quem respondeu o quiz TEM relacao) e substituido pela resposta.
 async function kommoGarantirRelacao(contatoId: number | null | undefined, row: any) {
   if (!contatoId) return;
   const en = await kommoEnumRelacao(row);
   if (!en) return;
   const d = await kfetch(`/contacts/${contatoId}`);
   if (!d.json?.id) return;
-  const jaTem = (d.json.custom_fields_values || []).some((f: any) =>
-    f.field_id === CF_CONTATO_RELACAO && (f.values || []).length);
-  if (jaTem) return;
+  const atual = (d.json.custom_fields_values || []).find((f: any) => f.field_id === CF_CONTATO_RELACAO);
+  const valorAtual = nrmDedup(atual?.values?.[0]?.value || "");
+  if (valorAtual && valorAtual !== "nao se aplica") return;
   await kfetch(`/contacts/${contatoId}`, {
     method: "PATCH",
     body: JSON.stringify({ custom_fields_values: [{ field_id: CF_CONTATO_RELACAO, values: [{ enum_id: en }] }] }),
