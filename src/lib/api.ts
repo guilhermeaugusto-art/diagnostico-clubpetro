@@ -56,14 +56,27 @@ function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
 
 /* ============== Create / Upsert ============== */
 
-export async function createSession(id: string, _version: string, _context: RequestContext): Promise<void> {
-  // INSERT mínimo: cria a linha com o id da sessão e o token secreto (a RLS
-  // exige token no INSERT e confere o mesmo token nos UPDATEs seguintes).
+export async function createSession(id: string, _version: string, context: RequestContext): Promise<void> {
+  // INSERT mínimo: cria a linha com o id da sessão, o token secreto (a RLS
+  // exige token no INSERT e confere nos UPDATEs) e a ORIGEM capturada no boot
+  // (UTMs + source inferido). Gravada uma vez na criação, antes das respostas.
+  const c = context || ({} as RequestContext);
   await safe("createSession", async () => {
     const res = await fetch(REST_URL, {
       method: "POST",
       headers: restHeaders(),
-      body: JSON.stringify({ id, token_sessao: tokenSessao() }),
+      body: JSON.stringify({
+        id,
+        token_sessao: tokenSessao(),
+        utm_source:   c.utm_source ?? null,
+        utm_medium:   c.utm_medium ?? null,
+        utm_campaign: c.utm_campaign ?? null,
+        utm_content:  c.utm_content ?? null,
+        utm_term:     c.utm_term ?? null,
+        origem_source: c.source ?? null,
+        referrer:     c.referrer ?? null,
+        landing_url:  c.landing_url ?? null,
+      }),
       keepalive: true,
     });
     if (!res.ok) throw new Error(`createSession HTTP ${res.status}: ${await res.text()}`);
