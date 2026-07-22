@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const MEETING_CODE = "ado-rhwa-kvx";
 const CUTOFF_DEFAULT = "2026-06-23T00:00:00Z";
 const MIN_SEGUNDOS = 60;
-const RD_ENDPOINT = "https://api.rd.services/platform/conversions";
 
 // Contas internas ClubPetro no Meet (nao sao leads)
 const INTERNOS_ID = new Set([
@@ -55,17 +54,10 @@ async function meet(path: string, token: string) {
   if (!res.ok) throw new Error("meet " + path + ": " + JSON.stringify(d));
   return d;
 }
-async function getRdToken() {
-  const { data } = await supabase.from("Armazena_Token_RD").select("Token").order("created_at", { ascending: false }).limit(1).maybeSingle();
-  return (data && (data as any).Token) ? (data as any).Token as string : null;
-}
-async function rdRaioxRealizado(rdToken: string, email: string, nome: string) {
-  const res = await fetch(RD_ENDPOINT + "?api_key=" + rdToken, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event_type: "CONVERSION", event_family: "CDP", payload: { conversion_identifier: "fez-raiox-posto", email, name: nome || undefined, tags: ["raiox-realizado"] } }),
-  });
-  return res.ok;
-}
+// (envio RD removido em 22/07: o UPDATE de participou_raiox ja dispara a
+// esteira via trigger, que envia fez-raiox-posto com payload completo e retry
+// pelo sweep — o envio daqui era o segundo remetente da corrida dupla
+// comprovada em 08/07, 14/07 e 21/07)
 
 Deno.serve(async (req) => {
   try {
@@ -75,7 +67,6 @@ Deno.serve(async (req) => {
 
     const creds = await getCreds();
     const token = await getAccessToken(creds);
-    const rdToken = await getRdToken();
 
     const space = await meet("spaces/" + MEETING_CODE, token);
     let recs: any[] = [];
@@ -115,7 +106,9 @@ Deno.serve(async (req) => {
           } else {
             cur.segundos += seg;
             cur.sess[rec.startTime] = (cur.sess[rec.startTime] || 0) + seg;
-            if ((p.latestEndTime || "") > cur.ultima) cur.ultima = p.latestEndTime;
+            // cur.ultima pode ter congelado undefined (conferencia ao vivo sem
+            // endTime): sem o !cur.ultima, nunca mais seria preenchida
+            if (p.latestEndTime && (!cur.ultima || p.latestEndTime > cur.ultima)) cur.ultima = p.latestEndTime;
           }
         }
         pt = d.nextPageToken;
@@ -261,10 +254,11 @@ Deno.serve(async (req) => {
         if (nivelFinal !== 4) {
           novasConcs.push({ meet_nome_norm: nomeNorm, resposta_id: candInfo.id, origem: "auto" });
         }
-        let rdSent = candInfo.rd_participou_enviado === true;
         if (!dryRun) {
           // UPDATE condicional: so grava quando ha novidade (nao re-dispara os
-          // triggers da tabela todo dia para o mesmo participante).
+          // triggers da tabela todo dia para o mesmo participante). E o proprio
+          // UPDATE que aciona a esteira (trigger em participou_raiox), que
+          // cuida do RD fez-raiox e do Kommo — daqui nao sai mais envio RD.
           const jaMarcado = candInfo.participou_raiox === true;
           // comparar INSTANTES: o Meet manda '...Z' e o PostgREST '...+00:00';
           // como string, 'Z' > '+' e o mesmo instante contava como "mais recente"
@@ -278,15 +272,8 @@ Deno.serve(async (req) => {
               raiox_observacao: `Presenca Meet: ${min} min (${(pes.ultima || "").slice(0, 10)})`,
             }).eq("id", candInfo.id);
           }
-
-          if (rdToken && candInfo.email && !candInfo.rd_participou_enviado) {
-            rdSent = await rdRaioxRealizado(rdToken, candInfo.email, candInfo.nome);
-            if (rdSent) {
-              await supabase.from("diagnostico_respostas").update({ rd_participou_enviado: true }).eq("id", candInfo.id);
-            }
-          }
         }
-        marcados.push({ meet: pes.displayName, min, lead: candInfo.nome, email: candInfo.email, nivel: nivelFinal, rd_enviado: rdSent });
+        marcados.push({ meet: pes.displayName, min, lead: candInfo.nome, email: candInfo.email, nivel: nivelFinal, rd_enviado: candInfo.rd_participou_enviado === true });
       } else {
         registraParticipacoes(pes, null);
         revisar.push({ meet: pes.displayName, min, candidatos: porPessoa.size, empate_no_nivel: finalistas.length > 1 ? topo : 0 });

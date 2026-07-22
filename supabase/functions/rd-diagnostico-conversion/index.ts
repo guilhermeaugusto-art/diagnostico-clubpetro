@@ -27,6 +27,11 @@ function safeParse(s: unknown) {
   try { return JSON.parse(String(s)); } catch { return null; }
 }
 
+// mesmo criterio de dedup da esteira (minusculo, sem acento)
+function nrm(s: unknown) {
+  return String(s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+
 // Campos custom do RD sao todos do tipo STRING — enviar numero da 400
 // (INVALID_DATA_TYPE em cf_score_diagnostico, capturado em 08/07).
 function asStr(v: unknown): string | undefined {
@@ -113,8 +118,24 @@ serve(async (req) => {
     let raioxRespStatus: number | null = null;
 
     // 1) Conversao inicial do diagnostico: uma vez, para quem concluiu.
-    //    Dedup pela coluna rd_enviado.
+    //    Dedup pela coluna rd_enviado + dedup conservador por ficha irma:
+    //    quem REFAZ o quiz gera linha nova (duplicado_de ainda null ate o
+    //    sweep da esteira) e reenviava fez-diagnostico (Antonio 03/07,
+    //    Bianca 21/07). Ficha irma com MESMO e-mail E MESMO primeiro nome ja
+    //    enviada => pula o envio, SEM marcar nada (o sweep marca duplicado_de
+    //    depois). Primeiro nome no criterio: casais dividem e-mail
+    //    (Carla/Cristiano) e NAO podem se bloquear.
+    let irmaJaEnviada = false;
     if (concluiu && !jaEnviado) {
+      const pn = nrm(row.nome).split(/\s+/)[0] || "";
+      if (pn) {
+        const padrao = email.replace(/([%_\\])/g, "\\$1");
+        const { data: irms } = await supabase.from("diagnostico_respostas")
+          .select("id,nome").ilike("email", padrao).neq("id", row.id).eq("rd_enviado", true);
+        irmaJaEnviada = (irms || []).some((x) => (nrm(x.nome).split(/\s+/)[0] || "") === pn);
+      }
+    }
+    if (concluiu && !jaEnviado && !irmaJaEnviada) {
       const diagResp = await sendConversion(token, {
         event_type: "CONVERSION",
         event_family: "CDP",
@@ -141,22 +162,23 @@ serve(async (req) => {
       }
     }
 
-    // 2) Conversao do Raio X: quando a pessoa confirma (ou comparece).
-    //    INDEPENDENTE de rd_enviado. Dedup pela coluna rd_raiox_enviado, para
-    //    nao reenviar a cada UPDATE (o cron remarca confirmado todo dia).
-    if (!raioxJaEnviado && (raioxStatus === "confirmado" || raioxStatus === "compareceu")) {
-      const ident = raioxStatus === "confirmado" ? "confirmou-raiox-posto" : "fez-raiox-posto";
-      const tag = raioxStatus === "confirmado" ? "raiox-confirmado" : "raiox-realizado";
+    // 2) Conversao do Raio X: quando a pessoa CONFIRMA. Dedup pela coluna
+    //    rd_raiox_enviado (o cron remarca confirmado todo dia).
+    //    ('compareceu' removido em 22/07: fez-raiox-posto e exclusivo da
+    //    esteira — aqui o dedup usava outra coluna e duplicaria o envio.)
+    if (!raioxJaEnviado && raioxStatus === "confirmado") {
       const r = await sendConversion(token, {
         event_type: "CONVERSION",
         event_family: "CDP",
-        payload: { conversion_identifier: ident, email, job_title: jobTitle, tags: [tag] },
+        payload: { conversion_identifier: "confirmou-raiox-posto", email, job_title: jobTitle, tags: ["raiox-confirmado"] },
       });
       raioxRespStatus = r.status;
       if (r.ok) {
         await supabase.from("diagnostico_respostas")
           .update({ rd_raiox_enviado: true })
           .eq("id", row.id);
+      } else {
+        console.error("confirmou-raiox-posto falhou", r.status, (r.text ?? "").slice(0, 300));
       }
     }
 

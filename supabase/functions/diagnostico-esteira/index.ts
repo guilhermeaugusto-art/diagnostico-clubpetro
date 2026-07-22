@@ -18,6 +18,9 @@
 //        e-mail de casal nao cola duas pessoas num card (v12, 22/07).
 // Antes das etapas, a varredura marca duplicado_de automaticamente (mesma
 // pessoa refez o quiz): mesmo e-mail E mesmo primeiro nome (v6, 21/07).
+// v13 (22/07, varredura completa): releitura fresca antes de agir (corrida
+// sweep x webhook), falhas de gravacao de flag visiveis em erros[], token RD
+// ausente logado, e 5b so avanca o marco com a checagem concluida.
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -94,7 +97,10 @@ async function vmGet(keys: string[]) {
   return m;
 }
 async function vmSet(key: string, value: string) {
-  await supabase.from("vm_app_keys").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
+  const { error } = await supabase.from("vm_app_keys").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
+  // refresh OAuth novo que nao persiste = proxima execucao usa refresh velho
+  // (se o RD rotacionar, a etapa 4 morre em silencio) — falha tem que subir
+  if (error) throw new Error(`persistir ${key}: ${error.message}`);
 }
 
 async function getRdPublicToken(): Promise<string | null> {
@@ -371,8 +377,11 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
   return { ok: true, leadId, detalhe: "lead criado" };
 }
 
-async function marcar(id: string, patch: Record<string, unknown>) {
-  await supabase.from("diagnostico_respostas").update(patch).eq("id", id);
+// devolve a mensagem de erro (ou null): flag que nao grava apos envio 2xx
+// significa RE-ENVIO da conversao na proxima varredura — precisa ficar visivel
+async function marcar(id: string, patch: Record<string, unknown>): Promise<string | null> {
+  const { error } = await supabase.from("diagnostico_respostas").update(patch).eq("id", id);
+  return error ? error.message : null;
 }
 
 // ---- Dedup de fichas (mesma pessoa refez o quiz) ----
@@ -417,6 +426,15 @@ Deno.serve(async (req) => {
     const acoes: any[] = [];
     const erros: any[] = [];
     const simular = (lead: string, etapa: string) => acoes.push({ lead, etapa, status: "dry" });
+    // grava flag e registra falha do UPDATE (antes era silenciosa)
+    const marcarLog = async (row: any, etapa: string, patch: Record<string, unknown>) => {
+      const e = await marcar(row.id, patch);
+      if (e) erros.push({ lead: row.nome, etapa: etapa + "-flag", erro: e });
+    };
+    if (!rdToken) {
+      // sem token as etapas 1-3 pulam TODAS as fichas — antes sem nenhum sinal
+      erros.push({ etapa: "rd-token", erro: "Armazena_Token_RD vazio/ilegivel: conversoes RD pausadas nesta execucao" });
+    }
 
     // Dedup automatico: a MESMA pessoa refez o quiz — mesmo e-mail E mesmo
     // primeiro nome — e a linha nova dispararia RD/Kommo em dobro (incidente
@@ -440,7 +458,7 @@ Deno.serve(async (req) => {
         g.sort((a, b) => notaFicha(b) - notaFicha(a) || String(a.created_at).localeCompare(String(b.created_at)));
         const canonica = g[0];
         for (const dup of g.slice(1)) {
-          await marcar(dup.id, { duplicado_de: canonica.id });
+          await marcarLog(dup, "dedup", { duplicado_de: canonica.id });
           dup.duplicado_de = canonica.id;
           acoes.push({ lead: dup.nome, etapa: "dedup", detalhe: "duplicata de " + canonica.id });
         }
@@ -462,7 +480,7 @@ Deno.serve(async (req) => {
         if (grupo.length > 1) {
           grupo.sort((a, b) => notaFicha(b) - notaFicha(a) || String(a.created_at).localeCompare(String(b.created_at)));
           for (const dup of grupo.slice(1)) {
-            await marcar(dup.id, { duplicado_de: grupo[0].id });
+            await marcarLog(dup, "dedup", { duplicado_de: grupo[0].id });
             if (dup.id === r0.id) r0.duplicado_de = grupo[0].id;
             acoes.push({ lead: dup.nome, etapa: "dedup", detalhe: "duplicata de " + grupo[0].id });
           }
@@ -470,8 +488,29 @@ Deno.serve(async (req) => {
       }
     }
 
-    for (const row of rows) {
+    for (let row of rows) {
       if (row.duplicado_de) continue; // ficha duplicada: quem conta e a canonica
+      // Releitura FRESCA antes de agir (so quando a ficha pode gerar acao):
+      // o sweep leva ~2,5 min e nas tercas dois crons disparam no mesmo
+      // minuto — snapshot velho reenviaria conversao ja feita pelo webhook.
+      if (modo === "sweep" && !dry) {
+        const podeAgir =
+          (row.concluiu === true && row.rd_enviado !== true) ||
+          ((row.raiox_status || "").toLowerCase() === "confirmado" && row.rd_raiox_enviado !== true) ||
+          (row.participou_raiox === true && (
+            row.rd_participou_enviado !== true || row.rd_oportunidade_enviado !== true ||
+            row.kommo_enviado !== true ||
+            (row.kommo_lead_id && row.ultima_participacao_raiox && row.kommo_enviado_em &&
+              Date.parse(row.ultima_participacao_raiox) > Date.parse(row.kommo_enviado_em))
+          ));
+        if (podeAgir) {
+          const { data: fresco } = await supabase.from("diagnostico_respostas")
+            .select("*").eq("id", row.id).maybeSingle();
+          if (!fresco) continue;
+          row = fresco;
+          if (row.duplicado_de) continue;
+        }
+      }
       const jobTitle = relacaoPosto(row);
       try {
         // 1) fez-diagnostico-posto
@@ -484,7 +523,7 @@ Deno.serve(async (req) => {
               cf_dimensao_fraca: dimensaoFraca(row), cf_frente_interesse: asStr(row.interesse),
               tags: ["diagnostico-realizado"],
             });
-            if (r.ok) await marcar(row.id, { rd_enviado: true, rd_enviado_em: new Date().toISOString() });
+            if (r.ok) await marcarLog(row, "fez-diagnostico", { rd_enviado: true, rd_enviado_em: new Date().toISOString() });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-diagnostico", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
@@ -495,7 +534,7 @@ Deno.serve(async (req) => {
               conversion_identifier: "confirmou-raiox-posto", email: row.email,
               job_title: jobTitle, tags: ["raiox-confirmado"],
             });
-            if (r.ok) await marcar(row.id, { rd_raiox_enviado: true });
+            if (r.ok) await marcarLog(row, "confirmou-raiox", { rd_raiox_enviado: true });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "confirmou-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
@@ -506,7 +545,7 @@ Deno.serve(async (req) => {
               conversion_identifier: "fez-raiox-posto", email: row.email,
               name: row.nome ?? undefined, job_title: jobTitle, tags: ["raiox-realizado"],
             });
-            if (r.ok) await marcar(row.id, { rd_participou_enviado: true });
+            if (r.ok) await marcarLog(row, "fez-raiox", { rd_participou_enviado: true });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
@@ -514,7 +553,7 @@ Deno.serve(async (req) => {
         if (row.participou_raiox === true && row.rd_oportunidade_enviado !== true && temEmail(row) && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row)) {
           if (dry) { simular(row.nome, "rd-oportunidade"); } else {
             const r = await rdMarkOpportunity(row.email);
-            if (r.ok) await marcar(row.id, { rd_oportunidade_enviado: true, rd_oportunidade_em: new Date().toISOString() });
+            if (r.ok) await marcarLog(row, "rd-oportunidade", { rd_oportunidade_enviado: true, rd_oportunidade_em: new Date().toISOString() });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "rd-oportunidade", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
@@ -528,16 +567,21 @@ Deno.serve(async (req) => {
             Date.parse(row.ultima_participacao_raiox) > Date.parse(row.kommo_enviado_em)) {
           if (dry) { simular(row.nome, "kommo-reabrir?"); } else {
             const ld = await kfetch(`/leads/${row.kommo_lead_id}?with=contacts`);
-            if (ld.json?.id) {
+            if (!ld.json?.id) {
+              // GET falho ficava mudo e o marco nao avancava nunca — registra
+              erros.push({ lead: row.nome, etapa: "kommo-reabrir", erro: `GET lead ${row.kommo_lead_id}: HTTP ${ld.status} ${ld.text}` });
+            } else {
               // toque de reconciliacao: garante o select de relacao no contato
               // principal do card (preenche so se estiver vazio)
               const cts = ld.json?._embedded?.contacts || [];
               const contatoId = (cts.find((c: any) => c.is_main) || cts[0])?.id;
               await kommoGarantirRelacao(contatoId, row);
+              let tudoOk = true;
               if (ld.json.status_id === 143) {
                 const rb = await kommoReabrir(Number(row.kommo_lead_id));
                 if (rb.ok) {
-                  await kommoEnsureTag(Number(row.kommo_lead_id));
+                  const tg = await kommoEnsureTag(Number(row.kommo_lead_id));
+                  if (!tg.ok) { tudoOk = false; erros.push({ lead: row.nome, etapa: "kommo-reaberto-tag", erro: `HTTP ${tg.status} ${tg.text}` }); }
                   await kfetch(`/leads/${row.kommo_lead_id}/notes`, {
                     method: "POST",
                     body: JSON.stringify([{ note_type: "common", params: {
@@ -545,14 +589,18 @@ Deno.serve(async (req) => {
                         + (relacaoPosto(row) ? `\nRelacao com o posto: ${relacaoPosto(row)}` : ""),
                     } }]),
                   });
-                  if (temEmail(row)) await rdMarkOpportunity(row.email);
+                  if (temEmail(row)) {
+                    const ro = await rdMarkOpportunity(row.email);
+                    if (!ro.ok) { tudoOk = false; erros.push({ lead: row.nome, etapa: "kommo-reaberto-rd", erro: `HTTP ${ro.status} ${ro.text}` }); }
+                  }
                   acoes.push({ lead: row.nome, etapa: "kommo-reaberto", kommo_lead_id: row.kommo_lead_id });
                 } else {
+                  tudoOk = false;
                   erros.push({ lead: row.nome, etapa: "kommo-reaberto", erro: rb.detalhe });
                 }
               }
-              // checado (reaberto ou nao estava perdido): avanca o marco
-              await marcar(row.id, { kommo_enviado_em: new Date().toISOString() });
+              // avanca o marco SO com a checagem concluida sem falha (senao retenta)
+              if (tudoOk) await marcarLog(row, "kommo-marco", { kommo_enviado_em: new Date().toISOString() });
             }
           }
         }
@@ -561,7 +609,7 @@ Deno.serve(async (req) => {
           if (dry) { simular(row.nome, "kommo"); } else {
             const r = await kommoPush(row);
             if (r.ok) {
-              await marcar(row.id, { kommo_enviado: true, kommo_lead_id: r.leadId ?? null, kommo_enviado_em: new Date().toISOString(), kommo_erro: null });
+              await marcarLog(row, "kommo", { kommo_enviado: true, kommo_lead_id: r.leadId ?? null, kommo_enviado_em: new Date().toISOString(), kommo_erro: null });
               acoes.push({ lead: row.nome, etapa: "kommo", detalhe: r.detalhe, kommo_lead_id: r.leadId });
             } else {
               await marcar(row.id, { kommo_erro: r.detalhe.slice(0, 500) });
