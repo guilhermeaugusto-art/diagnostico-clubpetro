@@ -27,6 +27,26 @@ const REST_HEADERS: Record<string, string> = {
   Prefer: "return=minimal",
 };
 
+/* Token secreto da sessão (22/07): nasce no navegador, vai junto do INSERT
+   (coluna token_sessao) e autentica cada UPDATE via header x-quiz-token — a
+   RLS só deixa atualizar a linha cujo token bate com o header. O id da sessão
+   aparece em link de PDF; o token nunca sai do navegador. sessionStorage
+   preserva o token num reload; sem storage (modo privado), fica em memória. */
+const TOKEN_STORE = "diag_token_sessao";
+let tokenMem: string | null = null;
+function tokenSessao(): string {
+  if (tokenMem) return tokenMem;
+  try { tokenMem = sessionStorage.getItem(TOKEN_STORE); } catch { /* sem storage */ }
+  if (!tokenMem) {
+    tokenMem = crypto.randomUUID() + crypto.randomUUID();
+    try { sessionStorage.setItem(TOKEN_STORE, tokenMem); } catch { /* só memória */ }
+  }
+  return tokenMem;
+}
+function restHeaders(): Record<string, string> {
+  return { ...REST_HEADERS, "x-quiz-token": tokenSessao() };
+}
+
 function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   return fn().catch((e) => {
     if (typeof console !== "undefined") console.warn(`[api:${label}]`, e);
@@ -37,12 +57,13 @@ function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
 /* ============== Create / Upsert ============== */
 
 export async function createSession(id: string, _version: string, _context: RequestContext): Promise<void> {
-  // INSERT mínimo: cria a linha com o id da sessão. O resto entra via UPDATE.
+  // INSERT mínimo: cria a linha com o id da sessão e o token secreto (a RLS
+  // exige token no INSERT e confere o mesmo token nos UPDATEs seguintes).
   await safe("createSession", async () => {
     const res = await fetch(REST_URL, {
       method: "POST",
-      headers: REST_HEADERS,
-      body: JSON.stringify({ id }),
+      headers: restHeaders(),
+      body: JSON.stringify({ id, token_sessao: tokenSessao() }),
       keepalive: true,
     });
     if (!res.ok) throw new Error(`createSession HTTP ${res.status}: ${await res.text()}`);
@@ -54,7 +75,7 @@ async function updateRow(id: string, patch: Record<string, unknown>): Promise<vo
   await safe("updateRow", async () => {
     const res = await fetch(`${REST_URL}?${ID_COL}=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
-      headers: REST_HEADERS,
+      headers: restHeaders(),
       body: JSON.stringify(patch),
       keepalive: true,
     });

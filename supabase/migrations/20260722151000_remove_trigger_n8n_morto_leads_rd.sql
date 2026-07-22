@@ -1,0 +1,14 @@
+-- Trigger 'leads_rd' em BD_Conversoes_RD disparava para a URL de TESTE do n8n
+-- (/webhook-test/47dcda25-...), que so responde com o editor n8n aberto: 404
+-- em TODA insercao. Nunca funcionou em producao — nenhum dado fluiu por ele.
+-- Removido para parar as falhas continuas e a fila pg_net. NAO mexe nos outros
+-- dois triggers legitimos da tabela (botconversa e trigger_update_tag_nutricao).
+--
+-- Se a automacao n8n for realmente desejada, recriar apontando para a URL de
+-- PRODUCAO (/webhook/ em vez de /webhook-test/), apos confirmar que o workflow
+-- existe e esta ativo. ROLLBACK exato (recria como estava):
+--   create trigger leads_rd after insert on public."BD_Conversoes_RD"
+--     for each row execute function supabase_functions.http_request(
+--       'https://n8n.clubpetro.com/webhook-test/47dcda25-5b34-4436-931b-a99e777b116f',
+--       'POST', '{"Content-type":"application/json"}', '{}', '1000');
+drop trigger if exists leads_rd on public."BD_Conversoes_RD";
