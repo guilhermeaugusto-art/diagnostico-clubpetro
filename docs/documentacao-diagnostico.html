@@ -7,7 +7,7 @@
   :root{
     --primary:#5B3FBF; --primary-deep:#42127E; --primary-soft:#F1EBFD;
     --border:#E2DCF2; --fg:#211843; --fg-soft:#4A3F6E; --muted:#6F6890;
-    --bg-soft:#F8F6FD; --ok:#1F9D62; --amarelo:#B8860B;
+    --bg-soft:#F8F6FD;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:#fff}
@@ -33,40 +33,11 @@
   code{font-family:Consolas,'Cascadia Mono',monospace;font-size:.93em;background:var(--bg-soft);
        border:1px solid var(--border);border-radius:3px;padding:0 3px;color:var(--primary-deep)}
 
-  .callout{background:var(--primary-soft);border:1px solid var(--border);border-left:3.5px solid var(--primary);
-           border-radius:7px;padding:7px 11px;margin:6px 0;font-size:8pt;line-height:1.45;color:var(--fg-soft)}
-  .callout b{color:var(--primary-deep)}
+  .regra{background:#FFF9EC;border:1.2px solid #E8C96A;border-radius:9px;padding:8px 12px;margin:10px 0 0}
+  .regra .rtit{font-size:9.4pt;font-weight:700;color:#8a6a10}
+  .regra .rtxt{font-size:8pt;color:#5c4a1a;margin-top:2px;line-height:1.45}
 
-  /* ====== fluxograma em linha do tempo (fácil de ler de cima para baixo) ====== */
-  .fluxo{position:relative;margin:6px 0 0}
-  .fluxo::before{content:'';position:absolute;left:21px;top:16px;bottom:16px;width:2.5px;
-     background:var(--primary-soft);border-radius:2px}
-  .passo{position:relative;display:flex;gap:12px;padding:0 0 13px 58px;align-items:flex-start}
-  .passo:last-child{padding-bottom:0}
-  .pnum{position:absolute;left:0;top:0;width:44px;height:44px;border-radius:13px;
-     background:var(--primary-soft);border:1.5px solid var(--primary);display:grid;place-items:center;
-     font-size:16pt;font-weight:700;color:var(--primary-deep)}
-  .pcorpo{flex:1;background:#fff;border:1.2px solid var(--border);border-radius:9px;padding:8px 12px}
-  .pcorpo.destaque{background:var(--bg-soft);border-color:var(--primary)}
-  .ptit{font-size:9.8pt;font-weight:700;color:var(--primary-deep)}
-  .ptxt{font-size:8.1pt;color:var(--fg-soft);margin-top:2px;line-height:1.42}
-  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-  .chip{display:inline-flex;align-items:center;gap:5px;font-size:7.1pt;font-weight:600;
-     border:1px solid var(--border);border-radius:20px;padding:2px 9px;background:var(--bg-soft);color:var(--fg-soft)}
-  .chip b{color:var(--primary-deep);font-weight:700}
-  .chip.rd{background:#FFF6F1;border-color:#F3C9B4}
-  .chip.rd b{color:#B44415}
-  .chip.kommo{background:#F2FBF6;border-color:#BFE6D2}
-  .chip.kommo b{color:#15734A}
-  .chip.google{background:#F5F9FF;border-color:#C4D9F8}
-  .chip.google b{color:#1B5CC4}
-  .chip.banco{background:var(--primary-soft);border-color:#D4C6F2}
-
-  .regra{background:#FFF9EC;border:1.2px solid #E8C96A;border-radius:9px;padding:8px 12px;margin:12px 0 0}
-  .regra .ptit{color:#8a6a10}
-  .regra .ptxt{color:#5c4a1a}
-
-  /* rodapé de página: nenhum. */
+  svg text{font-family:'Segoe UI',system-ui,sans-serif}
 </style>
 </head>
 <body>
@@ -77,77 +48,165 @@
   <p class="sub">ClubPetro. Do quiz até o painel de resultados: o caminho do lead, as ferramentas usadas e onde cada informação fica guardada. Atualizado em 29/07/2026.</p>
 
   <h2>1. Fluxograma</h2>
-  <p class="h2-desc">Leia de cima para baixo: cada passo mostra o que acontece e, nas etiquetas coloridas, qual ferramenta faz o trabalho e onde ela está.</p>
+  <p class="h2-desc">Cada faixa mostra quem executa o trabalho. Como ler: retângulo azul é uma tarefa, losango amarelo é uma decisão, círculo verde é o início, círculo vermelho é um fim, cilindro é banco de dados e seta tracejada é conversa automática entre sistemas.</p>
 
-  <div class="fluxo">
-    <div class="passo">
-      <div class="pnum">1</div>
-      <div class="pcorpo">
-        <div class="ptit">O lead responde o quiz</div>
-        <div class="ptxt">A pessoa abre o link do diagnóstico e começa a responder. Já no primeiro passo o cadastro é criado no banco de dados, com nome, e-mail, telefone e a origem do clique (UTMs do anúncio, e-mail ou WhatsApp).</div>
-        <div class="chips">
-          <span class="chip">🌐 <b>Site do quiz</b> diagnostico-clubpetro.web.app (Firebase)</span>
-          <span class="chip banco">🗄️ <b>Banco de dados</b> Supabase, tabela diagnostico_respostas</span>
-        </div>
-      </div>
-    </div>
+  <svg viewBox="0 0 780 496" width="100%" style="display:block">
+    <defs>
+      <linearGradient id="gt" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DDEBF7"/>
+      </linearGradient>
+      <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#404040"/>
+      </marker>
+      <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="none" stroke="#404040" stroke-width="1.4"/>
+      </marker>
+    </defs>
 
-    <div class="passo">
-      <div class="pnum">2</div>
-      <div class="pcorpo destaque">
-        <div class="ptit">O lead conclui o quiz e já vira oportunidade</div>
-        <div class="ptxt">Na última tela o sistema calcula o score, o nível e a nota de cada pilar. Desde 29/07/2026, concluir o quiz já abre a oportunidade: o robô da esteira envia o evento de oportunidade para o RD e cria o card para o time comercial no Kommo. Não viram oportunidade: quem marca que já é cliente, frentista e pessoal interno.</div>
-        <div class="chips">
-          <span class="chip">🤖 <b>Robô da esteira</b> função diagnostico-esteira, no Supabase</span>
-          <span class="chip rd">📣 <b>RD Station</b> conversão fez-diagnostico e evento de oportunidade</span>
-          <span class="chip kommo">💼 <b>Kommo</b> card no pipeline Fidelidade</span>
-        </div>
-      </div>
-    </div>
+    <!-- ===== piscina e raias ===== -->
+    <rect x="26" y="6" width="748" height="430" fill="#fff" stroke="#7F7F7F" stroke-width="1.2"/>
+    <rect x="26" y="6" width="18" height="430" fill="#F2F2F2" stroke="#7F7F7F" stroke-width="1.2"/>
+    <text x="35" y="221" font-size="8" font-weight="700" fill="#404040" text-anchor="middle" transform="rotate(-90 35 221)">Funil do Diagnóstico do Posto</text>
+    <rect x="44" y="6" width="18" height="430" fill="#FAFAFA" stroke="#7F7F7F" stroke-width="1"/>
+    <line x1="44" y1="142" x2="774" y2="142" stroke="#7F7F7F" stroke-width="1"/>
+    <line x1="44" y1="332" x2="774" y2="332" stroke="#7F7F7F" stroke-width="1"/>
+    <text x="53" y="74" font-size="7.4" font-weight="700" fill="#404040" text-anchor="middle" transform="rotate(-90 53 74)">Lead</text>
+    <text x="53" y="237" font-size="7.4" font-weight="700" fill="#404040" text-anchor="middle" transform="rotate(-90 53 237)">Robôs no Supabase</text>
+    <text x="53" y="384" font-size="7.4" font-weight="700" fill="#404040" text-anchor="middle" transform="rotate(-90 53 384)">Painel de BI</text>
 
-    <div class="passo">
-      <div class="pnum">3</div>
-      <div class="pcorpo">
-        <div class="ptit">O lead confirma presença no Raio-X</div>
-        <div class="ptxt">Ele clica no link do e-mail e é inscrito no evento da agenda. Quando responde "sim" no convite, um robô lê essa resposta e grava a ficha como confirmada. O RD recebe a conversão de confirmação.</div>
-        <div class="chips">
-          <span class="chip google">📆 <b>Google Agenda</b> convite do evento (agenda marketingcp)</span>
-          <span class="chip">🤖 <b>Robô de confirmação</b> função confirmar-raiox, no Supabase</span>
-          <span class="chip rd">📣 <b>RD Station</b> conversão confirmou-raiox</span>
-        </div>
-      </div>
-    </div>
+    <!-- ===== faixas dos sistemas externos ===== -->
+    <rect x="26" y="452" width="342" height="34" fill="#F2F2F2" stroke="#7F7F7F" stroke-width="1.2"/>
+    <text x="197" y="473" font-size="8.4" font-weight="700" fill="#404040" text-anchor="middle">RD STATION (marketing)</text>
+    <rect x="378" y="452" width="180" height="34" fill="#F2F2F2" stroke="#7F7F7F" stroke-width="1.2"/>
+    <text x="468" y="473" font-size="8.4" font-weight="700" fill="#404040" text-anchor="middle">GOOGLE (Agenda e Meet)</text>
+    <rect x="568" y="452" width="206" height="34" fill="#F2F2F2" stroke="#7F7F7F" stroke-width="1.2"/>
+    <text x="671" y="473" font-size="8.4" font-weight="700" fill="#404040" text-anchor="middle">KOMMO (CRM do comercial)</text>
 
-    <div class="passo">
-      <div class="pnum">4</div>
-      <div class="pcorpo">
-        <div class="ptit">O lead participa do Raio-X ao vivo</div>
-        <div class="ptxt">Toda terça às 11h a sessão acontece no Google Meet. Um robô pergunta ao próprio Google quem entrou na sala e por quanto tempo (presença real, não lista de inscritos), casa cada pessoa com o cadastro dela e marca a participação no banco. O card do Kommo ganha a etiqueta de Raio-X realizado e o RD recebe a conversão.</div>
-        <div class="chips">
-          <span class="chip google">🎥 <b>Google Meet</b> sala ado-rhwa-kvx, lida pela Meet API</span>
-          <span class="chip">🤖 <b>Robô de presença</b> função sync-raiox-presenca, no Supabase</span>
-          <span class="chip banco">🗄️ <b>Banco</b> tabela raiox_participacoes, uma linha por pessoa em cada sessão</span>
-        </div>
-      </div>
-    </div>
+    <!-- ===== setas de sequência (desenhadas antes das caixas) ===== -->
+    <line x1="82" y1="88" x2="102" y2="88" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="204" y1="88" x2="230" y2="88" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="332" y1="88" x2="374" y2="88" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="486" y1="88" x2="522" y2="88" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="154" y1="112" x2="154" y2="166" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="282" y1="112" x2="282" y2="171" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="299" y1="190" x2="316" y2="190" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <text x="304" y="184" font-size="6.6" fill="#404040">Não</text>
+    <line x1="282" y1="207" x2="282" y2="249" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <text x="288" y="228" font-size="6.6" fill="#404040">Sim</text>
+    <line x1="431" y1="112" x2="431" y2="238" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="582" y1="112" x2="582" y2="164" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="640" y1="190" x2="660" y2="190" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
+    <line x1="650" y1="378" x2="687" y2="378" stroke="#404040" stroke-width="1.3" marker-end="url(#af)"/>
 
-    <div class="passo">
-      <div class="pnum">5</div>
-      <div class="pcorpo">
-        <div class="ptit">O painel mostra tudo</div>
-        <div class="ptxt">O painel de BI busca os dados do banco e a situação de venda de cada card no Kommo, e monta o funil da semana: quem se cadastrou, concluiu, confirmou, participou, virou oportunidade e comprou. Atualiza sozinho a cada 5 minutos.</div>
-        <div class="chips">
-          <span class="chip">📊 <b>Painel de BI</b> funil-diagnostico.web.app (Firebase)</span>
-          <span class="chip">🔌 <b>API do painel</b> função funil-diagnostico-data, no Supabase</span>
-          <span class="chip kommo">💼 <b>Kommo</b> informa venda, perda e situação do card</span>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- associações com o banco (pontilhado) -->
+    <line x1="154" y1="212" x2="154" y2="244" stroke="#404040" stroke-width="1" stroke-dasharray="2 2.5"/>
+    <line x1="582" y1="214" x2="582" y2="238" stroke="#404040" stroke-width="1" stroke-dasharray="2 2.5"/>
+
+    <!-- banco alimenta o painel -->
+    <path d="M154 294 L154 378 L496 378" fill="none" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+    <text x="230" y="372" font-size="6.6" fill="#6F6890">API funil-diagnostico-data</text>
+    <path d="M582 288 L582 350" fill="none" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+
+    <!-- conversas com os sistemas externos (tracejado) -->
+    <line x1="350" y1="214" x2="350" y2="450" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+    <text x="344" y="300" font-size="6.6" fill="#6F6890" text-anchor="end">oportunidade e conversões</text>
+    <line x1="431" y1="284" x2="431" y2="450" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+    <text x="437" y="320" font-size="6.6" fill="#6F6890">lê os convites</text>
+    <path d="M524 198 L492 198 L492 450" fill="none" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+    <text x="498" y="320" font-size="6.6" fill="#6F6890">lê a sala</text>
+    <line x1="740" y1="214" x2="740" y2="450" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+    <text x="746" y="300" font-size="6.6" fill="#6F6890" transform="rotate(-90 746 300)"></text>
+    <line x1="600" y1="450" x2="600" y2="406" stroke="#404040" stroke-width="1.1" stroke-dasharray="5 3" marker-end="url(#ad)"/>
+    <text x="606" y="434" font-size="6.6" fill="#6F6890">venda e perda</text>
+
+    <!-- ===== faixa Lead ===== -->
+    <circle cx="72" cy="88" r="10" fill="#C6E6B3" stroke="#5AA632" stroke-width="1.6"/>
+    <text x="72" y="110" font-size="6.6" fill="#404040" text-anchor="middle">lead clica no link</text>
+
+    <rect x="104" y="64" width="100" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="154" y="84" font-size="7.8" font-weight="700" fill="#1F4E79" text-anchor="middle">Responder o quiz</text>
+    <text x="154" y="95" font-size="6.4" fill="#44546A" text-anchor="middle">no site do diagnóstico</text>
+    <text x="154" y="104" font-size="6.4" fill="#44546A" text-anchor="middle">(Firebase)</text>
+
+    <rect x="232" y="64" width="100" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="282" y="84" font-size="7.8" font-weight="700" fill="#1F4E79" text-anchor="middle">Concluir o quiz</text>
+    <text x="282" y="95" font-size="6.4" fill="#44546A" text-anchor="middle">score, nível e pilares</text>
+    <text x="282" y="104" font-size="6.4" fill="#44546A" text-anchor="middle">calculados na hora</text>
+
+    <rect x="376" y="64" width="110" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="431" y="84" font-size="7.8" font-weight="700" fill="#1F4E79" text-anchor="middle">Confirmar presença</text>
+    <text x="431" y="95" font-size="6.4" fill="#44546A" text-anchor="middle">responde "sim" no convite</text>
+    <text x="431" y="104" font-size="6.4" fill="#44546A" text-anchor="middle">da Google Agenda</text>
+
+    <rect x="524" y="64" width="116" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="582" y="84" font-size="7.8" font-weight="700" fill="#1F4E79" text-anchor="middle">Participar do Raio-X</text>
+    <text x="582" y="95" font-size="6.4" fill="#44546A" text-anchor="middle">Google Meet, terça às 11h</text>
+    <text x="582" y="104" font-size="6.4" fill="#44546A" text-anchor="middle">sala ado-rhwa-kvx</text>
+
+    <!-- ===== faixa Robôs ===== -->
+    <rect x="104" y="168" width="100" height="44" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="154" y="185" font-size="7.6" font-weight="700" fill="#1F4E79" text-anchor="middle">Criar a ficha</text>
+    <text x="154" y="196" font-size="6.4" fill="#44546A" text-anchor="middle">nome, contato e origem</text>
+    <text x="154" y="205" font-size="6.4" fill="#44546A" text-anchor="middle">(UTMs do clique)</text>
+
+    <!-- decisão -->
+    <path d="M282 173 L299 190 L282 207 L265 190 Z" fill="#FFF2B9" stroke="#C9A227" stroke-width="1.4"/>
+    <line x1="276" y1="184" x2="288" y2="196" stroke="#C9A227" stroke-width="1.8"/>
+    <line x1="288" y1="184" x2="276" y2="196" stroke="#C9A227" stroke-width="1.8"/>
+    <text x="258" y="155" font-size="6.6" fill="#404040" text-anchor="middle">é cliente, frentista</text>
+    <text x="258" y="164" font-size="6.6" fill="#404040" text-anchor="middle">ou interno?</text>
+
+    <circle cx="282" cy="261" r="11" fill="#F4B1AE" stroke="#C0504D" stroke-width="2.6"/>
+    <text x="282" y="286" font-size="6.6" fill="#404040" text-anchor="middle">não vira oportunidade</text>
+
+    <rect x="318" y="166" width="104" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="370" y="183" font-size="7.6" font-weight="700" fill="#1F4E79" text-anchor="middle">Abrir oportunidade</text>
+    <text x="370" y="194" font-size="6.4" fill="#44546A" text-anchor="middle">evento no RD e card no</text>
+    <text x="370" y="203" font-size="6.4" fill="#44546A" text-anchor="middle">Kommo (robô da esteira)</text>
+
+    <rect x="380" y="240" width="104" height="44" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="432" y="257" font-size="7.6" font-weight="700" fill="#1F4E79" text-anchor="middle">Marcar confirmado</text>
+    <text x="432" y="268" font-size="6.4" fill="#44546A" text-anchor="middle">robô confirmar-raiox lê o</text>
+    <text x="432" y="277" font-size="6.4" fill="#44546A" text-anchor="middle">RSVP e grava na ficha</text>
+
+    <rect x="524" y="166" width="116" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="582" y="183" font-size="7.6" font-weight="700" fill="#1F4E79" text-anchor="middle">Marcar presença real</text>
+    <text x="582" y="194" font-size="6.4" fill="#44546A" text-anchor="middle">robô sync-raiox-presenca lê</text>
+    <text x="582" y="203" font-size="6.4" fill="#44546A" text-anchor="middle">quem entrou e por quanto tempo</text>
+
+    <rect x="662" y="166" width="104" height="48" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="714" y="183" font-size="7.6" font-weight="700" fill="#1F4E79" text-anchor="middle">Atualizar o card</text>
+    <text x="714" y="194" font-size="6.4" fill="#44546A" text-anchor="middle">etiqueta raiox-realizado,</text>
+    <text x="714" y="203" font-size="6.4" fill="#44546A" text-anchor="middle">nota e conversão no RD</text>
+
+    <!-- cilindros -->
+    <g>
+      <path d="M112 252 v34 a42 6 0 0 0 84 0 v-34" fill="#FDFDFD" stroke="#7F7F7F" stroke-width="1.1"/>
+      <ellipse cx="154" cy="252" rx="42" ry="6" fill="#F2F2F2" stroke="#7F7F7F" stroke-width="1.1"/>
+      <text x="154" y="271" font-size="6.4" fill="#404040" text-anchor="middle">diagnostico_</text>
+      <text x="154" y="280" font-size="6.4" fill="#404040" text-anchor="middle">respostas</text>
+    </g>
+    <g>
+      <path d="M537 246 v34 a45 6 0 0 0 90 0 v-34" fill="#FDFDFD" stroke="#7F7F7F" stroke-width="1.1"/>
+      <ellipse cx="582" cy="246" rx="45" ry="6" fill="#F2F2F2" stroke="#7F7F7F" stroke-width="1.1"/>
+      <text x="582" y="265" font-size="6.4" fill="#404040" text-anchor="middle">raiox_</text>
+      <text x="582" y="274" font-size="6.4" fill="#404040" text-anchor="middle">participacoes</text>
+    </g>
+
+    <!-- ===== faixa Painel de BI ===== -->
+    <rect x="500" y="352" width="150" height="52" rx="7" fill="url(#gt)" stroke="#2E75B6" stroke-width="1.3"/>
+    <text x="575" y="370" font-size="7.8" font-weight="700" fill="#1F4E79" text-anchor="middle">Montar o funil da semana</text>
+    <text x="575" y="381" font-size="6.4" fill="#44546A" text-anchor="middle">cadastrou, concluiu, confirmou,</text>
+    <text x="575" y="390" font-size="6.4" fill="#44546A" text-anchor="middle">participou, oportunidade e venda</text>
+    <text x="575" y="399" font-size="6.4" fill="#44546A" text-anchor="middle">(funil-diagnostico.web.app)</text>
+
+    <circle cx="700" cy="378" r="11" fill="#F4B1AE" stroke="#C0504D" stroke-width="2.6"/>
+    <text x="700" y="402" font-size="6.6" fill="#404040" text-anchor="middle">números na tela</text>
+  </svg>
 
   <div class="regra">
-    <div class="ptit">⭐ Regra de oportunidade, em vigor desde 29/07/2026</div>
-    <div class="ptxt">Concluir o quiz já vira oportunidade no RD e card no Kommo, sem precisar esperar o Raio-X. As exceções continuam as mesmas: quem marca que já é cliente, quem é frentista e o pessoal interno não viram oportunidade; para o RD é preciso ter e-mail (o Kommo aceita só telefone). As fichas antigas, criadas antes de 29/07, seguem a regra anterior: viram oportunidade quando participam do Raio-X. O card nasce com a etiqueta diagnostico-realizado e ganha a etiqueta raiox-realizado, com uma nota automática, quando a presença acontece.</div>
+    <div class="rtit">⭐ Regra de oportunidade, em vigor desde 29/07/2026</div>
+    <div class="rtxt">Concluir o quiz já vira oportunidade no RD e card no Kommo, sem precisar esperar o Raio-X. As exceções continuam as mesmas: quem marca que já é cliente, quem é frentista e o pessoal interno não viram oportunidade; para o RD é preciso ter e-mail (o Kommo aceita só telefone). As fichas antigas, criadas antes de 29/07, seguem a regra anterior: viram oportunidade quando participam do Raio-X. O card nasce com a etiqueta diagnostico-realizado e ganha a etiqueta raiox-realizado, com uma nota automática, quando a presença acontece.</div>
   </div>
 </section>
 
@@ -187,7 +246,6 @@
     <tr><td><b>O robô de presença está rodando?</b></td><td>O painel avisa em vermelho se ele ficar 26 horas sem rodar. O histórico fica em <code>raiox_presenca_log</code> e <code>diagnostico_esteira_log</code>.</td></tr>
     <tr><td><b>Um nome apareceu "para revisar" (empate de cadastros)</b></td><td>Insira a decisão na tabela <code>raiox_conciliacoes</code> (nome usado no Meet ligado à ficha certa); vale para sempre e o robô conta na rodada seguinte.</td></tr>
   </table>
-
 </section>
 
 </body>
