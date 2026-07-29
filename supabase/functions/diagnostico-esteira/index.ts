@@ -6,8 +6,8 @@
 //   1) RD conversao fez-diagnostico-posto        (concluiu && !rd_enviado)
 //   2) RD conversao confirmou-raiox-posto        (confirmado && !rd_raiox_enviado)
 //   3) RD conversao fez-raiox-posto + tag        (participou && !rd_participou_enviado)
-//   4) RD evento OPPORTUNITY (funil default)     (participou && !rd_oportunidade_enviado)
-//   5) Kommo lead com tag raiox-realizado        (participou && !kommo_enviado)
+//   4) RD evento OPPORTUNITY (funil default)     (elegivel && !rd_oportunidade_enviado)
+//   5) Kommo lead com tag conforme o estagio     (elegivel && !kommo_enviado)
 //      - match de lead existente APENAS por contato exato (email/telefone),
 //        ignorando a base fria de prospeccao; sem match, cria
 //        "{Nome} - Raio X" no pipeline Fidelidade (v5, 14/07).
@@ -21,6 +21,15 @@
 // v13 (22/07, varredura completa): releitura fresca antes de agir (corrida
 // sweep x webhook), falhas de gravacao de flag visiveis em erros[], token RD
 // ausente logado, e 5b so avanca o marco com a checagem concluida.
+// v14 (29/07): OPORTUNIDADE (RD + Kommo) dispara na CONCLUSAO do quiz para
+// fichas criadas a partir do corte OPORTUNIDADE_AO_CONCLUIR_DESDE — decisao do
+// dono; a base anterior segue pela participacao (senao a primeira varredura
+// despejaria o historico inteiro no RD/Kommo). Novo trigger de banco em
+// concluiu chama com ?gatilho=concluiu e este webhook PULA a etapa 1 (a
+// rd-diagnostico-conversion dispara no MESMO update e ja envia fez-diagnostico
+// — dois remetentes seria a corrida dupla de novo). Card Kommo criado sem
+// participacao nasce com tag diagnostico-realizado e ganha raiox-realizado +
+// nota quando a presenca e registrada (5b).
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -87,6 +96,15 @@ function ehCliente(row: any) {
 // nem card no Kommo — regra do dono (21/07). Conversoes RD comuns continuam.
 function ehFamiliaPires(row: any) {
   return typeof row.email === "string" && row.email.trim().toLowerCase().endsWith("@familiapires.com.br");
+}
+// Regra de oportunidade v14 (29/07/2026, decisao do dono): quem CONCLUI o quiz
+// ja e oportunidade — sem esperar a presenca no Raio-X. So para fichas criadas
+// a partir do corte; a base antiga segue precisando de participacao. As
+// exclusoes (cliente/frentista/interno/sem contato) ficam nas etapas 4 e 5.
+const OPORTUNIDADE_AO_CONCLUIR_DESDE = Date.parse("2026-07-29T00:00:00Z");
+function elegivelOportunidade(row: any) {
+  if (row.participou_raiox === true) return true;
+  return row.concluiu === true && Date.parse(row.created_at) >= OPORTUNIDADE_AO_CONCLUIR_DESDE;
 }
 
 async function vmGet(keys: string[]) {
@@ -289,19 +307,30 @@ async function kommoGarantirRelacao(contatoId: number | null | undefined, row: a
   });
 }
 
-async function kommoEnsureTag(leadId: number) {
+// Tag do card conforme o estagio real: com presenca no Raio-X e
+// raiox-realizado; card aberto na conclusao do quiz (v14) e
+// diagnostico-realizado — o comercial enxerga a diferenca de estagio.
+function tagKommo(row: any) {
+  return row.participou_raiox === true ? "raiox-realizado" : "diagnostico-realizado";
+}
+// added=true quando a tag foi REALMENTE adicionada agora (5b usa isso para
+// escrever a nota de participacao uma unica vez por card)
+async function kommoEnsureTag(leadId: number, tagName = "raiox-realizado") {
   const d = await kfetch(`/leads/${leadId}`);
   const tags = (d.json?._embedded?.tags || []).map((t: any) => ({ name: t.name }));
-  if (tags.some((t: any) => t.name === "raiox-realizado")) return { ok: true, status: 200, text: "tag ja presente" };
-  tags.push({ name: "raiox-realizado" });
-  return await kfetch(`/leads/${leadId}`, { method: "PATCH", body: JSON.stringify({ _embedded: { tags } }) });
+  if (tags.some((t: any) => t.name === tagName)) return { ok: true, status: 200, text: "tag ja presente", added: false };
+  tags.push({ name: tagName });
+  const r = await kfetch(`/leads/${leadId}`, { method: "PATCH", body: JSON.stringify({ _embedded: { tags } }) });
+  return { ...r, added: r.ok };
 }
 function notaKommo(row: any): string {
   // relacaoPosto (nao o campo cru): cai para o papel (dono/gerente/frentista)
   // quando relacao_posto esta vazio — antes a relacao sumia da nota
   const rel = relacaoPosto(row);
   const partes = [
-    `Participou do Raio-X do Posto (diagnostico ClubPetro).`,
+    row.participou_raiox === true
+      ? `Participou do Raio-X do Posto (diagnostico ClubPetro).`
+      : `Concluiu o Diagnostico do Posto (quiz ClubPetro) — oportunidade aberta na conclusao (regra 29/07/2026).`,
     rel ? `Relacao com o posto: ${rel}` : null,
     row.score !== null && row.score !== undefined ? `Score do diagnostico: ${row.score} (${row.nivel ?? "sem nivel"})` : null,
     row.interesse ? `Frente de interesse: ${row.interesse}` : null,
@@ -333,7 +362,7 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
       if (!rb.ok) return { ok: false, detalhe: rb.detalhe };
       detalhe = rb.detalhe;
     }
-    const r = await kommoEnsureTag(existente.id);
+    const r = await kommoEnsureTag(existente.id, tagKommo(row));
     if (!r.ok) return { ok: false, detalhe: `tag em lead existente ${existente.id}: HTTP ${r.status} ${r.text}` };
     await kommoGarantirRelacao(existente._contatoId, row);
     await kfetch(`/leads/${existente.id}/notes`, {
@@ -360,7 +389,7 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
     status_id: meta.statusId,
     ...(cf.length ? { custom_fields_values: cf } : {}),
     _embedded: {
-      tags: [{ name: "raiox-realizado" }],
+      tags: [{ name: tagKommo(row) }],
       contacts: [{
         name: row.nome || row.email || "Lead Diagnostico",
         ...(contactCf.length ? { custom_fields_values: contactCf } : {}),
@@ -403,6 +432,9 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const dry = url.searchParams.get("dry") === "1";
+    // origem do webhook: o trigger de concluiu chama com ?gatilho=concluiu
+    // (a etapa 1 e pulada nesse caso — ver comentario la)
+    const gatilho = url.searchParams.get("gatilho") || "";
 
     let rows: any[] = [];
     let modo = "sweep";
@@ -498,11 +530,11 @@ Deno.serve(async (req) => {
           (row.concluiu === true && row.rd_enviado !== true) ||
           ((row.raiox_status || "").toLowerCase() === "confirmado" && row.rd_raiox_enviado !== true) ||
           (row.participou_raiox === true && (
-            row.rd_participou_enviado !== true || row.rd_oportunidade_enviado !== true ||
-            row.kommo_enviado !== true ||
+            row.rd_participou_enviado !== true ||
             (row.kommo_lead_id && row.ultima_participacao_raiox && row.kommo_enviado_em &&
               Date.parse(row.ultima_participacao_raiox) > Date.parse(row.kommo_enviado_em))
-          ));
+          )) ||
+          (elegivelOportunidade(row) && (row.rd_oportunidade_enviado !== true || row.kommo_enviado !== true));
         if (podeAgir) {
           const { data: fresco } = await supabase.from("diagnostico_respostas")
             .select("*").eq("id", row.id).maybeSingle();
@@ -513,8 +545,12 @@ Deno.serve(async (req) => {
       }
       const jobTitle = relacaoPosto(row);
       try {
-        // 1) fez-diagnostico-posto
-        if (row.concluiu === true && row.rd_enviado !== true && temEmail(row) && !isFrentista(row) && rdToken) {
+        // 1) fez-diagnostico-posto — PULADA no webhook do gatilho de concluiu:
+        // a rd-diagnostico-conversion dispara no MESMO update e ja envia esta
+        // conversao; dois remetentes na mesma janela = envio em dobro no RD.
+        // O sweep (a cada 10 min) continua cobrindo o retry se ela falhar.
+        if (row.concluiu === true && row.rd_enviado !== true && temEmail(row) && !isFrentista(row) && rdToken &&
+            !(modo === "webhook" && gatilho === "concluiu")) {
           if (dry) { simular(row.nome, "fez-diagnostico"); } else {
             const r = await rdConversion(rdToken, {
               conversion_identifier: "fez-diagnostico-posto",
@@ -549,8 +585,9 @@ Deno.serve(async (req) => {
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
-        // 4) OPORTUNIDADE no RD (participou, nao-cliente, nao-frentista, nao-interno)
-        if (row.participou_raiox === true && row.rd_oportunidade_enviado !== true && temEmail(row) && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row)) {
+        // 4) OPORTUNIDADE no RD (elegivel = concluiu apos o corte OU participou;
+        //    nao-cliente, nao-frentista, nao-interno)
+        if (elegivelOportunidade(row) && row.rd_oportunidade_enviado !== true && temEmail(row) && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row)) {
           if (dry) { simular(row.nome, "rd-oportunidade"); } else {
             const r = await rdMarkOpportunity(row.email);
             if (r.ok) await marcarLog(row, "rd-oportunidade", { rd_oportunidade_enviado: true, rd_oportunidade_em: new Date().toISOString() });
@@ -577,6 +614,26 @@ Deno.serve(async (req) => {
               const contatoId = (cts.find((c: any) => c.is_main) || cts[0])?.id;
               await kommoGarantirRelacao(contatoId, row);
               let tudoOk = true;
+              if (ld.json.status_id !== 143) {
+                // Card ABERTO com participacao posterior ao envio: garante a
+                // tag raiox-realizado (cards criados na conclusao do quiz, v14,
+                // nascem so com diagnostico-realizado) e anota a presenca UMA
+                // vez por card (added=false nas proximas participacoes).
+                const tg = await kommoEnsureTag(Number(row.kommo_lead_id));
+                if (!tg.ok) {
+                  tudoOk = false;
+                  erros.push({ lead: row.nome, etapa: "kommo-tag-raiox", erro: `HTTP ${tg.status} ${tg.text}` });
+                } else if (tg.added) {
+                  await kfetch(`/leads/${row.kommo_lead_id}/notes`, {
+                    method: "POST",
+                    body: JSON.stringify([{ note_type: "common", params: {
+                      text: `Participou do Raio-X em ${String(row.ultima_participacao_raiox).slice(0, 10)}.`
+                        + (relacaoPosto(row) ? `\nRelacao com o posto: ${relacaoPosto(row)}` : ""),
+                    } }]),
+                  });
+                  acoes.push({ lead: row.nome, etapa: "kommo-tag-raiox", kommo_lead_id: row.kommo_lead_id });
+                }
+              }
               if (ld.json.status_id === 143) {
                 const rb = await kommoReabrir(Number(row.kommo_lead_id));
                 if (rb.ok) {
@@ -604,8 +661,9 @@ Deno.serve(async (req) => {
             }
           }
         }
-        // 5) Kommo (participou, nao-cliente, nao-frentista, nao-interno, com contato)
-        if (row.participou_raiox === true && row.kommo_enviado !== true && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row) && (temEmail(row) || row.telefone)) {
+        // 5) Kommo (elegivel = concluiu apos o corte OU participou; nao-cliente,
+        //    nao-frentista, nao-interno, com contato)
+        if (elegivelOportunidade(row) && row.kommo_enviado !== true && !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row) && (temEmail(row) || row.telefone)) {
           if (dry) { simular(row.nome, "kommo"); } else {
             const r = await kommoPush(row);
             if (r.ok) {
