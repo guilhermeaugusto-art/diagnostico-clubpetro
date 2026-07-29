@@ -409,7 +409,30 @@ async function kommoAnexarPdf(row: any, url: string, nome: string): Promise<{ ok
     body: JSON.stringify([{ file_uuid: uuid }]),
   });
   if (!at.ok) return { ok: false, detalhe: `pendurar no card: HTTP ${at.status} ${at.text}` };
-  return { ok: true, detalhe: "pdf anexado ao card" };
+  // Nota de anexo na TIMELINE: arquivo so pela files API cai na aba Arquivos,
+  // que o comercial nao abre — a nota poe o PDF no feed do card (descoberto
+  // com o Vinicius, 29/07). Exige version_uuid; se o upload nao devolver,
+  // busca no metadata do drive. Nao-fatal: o arquivo ja esta no card.
+  let versao = String(fj?.version_uuid || "");
+  if (!versao) {
+    const meta2 = await fetch(`${drive}/v1.0/files/${uuid}`, { headers: { Authorization: "Bearer " + token } });
+    const mj = await meta2.json().catch(() => null);
+    versao = String(mj?.version_uuid || "");
+    if (!versao) {
+      const href = String(mj?._links?.download_version?.href || "");
+      const m = href.match(new RegExp(uuid + "/([0-9a-f-]{36})/"));
+      if (m) versao = m[1];
+    }
+  }
+  let notaOk = false;
+  if (versao) {
+    const nt = await kfetch(`/leads/${row.kommo_lead_id}/notes`, {
+      method: "POST",
+      body: JSON.stringify([{ note_type: "attachment", params: { file_uuid: uuid, version_uuid: versao, file_name: nome } }]),
+    });
+    notaOk = nt.ok;
+  }
+  return { ok: true, detalhe: "pdf anexado ao card" + (notaOk ? " + nota na timeline" : " (sem nota na timeline)") };
 }
 // Gera (ou regenera) o rapport de abordagem da ficha no servidor — a funcao
 // diagnostico-rapport monta o PDF com o que a ficha tiver (concluida ou parada
