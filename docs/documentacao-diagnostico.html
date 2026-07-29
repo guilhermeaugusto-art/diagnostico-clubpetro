@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Diagnóstico do Posto — Documentação do Sistema</title>
+<style>
+  :root{
+    --primary:#5B3FBF; --primary-deep:#42127E; --primary-soft:#F1EBFD;
+    --border:#E2DCF2; --fg:#211843; --fg-soft:#4A3F6E; --muted:#6F6890;
+    --bg-soft:#F8F6FD; --ok:#1F9D62; --warn:#E8683C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#fff}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--fg);
+       font-size:9.2pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:Letter;margin:0}
+  .page{width:8.5in;height:11in;padding:.45in .58in .4in;position:relative;
+        page-break-after:always;overflow:hidden}
+  .page:last-child{page-break-after:auto}
+
+  /* cabeçalho padrão do documento */
+  .doc-head{display:flex;justify-content:space-between;align-items:flex-start;
+            border-bottom:2.5px solid var(--primary);padding-bottom:8px;margin-bottom:10px}
+  .doc-kicker{font-size:6.8pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .doc-title{font-size:15pt;font-weight:700;color:var(--primary-deep);letter-spacing:-.01em;line-height:1.15;margin-top:2px}
+  .doc-sub{font-size:8.2pt;color:var(--fg-soft);margin-top:2px}
+  .meta{font-size:7pt;color:var(--muted);text-align:right;line-height:1.55;white-space:nowrap}
+  .meta b{color:var(--fg-soft)}
+
+  h2{font-size:11pt;font-weight:700;color:var(--primary-deep);margin:7px 0 2px;
+     display:flex;align-items:baseline;gap:8px}
+  h2 .n{font-family:Consolas,monospace;font-size:8.5pt;color:var(--primary);font-weight:600}
+  .h2-desc{font-size:8pt;color:var(--muted);margin:0 0 8px}
+  h3{font-size:8.8pt;font-weight:700;color:var(--fg);margin:8px 0 3px}
+
+  table{width:100%;border-collapse:collapse;font-size:7.6pt;margin:3px 0 6px}
+  th{background:var(--primary-soft);color:var(--primary-deep);text-align:left;font-weight:700;
+     padding:3px 6px;border:1px solid var(--border);font-size:7.1pt;letter-spacing:.02em}
+  td{padding:3px 6px;border:1px solid var(--border);vertical-align:top;color:var(--fg-soft);line-height:1.34}
+  td b{color:var(--fg)}
+  code{font-family:Consolas,'Cascadia Mono',monospace;font-size:.92em;background:var(--bg-soft);
+       border:1px solid var(--border);border-radius:3px;padding:0 3px;color:var(--primary-deep)}
+
+  .callout{background:var(--primary-soft);border:1px solid var(--border);border-left:3.5px solid var(--primary);
+           border-radius:6px;padding:6px 10px;margin:5px 0;font-size:7.8pt;line-height:1.4;color:var(--fg-soft)}
+  .callout b{color:var(--primary-deep)}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:7.2pt;color:var(--muted);margin-top:6px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{display:inline-block;width:14px;height:9px;border-radius:2px;border:1px solid var(--border)}
+
+  .foot{position:absolute;left:.58in;right:.58in;bottom:.28in;display:flex;justify-content:space-between;
+        font-size:6.8pt;color:var(--muted);border-top:1px solid var(--border);padding-top:5px}
+  svg text{font-family:'Segoe UI',system-ui,sans-serif}
+</style>
+</head>
+<body>
+
+<!-- ==================== PÁGINA 1 — FLUXOGRAMA ==================== -->
+<section class="page">
+  <div class="doc-head">
+    <div>
+      <div class="doc-kicker">ClubPetro · Funil do Diagnóstico &amp; Raio-X do Posto</div>
+      <div class="doc-title">Documentação do Sistema</div>
+      <div class="doc-sub">Como o diagnóstico funciona, onde cada dado nasce e como cada número do painel é calculado.</div>
+    </div>
+    <div class="meta">
+      <div><b>Documento</b>&nbsp; DIAG-DOC-001</div>
+      <div><b>Versão</b>&nbsp; 1.0 &nbsp;·&nbsp; <b>Data</b>&nbsp; 29/07/2026</div>
+      <div><b>Status</b>&nbsp; Vigente</div>
+      <div><b>Sistema</b>&nbsp; diagnostico-clubpetro.web.app</div>
+    </div>
+  </div>
+
+  <h2><span class="n">1.</span> Fluxograma</h2>
+  <p class="h2-desc">Caminho do lead, do clique no quiz ao painel de BI. Setas cheias = fluxo do lead e gravações no banco; setas tracejadas = integrações automáticas (robôs e APIs).</p>
+
+  <svg viewBox="0 0 740 578" width="100%" style="display:block">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#42127E"/>
+      </marker>
+      <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#8B70E0"/>
+      </marker>
+    </defs>
+
+    <!-- ======== coluna principal (fluxo do lead) ======== -->
+    <!-- início -->
+    <circle cx="150" cy="22" r="9" fill="#5B3FBF"/>
+    <text x="170" y="26" font-size="9.5" fill="#6F6890">lead clica no link do quiz</text>
+
+    <!-- A: quiz -->
+    <rect x="30" y="44" width="240" height="52" rx="9" fill="#F1EBFD" stroke="#5B3FBF" stroke-width="1.4"/>
+    <text x="150" y="64" text-anchor="middle" font-size="10.5" font-weight="700" fill="#42127E">Quiz do Diagnóstico</text>
+    <text x="150" y="78" text-anchor="middle" font-size="8" fill="#4A3F6E">diagnostico-clubpetro.web.app (Firebase)</text>
+    <text x="150" y="89" text-anchor="middle" font-size="8" fill="#4A3F6E">cadastro + UTMs gravados já no 1º passo</text>
+
+    <!-- B: concluiu -->
+    <rect x="30" y="128" width="240" height="52" rx="9" fill="#fff" stroke="#5B3FBF" stroke-width="1.4"/>
+    <text x="150" y="148" text-anchor="middle" font-size="10.5" font-weight="700" fill="#42127E">Conclui o quiz</text>
+    <text x="150" y="162" text-anchor="middle" font-size="8" fill="#4A3F6E">concluiu = true · score, nível e pilares calculados</text>
+    <text x="150" y="173" text-anchor="middle" font-size="8" fill="#E8683C" font-weight="700">★ desde 29/07/2026: concluir já vira OPORTUNIDADE</text>
+
+    <!-- C: confirma -->
+    <rect x="30" y="240" width="240" height="52" rx="9" fill="#fff" stroke="#5B3FBF" stroke-width="1.4"/>
+    <text x="150" y="260" text-anchor="middle" font-size="10.5" font-weight="700" fill="#42127E">Confirma presença no Raio-X</text>
+    <text x="150" y="274" text-anchor="middle" font-size="8" fill="#4A3F6E">link do e-mail → RSVP “sim” no evento do Google</text>
+    <text x="150" y="285" text-anchor="middle" font-size="8" fill="#4A3F6E">robô grava raiox_status = 'confirmado'</text>
+
+    <!-- D: participa -->
+    <rect x="30" y="324" width="240" height="52" rx="9" fill="#fff" stroke="#5B3FBF" stroke-width="1.4"/>
+    <text x="150" y="344" text-anchor="middle" font-size="10.5" font-weight="700" fill="#42127E">Participa do Raio-X ao vivo</text>
+    <text x="150" y="358" text-anchor="middle" font-size="8" fill="#4A3F6E">terça 11h BRT · Google Meet (sala ado-rhwa-kvx)</text>
+    <text x="150" y="369" text-anchor="middle" font-size="8" fill="#4A3F6E">presença REAL lida da Meet API → participou_raiox</text>
+
+    <!-- E: BI -->
+    <rect x="30" y="408" width="240" height="52" rx="9" fill="#F1EBFD" stroke="#5B3FBF" stroke-width="1.4"/>
+    <text x="150" y="428" text-anchor="middle" font-size="10.5" font-weight="700" fill="#42127E">Painel de BI</text>
+    <text x="150" y="442" text-anchor="middle" font-size="8" fill="#4A3F6E">funil-diagnostico.web.app · atualiza a cada 5 min</text>
+    <text x="150" y="453" text-anchor="middle" font-size="8" fill="#4A3F6E">funil, presença por sessão, motivos e vendas</text>
+
+    <!-- setas do fluxo principal -->
+    <line x1="150" y1="31" x2="150" y2="42" stroke="#42127E" stroke-width="1.6" marker-end="url(#ar)"/>
+    <line x1="150" y1="96" x2="150" y2="126" stroke="#42127E" stroke-width="1.6" marker-end="url(#ar)"/>
+    <line x1="150" y1="180" x2="150" y2="238" stroke="#42127E" stroke-width="1.6" marker-end="url(#ar)"/>
+    <line x1="150" y1="292" x2="150" y2="322" stroke="#42127E" stroke-width="1.6" marker-end="url(#ar)"/>
+    <line x1="150" y1="376" x2="150" y2="406" stroke="#42127E" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <!-- ======== banco (centro-direita) ======== -->
+    <g>
+      <path d="M318 120 h150 a10 10 0 0 1 10 10 v64 a10 10 0 0 1 -10 10 h-150 a10 10 0 0 1 -10-10 v-64 a10 10 0 0 1 10-10 z" fill="#FAF8FE" stroke="#8B70E0" stroke-width="1.4"/>
+      <ellipse cx="393" cy="120" rx="85" ry="10" fill="#EDE6FB" stroke="#8B70E0" stroke-width="1.4"/>
+      <text x="393" y="146" text-anchor="middle" font-size="10" font-weight="700" fill="#42127E">Supabase (Postgres)</text>
+      <text x="393" y="160" text-anchor="middle" font-size="7.6" fill="#4A3F6E">diagnostico_respostas (fichas + flags)</text>
+      <text x="393" y="171" text-anchor="middle" font-size="7.6" fill="#4A3F6E">raiox_participacoes · raiox_conciliacoes</text>
+      <text x="393" y="182" text-anchor="middle" font-size="7.6" fill="#4A3F6E">projeto azmtxhjtqodtaeoshrye</text>
+    </g>
+
+    <!-- esteira -->
+    <rect x="308" y="240" width="170" height="60" rx="9" fill="#fff" stroke="#8B70E0" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="393" y="259" text-anchor="middle" font-size="9.5" font-weight="700" fill="#42127E">Esteira (robô)</text>
+    <text x="393" y="272" text-anchor="middle" font-size="7.6" fill="#4A3F6E">gatilhos: concluiu · participou</text>
+    <text x="393" y="283" text-anchor="middle" font-size="7.6" fill="#4A3F6E">+ varredura a cada 10 min, com retry</text>
+    <text x="393" y="294" text-anchor="middle" font-size="7.6" fill="#4A3F6E">e trava anti-duplicidade por coluna</text>
+
+    <!-- robô de presença -->
+    <rect x="308" y="330" width="170" height="46" rx="9" fill="#fff" stroke="#8B70E0" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="393" y="348" text-anchor="middle" font-size="9.5" font-weight="700" fill="#42127E">Robô de presença</text>
+    <text x="393" y="361" text-anchor="middle" font-size="7.6" fill="#4A3F6E">sync-raiox-presenca · terças a cada</text>
+    <text x="393" y="371" text-anchor="middle" font-size="7.6" fill="#4A3F6E">10 min (13–17h UTC) + diário 06h/18h</text>
+
+    <!-- API do BI -->
+    <rect x="308" y="408" width="170" height="40" rx="9" fill="#fff" stroke="#8B70E0" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="393" y="425" text-anchor="middle" font-size="9" font-weight="700" fill="#42127E">API funil-diagnostico-data</text>
+    <text x="393" y="438" text-anchor="middle" font-size="7.6" fill="#4A3F6E">junta banco + Kommo e entrega ao painel</text>
+
+    <!-- ======== sistemas externos (direita) ======== -->
+    <rect x="520" y="128" width="200" height="58" rx="9" fill="#FFF7F3" stroke="#E8683C" stroke-width="1.3"/>
+    <text x="620" y="147" text-anchor="middle" font-size="9.5" font-weight="700" fill="#B44415">RD Station Marketing</text>
+    <text x="620" y="161" text-anchor="middle" font-size="7.6" fill="#4A3F6E">conversões: fez-diagnostico · confirmou-raiox</text>
+    <text x="620" y="172" text-anchor="middle" font-size="7.6" fill="#4A3F6E">· fez-raiox · evento OPORTUNIDADE</text>
+
+    <rect x="520" y="240" width="200" height="52" rx="9" fill="#F2FBF6" stroke="#1F9D62" stroke-width="1.3"/>
+    <text x="620" y="259" text-anchor="middle" font-size="9.5" font-weight="700" fill="#15734A">Kommo CRM</text>
+    <text x="620" y="273" text-anchor="middle" font-size="7.6" fill="#4A3F6E">card no pipeline Fidelidade p/ o comercial</text>
+    <text x="620" y="284" text-anchor="middle" font-size="7.6" fill="#4A3F6E">venda/perda voltam para o BI</text>
+
+    <rect x="520" y="324" width="200" height="58" rx="9" fill="#F5F9FF" stroke="#4285F4" stroke-width="1.3"/>
+    <text x="620" y="343" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1B5CC4">Google (APIs)</text>
+    <text x="620" y="357" text-anchor="middle" font-size="7.6" fill="#4A3F6E">Calendar v3: RSVP dos confirmados</text>
+    <text x="620" y="368" text-anchor="middle" font-size="7.6" fill="#4A3F6E">Meet v2: quem esteve na sala e por quanto tempo</text>
+
+    <!-- ======== ligações ======== -->
+    <!-- quiz grava no banco -->
+    <line x1="270" y1="70" x2="380" y2="118" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <text x="322" y="80" font-size="7" fill="#6F6890">grava ficha</text>
+    <!-- concluiu -> esteira -->
+    <path d="M270 154 L300 154 Q307 154 307 162 L307 232 Q307 240 315 240 L340 240" fill="none" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <text x="277" y="147" font-size="7" fill="#6F6890">gatilho: concluiu</text>
+    <!-- participou dispara a esteira via banco (seta robô→banco já mostra o caminho) -->
+    <!-- esteira -> RD -->
+    <path d="M478 258 L500 258 Q508 258 508 250 L508 172 Q508 164 516 164 L518 164" fill="none" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <!-- esteira -> kommo -->
+    <line x1="478" y1="272" x2="518" y2="272" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <!-- google -> robo presenca -->
+    <line x1="520" y1="353" x2="480" y2="353" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <!-- robo presenca -> banco (contorna a esteira pela esquerda) -->
+    <path d="M308 340 Q294 340 294 332 L294 212 Q294 204 302 204 L306 204" fill="none" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <text x="484" y="366" font-size="7" fill="#6F6890" text-anchor="end"></text>
+    <!-- banco -> api bi -->
+    <path d="M478 176 L496 176 Q504 176 504 184 L504 420 Q504 428 496 428 L480 428" fill="none" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <!-- api bi -> painel -->
+    <line x1="308" y1="428" x2="272" y2="431" stroke="#8B70E0" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+
+    <!-- caixa da regra -->
+    <rect x="308" y="470" width="412" height="58" rx="9" fill="#FFF9EC" stroke="#E8B93C" stroke-width="1.3"/>
+    <text x="322" y="489" font-size="8.6" font-weight="700" fill="#8a6a10">Regra de oportunidade (vigente desde 29/07/2026)</text>
+    <text x="322" y="502" font-size="7.8" fill="#4A3F6E">Concluiu o quiz → vira oportunidade no RD + card no Kommo, sem esperar o Raio-X.</text>
+    <text x="322" y="513" font-size="7.8" fill="#4A3F6E">Exceções (não viram): quem marca “já é cliente”, frentista/outro, e-mail interno @familiapires;</text>
+    <text x="322" y="524" font-size="7.8" fill="#4A3F6E">RD exige e-mail (Kommo aceita só telefone). Fichas antigas (antes de 29/07) seguem a regra anterior.</text>
+
+    <!-- legenda -->
+    <rect x="30" y="470" width="252" height="58" rx="9" fill="#FAF8FE" stroke="#E2DCF2"/>
+    <text x="44" y="489" font-size="8.6" font-weight="700" fill="#42127E">Legenda</text>
+    <text x="44" y="502" font-size="7.8" fill="#4A3F6E">caixa cheia = passo do lead · tracejada = robô/serviço</text>
+    <text x="44" y="513" font-size="7.8" fill="#4A3F6E">cilindro = banco de dados · seta tracejada = API</text>
+    <text x="44" y="524" font-size="7.8" fill="#4A3F6E">★ = mudança de regra de 29/07/2026</text>
+  </svg>
+
+  <div class="foot">
+    <span>ClubPetro · Documentação do Funil do Diagnóstico · v1.0</span>
+    <span>página 1 de 2</span>
+  </div>
+</section>
+
+<!-- ==================== PÁGINA 2 — COMO CADA DADO É COMPUTADO ==================== -->
+<section class="page">
+  <div class="doc-head">
+    <div>
+      <div class="doc-kicker">ClubPetro · Funil do Diagnóstico &amp; Raio-X do Posto</div>
+      <div class="doc-title">Como cada dado é computado</div>
+    </div>
+    <div class="meta">
+      <div><b>Documento</b>&nbsp; DIAG-DOC-001 · v1.0 · 29/07/2026</div>
+      <div><b>Banco</b>&nbsp; Supabase <code>azmtxhjtqodtaeoshrye</code></div>
+    </div>
+  </div>
+
+  <h2><span class="n">2.</span> Métricas do painel — de onde sai cada número</h2>
+  <table>
+    <tr><th style="width:14%">Métrica</th><th>Como é computada</th><th style="width:30%">Fonte / ferramenta</th></tr>
+    <tr><td><b>Cadastrou</b></td><td>Linha criada em <code>diagnostico_respostas</code> no 1º passo do quiz (nome/e-mail/telefone + UTMs de origem). Fichas repetidas da mesma pessoa são fundidas pelo robô (<code>duplicado_de</code>).</td><td>Quiz → API do Supabase (com token de sessão; ninguém lê a ficha dos outros)</td></tr>
+    <tr><td><b>Concluiu</b></td><td>Coluna <code>concluiu = true</code> gravada na última tela do quiz, junto com score, nível e nota por pilar.</td><td>Quiz → Supabase</td></tr>
+    <tr><td><b>Confirmou</b></td><td>O lead clica no link do e-mail e o sistema o inscreve no evento; quem responde “sim” no convite vira <code>raiox_status = 'confirmado'</code>.</td><td>Função <code>confirmar-raiox</code> → <b>Google Calendar API v3</b> (agenda marketingcp; robôs diário 21h UTC e terça de manhã)</td></tr>
+    <tr><td><b>Participou</b></td><td>Presença <b>real</b> da sala do Meet: o robô lê quem entrou e por quanto tempo (mín. 60 s), ignora contas internas e casa cada participante com uma ficha por e-mail/telefone/nome. Empate vai para revisão humana (card no BI); a decisão fica salva em <code>raiox_conciliacoes</code>. Cada presença vira 1 linha em <code>raiox_participacoes</code> (pessoa × sessão) e marca <code>participou_raiox</code>.</td><td>Função <code>sync-raiox-presenca</code> → <b>Google Meet REST API v2</b> (<code>conferenceRecords</code> + <code>participants</code>, sala <code>ado-rhwa-kvx</code>); terças a cada 10 min + diário 06h/18h UTC</td></tr>
+    <tr><td><b>Oportunidade</b></td><td><b>Regra 29/07/2026: concluiu o quiz = oportunidade</b> (fichas criadas a partir do corte; as antigas seguem a regra anterior, por participação). Exclusões: “já é cliente”, frentista, e-mail @familiapires, e o RD exige e-mail. Envio com trava anti-duplicidade (<code>rd_oportunidade_enviado</code>, <code>kommo_enviado</code>) e retry a cada 10 min.</td><td>Função <code>diagnostico-esteira</code> → <b>RD Station</b> (evento OPPORTUNITY, OAuth) + <b>Kommo</b> (card no pipeline Fidelidade)</td></tr>
+    <tr><td><b>Venda / Perda</b></td><td>Estado do card no Kommo (ganho/perdido), lido na hora em que o painel carrega. Perda só conta se o card foi perdido <i>depois</i> da 1ª participação; card perdido de quem volta ao Raio-X reabre sozinho.</td><td>API <code>funil-diagnostico-data</code> → <b>Kommo API v4</b></td></tr>
+    <tr><td><b>Semana</b></td><td>Corte terça <b>11:00 BRT</b>: cadastro depois das 11h de terça conta para a semana seguinte; com janela, “Participou” = presença na sessão da semana. Oportunidade/venda de quem não participou contam na semana do cadastro.</td><td>Cálculo no próprio painel (BI)</td></tr>
+  </table>
+
+  <h2><span class="n">3.</span> Ferramentas, APIs e credenciais</h2>
+  <table>
+    <tr><th style="width:24%">Serviço</th><th>Para quê</th><th style="width:34%">Autenticação (onde está a chave)</th></tr>
+    <tr><td><b>Supabase</b> (Postgres + funções)</td><td>Banco único do funil e os 4 robôs (esteira, presença, confirmação, API do BI)</td><td>service-role das funções; quiz usa chave pública + token de sessão (RLS)</td></tr>
+    <tr><td><b>Google Meet API v2</b></td><td>Contar e identificar quem participou do Raio-X</td><td>OAuth refresh-token na tabela <code>integration_secrets</code> (<code>google_*</code> / <code>meet_*</code>)</td></tr>
+    <tr><td><b>Google Calendar API v3</b></td><td>Inscrever o lead no evento e ler os RSVPs (confirmados)</td><td><code>integration_secrets</code> (<code>gcal_*</code>)</td></tr>
+    <tr><td><b>RD Station</b></td><td>Conversões do funil e evento OPORTUNIDADE</td><td>token público em <code>Armazena_Token_RD</code>; OAuth (oportunidade) em <code>vm_app_keys</code> (<code>RD_*</code>)</td></tr>
+    <tr><td><b>Kommo API v4</b></td><td>Card comercial, tag, nota, venda/perda</td><td>token em <code>vm_app_keys</code> (<code>KOMMO_*</code>)</td></tr>
+    <tr><td><b>Firebase Hosting</b></td><td>Quiz (<code>diagnostico-clubpetro.web.app</code>) e BI (<code>funil-diagnostico.web.app</code>)</td><td>conta Google do projeto</td></tr>
+  </table>
+
+  <h2><span class="n">4.</span> Perguntas rápidas de operação</h2>
+  <table>
+    <tr><th style="width:34%">Pergunta</th><th>Onde ver</th></tr>
+    <tr><td><b>Quantos participaram do Raio-X esta semana? Quem são?</b></td><td>BI → janela da semana → etapa “Participou”; os nomes estão nos cards da sessão (inclusive quem esteve na sala sem cadastro). Fonte bruta: <code>raiox_participacoes</code>.</td></tr>
+    <tr><td><b>Fulano era elegível e não virou oportunidade. Por quê?</b></td><td>BI → card “Elegíveis que não viraram oportunidade”: motivo nome a nome (cliente, frentista, sem e-mail, interno ou envio a caminho).</td></tr>
+    <tr><td><b>O robô de presença está rodando?</b></td><td>O BI avisa em vermelho se ficar 26 h sem rodar. Histórico: <code>raiox_presenca_log</code> e <code>diagnostico_esteira_log</code>.</td></tr>
+    <tr><td><b>Nome apareceu “para revisar” (empate)</b></td><td>Inserir a decisão em <code>raiox_conciliacoes</code> (nome do Meet → ficha); vale para sempre, o robô conta na rodada seguinte.</td></tr>
+  </table>
+
+  <div class="callout">
+    <b>Mudança de regra — 29/07/2026.</b> Antes, o lead só virava oportunidade (RD/Kommo) depois de <i>participar</i> do Raio-X.
+    Agora <b>concluir o quiz já abre a oportunidade</b>: o card do Kommo nasce com a tag <code>diagnostico-realizado</code> e ganha
+    <code>raiox-realizado</code> + nota automática quando a presença acontece. Exclusões inalteradas (cliente, frentista, sem e-mail
+    no RD, interno). O corte protege o histórico: as 69 fichas antigas que concluíram sem participar não foram reenviadas.
+  </div>
+
+  <div class="foot">
+    <span>ClubPetro · Documentação do Funil do Diagnóstico · v1.0</span>
+    <span>página 2 de 2</span>
+  </div>
+</section>
+
+</body>
+</html>
