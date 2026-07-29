@@ -30,6 +30,11 @@
 // — dois remetentes seria a corrida dupla de novo). Card Kommo criado sem
 // participacao nasce com tag diagnostico-realizado e ganha raiox-realizado +
 // nota quando a presenca e registrada (5b).
+// v15 (29/07, 5c): o PDF comercial e IMPORTADO como arquivo anexo do card
+// (pedido do dono) — o link na nota continua, mas o comercial abre o arquivo
+// direto no Kommo. Reconciliacao com flag kommo_pdf_enviado: a URL do PDF pode
+// aparecer DEPOIS do card (geracao assincrona), entao 5c roda sempre que card
+// e PDF existem e a flag esta vazia; falha fica em erros[] e retenta no sweep.
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -340,6 +345,69 @@ function notaKommo(row: any): string {
   ].filter(Boolean);
   return partes.join("\n");
 }
+// ---- Anexo do PDF comercial no card (5c) ----
+// Drive do Kommo: descoberto uma vez por execucao via /account?with=drive_url.
+let kommoDriveCache: string | null = null;
+async function kommoDriveUrl(): Promise<string | null> {
+  if (kommoDriveCache) return kommoDriveCache;
+  const d = await kfetch(`/account?with=drive_url`);
+  const u = d.json?.drive_url;
+  if (typeof u === "string" && u.startsWith("http")) {
+    kommoDriveCache = u.replace(/\/+$/, "");
+    return kommoDriveCache;
+  }
+  return null;
+}
+// Baixa o PDF do Storage e sobe pro drive do Kommo (sessao -> partes ->
+// uuid), depois PENDURA no card via PUT /leads/{id}/files. Parte respeita o
+// max_part_size da sessao (nossos PDFs tem centenas de KB, normalmente vai em
+// parte unica). Qualquer degrau falhando devolve detalhe pro erros[] — a flag
+// so avanca com o anexo confirmado.
+async function kommoAnexarPdf(row: any): Promise<{ ok: boolean; detalhe: string }> {
+  const url = String(row.pdf_comercial_url || "").trim();
+  if (!url.startsWith("http")) return { ok: false, detalhe: "pdf_comercial_url invalida" };
+  const pdfRes = await fetch(url);
+  if (!pdfRes.ok) return { ok: false, detalhe: `baixar pdf: HTTP ${pdfRes.status}` };
+  const bytes = new Uint8Array(await pdfRes.arrayBuffer());
+  if (!bytes.length) return { ok: false, detalhe: "pdf vazio no storage" };
+  const drive = await kommoDriveUrl();
+  if (!drive) return { ok: false, detalhe: "drive_url indisponivel na conta" };
+  const { token } = await kommoCreds();
+  const nome = `Diagnostico - ${String(row.nome || row.email || "lead").slice(0, 60)}.pdf`;
+  const ses = await fetch(`${drive}/v1.0/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+    body: JSON.stringify({ file_name: nome, file_size: bytes.length, content_type: "application/pdf" }),
+  });
+  const sj = await ses.json().catch(() => null);
+  if (!ses.ok || !sj?.upload_url) {
+    return { ok: false, detalhe: `sessao de upload: HTTP ${ses.status} ${JSON.stringify(sj).slice(0, 200)}` };
+  }
+  const partMax = Number(sj.max_part_size) > 0 ? Number(sj.max_part_size) : bytes.length;
+  let next = String(sj.upload_url);
+  let fj: any = null;
+  for (let ofs = 0; ofs < bytes.length; ) {
+    const parte = bytes.slice(ofs, ofs + partMax);
+    const up = await fetch(next, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream", Authorization: "Bearer " + token },
+      body: parte,
+    });
+    fj = await up.json().catch(() => null);
+    if (!up.ok) return { ok: false, detalhe: `upload parte ${ofs}: HTTP ${up.status} ${JSON.stringify(fj).slice(0, 200)}` };
+    ofs += parte.length;
+    if (ofs < bytes.length && fj?.next_url) next = String(fj.next_url);
+  }
+  const uuid = fj?.uuid;
+  if (!uuid) return { ok: false, detalhe: "upload sem uuid na resposta final: " + JSON.stringify(fj).slice(0, 200) };
+  const at = await kfetch(`/leads/${row.kommo_lead_id}/files`, {
+    method: "PUT",
+    body: JSON.stringify([{ file_uuid: uuid }]),
+  });
+  if (!at.ok) return { ok: false, detalhe: `pendurar no card: HTTP ${at.status} ${at.text}` };
+  return { ok: true, detalhe: "pdf anexado ao card" };
+}
+
 // Card PERDIDO (status 143) de quem participou volta ao INICIO do pipeline
 // Fidelidade — regra do dono (21/07): perdido no passado nao segura o lead
 // fora; se participou do Raio-X, e prospeccao ativa de novo.
@@ -534,7 +602,8 @@ Deno.serve(async (req) => {
             (row.kommo_lead_id && row.ultima_participacao_raiox && row.kommo_enviado_em &&
               Date.parse(row.ultima_participacao_raiox) > Date.parse(row.kommo_enviado_em))
           )) ||
-          (elegivelOportunidade(row) && (row.rd_oportunidade_enviado !== true || row.kommo_enviado !== true));
+          (elegivelOportunidade(row) && (row.rd_oportunidade_enviado !== true || row.kommo_enviado !== true)) ||
+          (row.kommo_enviado === true && row.kommo_lead_id && row.pdf_comercial_url && row.kommo_pdf_enviado !== true);
         if (podeAgir) {
           const { data: fresco } = await supabase.from("diagnostico_respostas")
             .select("*").eq("id", row.id).maybeSingle();
@@ -669,9 +738,29 @@ Deno.serve(async (req) => {
             if (r.ok) {
               await marcarLog(row, "kommo", { kommo_enviado: true, kommo_lead_id: r.leadId ?? null, kommo_enviado_em: new Date().toISOString(), kommo_erro: null });
               acoes.push({ lead: row.nome, etapa: "kommo", detalhe: r.detalhe, kommo_lead_id: r.leadId });
+              // espelha no snapshot local: a 5c logo abaixo ja anexa o PDF
+              // nesta MESMA passada quando a URL ja estiver gerada
+              row.kommo_enviado = true;
+              row.kommo_lead_id = r.leadId ?? row.kommo_lead_id;
             } else {
               await marcar(row.id, { kommo_erro: r.detalhe.slice(0, 500) });
               erros.push({ lead: row.nome, etapa: "kommo", erro: r.detalhe });
+            }
+          }
+        }
+        // 5c) PDF comercial IMPORTADO como anexo do card (pedido do dono,
+        // 29/07): o link na nota continua, mas o arquivo fica no card. A URL
+        // pode nascer depois do card (geracao assincrona) — por isso e
+        // reconciliacao por flag, nao um passo do push. Falha nao trava as
+        // outras etapas e retenta no proximo sweep.
+        if (row.kommo_enviado === true && row.kommo_lead_id && row.pdf_comercial_url && row.kommo_pdf_enviado !== true) {
+          if (dry) { simular(row.nome, "kommo-pdf"); } else {
+            const r = await kommoAnexarPdf(row);
+            if (r.ok) {
+              await marcarLog(row, "kommo-pdf", { kommo_pdf_enviado: true });
+              acoes.push({ lead: row.nome, etapa: "kommo-pdf", kommo_lead_id: row.kommo_lead_id });
+            } else {
+              erros.push({ lead: row.nome, etapa: "kommo-pdf", erro: r.detalhe });
             }
           }
         }
