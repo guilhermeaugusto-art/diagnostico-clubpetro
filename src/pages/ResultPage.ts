@@ -78,6 +78,8 @@ function radarBars(state: AppState): string {
 /* ============================================================
    SEÇÃO 1 · HERO (nota + radar)
    CTA leva pro próximo passo guiado (o Raio-X, logo abaixo).
+   O id "analise-pronta" é âncora de conversão no GTM (gatilho de
+   visibilidade do elemento): não renomear nem remover.
    ============================================================ */
 
 function hero(state: AppState, score: number): string {
@@ -86,7 +88,7 @@ function hero(state: AppState, score: number): string {
   return `
     <header class="rr-hero">
       <div class="rr-hero-copy">
-        <span class="rr-eyebrow">Sua análise está pronta</span>
+        <span class="rr-eyebrow" id="analise-pronta">Sua análise está pronta</span>
         <h1 class="rr-headline">
           ${first ? `Fala, ${escHtml(first)}.` : "Olá."} Esse é o retrato do seu posto hoje.
         </h1>

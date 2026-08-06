@@ -37,7 +37,7 @@ import {
   createSession,
   setSessionContact,
   completeSession,
-  markRdSent,
+  markResultadoVisto,
   persistAnswer,
   persistResult,
   persistAgendouRaiox,
@@ -105,7 +105,8 @@ function renderBody(): string {
         resumable: hasResumable,
         name: state.name,
         phone: state.phone,
-        entryValid: nameValid(state) && phoneValid(state),
+        email: state.email,
+        entryValid: nameValid(state) && phoneValid(state) && emailValid(state),
       });
     case "question": {
       const q = currentQuestion(state);
@@ -258,28 +259,35 @@ function resetFlowFlags(): void {
 }
 
 function startDiagnostic(): void {
-  // Entrada só libera o quiz com nome + WhatsApp (é essa captura que abre a
-  // porta e já garante o lead pra follow-up mesmo se a pessoa não confirmar).
+  // Entrada só libera o quiz com nome + WhatsApp + e-mail. O e-mail no início
+  // é o que sobe o lead pro RD Station na hora (conversão
+  // iniciou-diagnostico-posto, via trigger no banco quando a coluna email é
+  // gravada), com a origem de tráfego capturada no boot.
   if (!nameValid(state)) { flagFieldInvalid("welcomeName"); return; }
   if (!phoneValid(state)) { flagFieldInvalid("welcomePhone"); return; }
+  if (!emailValid(state)) { flagFieldInvalid("welcomeEmail"); return; }
   hasResumable = false;
   resetFlowFlags();
   const keptName = state.name.trim();
   const keptPhone = state.phone;
+  const keptEmail = state.email.trim();
   state = freshState();
   state.name = keptName;
   state.phone = keptPhone;
+  state.email = keptEmail;
   state.diagId = uuid();
   state.startedAt = new Date().toISOString();
   state.screen = "question";
   state.cursor = 0;
   saveState(state);
   // Persiste a sessão (fire-and-forget) e zera buffer local de respostas.
+  // O contato entra num PATCH separado APÓS o INSERT: é ele que dispara o
+  // trigger rd_diagnostico_inicio (a linha já tem as UTMs do INSERT).
   resetLocalAnswers();
   if (state.diagId) {
     const id = state.diagId;
     createSession(id, CONFIG.VERSION, bootContext || captureContext())
-      .then(() => setSessionContact(id, keptName, "", keptPhone));
+      .then(() => setSessionContact(id, keptName, keptEmail, keptPhone));
   }
   track("diagnostic_started", {}, state.diagId); // não enviar PII (nome) a GTM/Meta Pixel (SEC-03)
   render();
@@ -303,12 +311,14 @@ function resumeDiagnostic(): void {
 function discardAndStart(): void {
   const keptName = state.name.trim();
   const keptPhone = state.phone;
+  const keptEmail = state.email.trim();
   clearState();
   hasResumable = false;
   resetFlowFlags();
   state = freshState();
   state.name = keptName;
   state.phone = keptPhone;
+  state.email = keptEmail;
   state.diagId = uuid();
   state.startedAt = new Date().toISOString();
   state.screen = "question";
@@ -318,7 +328,7 @@ function discardAndStart(): void {
   if (state.diagId) {
     const id = state.diagId;
     createSession(id, CONFIG.VERSION, bootContext || captureContext())
-      .then(() => setSessionContact(id, keptName, "", keptPhone));
+      .then(() => setSessionContact(id, keptName, keptEmail, keptPhone));
   }
   track("diagnostic_restarted", {}, state.diagId);
   render();
@@ -650,10 +660,11 @@ function onQuestionRendered(): void {
 function onWelcomeRendered(): void {
   const input = document.getElementById("welcomeName") as HTMLInputElement | null;
   const phoneEl = document.getElementById("welcomePhone") as HTMLInputElement | null;
+  const emailEl = document.getElementById("welcomeEmail") as HTMLInputElement | null;
   const btn = document.getElementById("btnStartDiag") as HTMLButtonElement | null;
   if (!input) return;
   const updateBtn = () => {
-    const ok = nameValid(state) && phoneValid(state);
+    const ok = nameValid(state) && phoneValid(state) && emailValid(state);
     if (ok) btn?.removeAttribute("disabled");
     else btn?.setAttribute("disabled", "");
     btn?.setAttribute("aria-disabled", ok ? "false" : "true");
@@ -680,6 +691,19 @@ function onWelcomeRendered(): void {
       updateBtn();
     });
     phoneEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); emailEl?.focus(); }
+    });
+  }
+  if (emailEl) {
+    emailEl.addEventListener("input", (e) => {
+      const t = e.target as HTMLInputElement;
+      state.email = t.value;
+      saveState(state);
+      emailEl.classList.remove("is-invalid");
+      emailEl.setAttribute("aria-invalid", "false");
+      updateBtn();
+    });
+    emailEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); startDiagnostic(); }
     });
   }
@@ -692,10 +716,11 @@ function onWelcomeRendered(): void {
 }
 
 /* ============== Portão de e-mail das trilhas comerciais ==============
-   Dono e gerente: um pop-up obrigatório pede o e-mail para liberar o resultado.
-   É aqui que o lead é enviado ao RD/Kommo (submitLead), então o contato entra na
-   nossa base mesmo que a pessoa nunca marque a agenda depois. O frentista não
-   passa por aqui (não vira lead). Regra registrada na RULES.md 3.15. */
+   Desde 05/08 o e-mail é capturado na TELA INICIAL, então este portão virou
+   FALLBACK: só aparece pra sessão antiga (retomada) que chegou ao resultado
+   sem e-mail válido no estado. No fluxo novo, emailValid já é true e o
+   onResultRendered pula direto pro submitLead. O frentista não passa por aqui
+   (não vira lead). Regra registrada na RULES.md 3.15. */
 function showResultGate(): void {
   if (document.getElementById("resultGate") || emailValid(state)) return;
   const article = document.querySelector<HTMLElement>(".rr-result");
@@ -813,11 +838,11 @@ function onResultRendered(): void {
     // Frentista não gera MQL: marca a conclusão e para por aqui.
     if (state.diagId) completeSession(state.diagId, false);
   } else {
-    // Dono e gerente: portão de e-mail obrigatório libera o resultado. Enquanto
-    // não há e-mail válido, mostra o pop-up; ao liberar (ou numa retomada que já
-    // tem e-mail), segue o fluxo normal do resultado.
+    // Dono e gerente: o e-mail já veio da tela inicial, então o caminho normal
+    // é direto — envia o lead (idempotente) e libera o resultado sem pop-up.
+    // O portão só abre no fallback de sessão antiga sem e-mail no estado.
     if (emailValid(state)) {
-      submitLead(); // e-mail já presente (retomada): garante o envio do lead (idempotente)
+      submitLead();
       unlockResults();
     } else {
       showResultGate();
@@ -868,6 +893,10 @@ async function persistResultData(): Promise<void> {
 
   if (!state.diagId) return;
 
+  // Conversão da tela final: grava a primeira abertura do resultado no banco
+  // (coluna resultado_visto_em), espelho do gatilho GTM na âncora #analise-pronta.
+  markResultadoVisto(state.diagId);
+
   const dimensions: Record<string, { earned: number; possible: number; pct: number }> = {};
   BLOCK_ORDER.forEach((b) => {
     dimensions[b] = { earned: bs[b].earned, possible: bs[b].possible, pct: bs[b].pct };
@@ -911,9 +940,13 @@ async function persistResultData(): Promise<void> {
   if (m) m.textContent = "Respostas registradas";
 }
 
-/* Envio do lead: a pessoa deixou o WhatsApp e destravou o plano. Grava o
-   contato, marca a sessão como MQL, dispara a conversão no RD Station e gera o
-   PDF. Só dono e gerente chegam aqui (frentista não vira lead). Idempotente. */
+/* Envio do lead: contato completo + conclusão gravados na linha da sessão e
+   PDF gerado. Quem manda a conversão pro RD Station é o BANCO: o flip de
+   `concluiu` dispara o trigger rd_diagnostico_conversion (fez-diagnostico-posto)
+   e o sweep da esteira cobre o retry. A chamada direta daqui foi REMOVIDA
+   (05/08): o payload dela não tinha `concluiu`, a função respondia 200 sem
+   enviar nada e o markRdSent marcava rd_enviado=true à toa — envenenando o
+   dedup e podendo calar o envio real. Idempotente. */
 async function submitLead(): Promise<void> {
   if (leadSent) return;
   leadSent = true;
@@ -922,10 +955,6 @@ async function submitLead(): Promise<void> {
   if (!state.diagId) return;
 
   const score = totalScore(state);
-  const lvl = levelFor(score);
-  const routing = buildRoutingPayload(state);
-  const bs = blockScores(state);
-  const ranked = rankedBlocks(state);
   const trilha = currentTrack(state);
 
   setSessionContact(state.diagId, state.name, state.email, state.phone);
@@ -944,39 +973,6 @@ async function submitLead(): Promise<void> {
   // Evento ÚNICO de conversão para o GTM (trigger de Evento Personalizado
   // "conversao_diagnostico"). Sem PII: só score e trilha.
   track("conversao_diagnostico", { score, trilha }, state.diagId);
-
-  // ============== Edge function RD (best-effort) ==============
-  const blockPctsObj: Record<string, number> = {};
-  BLOCK_ORDER.forEach((b) => (blockPctsObj[b] = bs[b].pct));
-  try {
-    const res = await fetch(CONFIG.SUPABASE_URL + CONFIG.RD_CONVERSION_FN, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + CONFIG.SUPABASE_ANON_KEY,
-        apikey: CONFIG.SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        nome: state.name,
-        email: state.email,
-        telefone: state.phone,
-        score_total: score,
-        nivel: lvl.name,
-        dimensao_fraca: ranked[0]?.id ?? null,
-        sinal: state.signal,
-        z2: routing.z2,
-        readiness: routing.readiness,
-        block_scores: blockPctsObj,
-        diag_id: state.diagId,
-        papel: trilha,
-        approach_message: routing.approachMessage,
-      }),
-      keepalive: true,
-    });
-    if (res.ok && state.diagId) markRdSent(state.diagId);
-  } catch (e) {
-    console.warn("RD conversion best-effort falhou:", e);
-  }
 
   // ============== Geração + upload do PDF (background) ==============
   generateAndUploadReport().catch((e) => {

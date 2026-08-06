@@ -6,7 +6,9 @@ export const CONFIG = {
   SUPABASE_URL: "https://azmtxhjtqodtaeoshrye.supabase.co",
   SUPABASE_ANON_KEY:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXR4aGp0cW9kdGFlb3NocnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NTM1ODUsImV4cCI6MjAyODQyOTU4NX0.KvQovDvmATwBPc50oqnY_yJqjqoywZdSXm_bz5qn4V0",
-  RD_CONVERSION_FN: "/functions/v1/rd-diagnostico-conversion",
+  /* RD_CONVERSION_FN removido (05/08): o envio ao RD é 100% do backend, via
+     triggers do banco (rd_diagnostico_inicio no e-mail, rd_diagnostico_conversion
+     no flip de concluiu) + sweep da esteira. O front não chama mais a função. */
   /* Confirmacao de presenca no Raio X: a Edge Function adiciona o lead como
      convidado do evento UNICO compartilhado e o redireciona para o RSVP.
      Mesma sala para todos, sem gerar Meet dinamico. */

@@ -65,6 +65,23 @@ function relacaoPosto(row: Record<string, unknown>): string | undefined {
   return RELACAO_LABEL[papel];
 }
 
+// Origem de trafego para atribuicao no RD (e por aqui que o time de trafego
+// pago valida a conversao da campanha). utm_source manda; sem UTM, cai no
+// source inferido do referrer (origem_source, gravado no INSERT da sessao).
+// Campo vazio fica FORA do payload (RD nao aceita null em traffic_*).
+function trafficFields(row: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  const source = asStr(row.utm_source) ?? asStr(row.origem_source);
+  if (source) out.traffic_source = source;
+  const medium = asStr(row.utm_medium);
+  if (medium) out.traffic_medium = medium;
+  const campaign = asStr(row.utm_campaign);
+  if (campaign) out.traffic_campaign = campaign;
+  const term = asStr(row.utm_term);
+  if (term) out.traffic_value = term;
+  return out;
+}
+
 // Le o token publico mais recente da tabela Armazena_Token_RD
 async function getRdToken(): Promise<string | null> {
   const { data, error } = await supabase
@@ -116,6 +133,37 @@ serve(async (req) => {
     let diagStatus: number | null = null;
     let diagErro: string | null = null;
     let raioxRespStatus: number | null = null;
+    let inicioStatus: number | null = null;
+
+    // 0) Conversao de INICIO (iniciou-diagnostico-posto): o e-mail agora entra
+    //    na tela inicial do quiz, entao o lead sobe pro RD assim que a coluna
+    //    email e preenchida (trigger rd_diagnostico_inicio), com a origem de
+    //    trafego junto. Dedup pela coluna rd_inicio_enviado. So roda ANTES da
+    //    conclusao: ficha antiga que so aparece aqui no flip de concluiu ja
+    //    leva a origem na propria fez-diagnostico-posto, sem "inicio" tardio.
+    const inicioJaEnviado = row.rd_inicio_enviado === true || row.rd_inicio_enviado === "true";
+    if (!inicioJaEnviado && !concluiu) {
+      const r = await sendConversion(token, {
+        event_type: "CONVERSION",
+        event_family: "CDP",
+        payload: {
+          conversion_identifier: "iniciou-diagnostico-posto",
+          email,
+          name: row.nome ?? undefined,
+          mobile_phone: asStr(row.telefone),
+          ...trafficFields(row),
+          tags: ["diagnostico-iniciado"],
+        },
+      });
+      inicioStatus = r.status;
+      if (r.ok) {
+        await supabase.from("diagnostico_respostas")
+          .update({ rd_inicio_enviado: true, rd_inicio_enviado_em: new Date().toISOString() })
+          .eq("id", row.id);
+      } else {
+        console.error("iniciou-diagnostico-posto falhou", r.status, (r.text ?? "").slice(0, 300));
+      }
+    }
 
     // 1) Conversao inicial do diagnostico: uma vez, para quem concluiu.
     //    Dedup pela coluna rd_enviado + dedup conservador por ficha irma:
@@ -144,6 +192,8 @@ serve(async (req) => {
           email,
           name: row.nome ?? undefined,
           job_title: jobTitle,
+          mobile_phone: asStr(row.telefone),
+          ...trafficFields(row),
           cf_score_diagnostico: asStr(row.score),
           cf_nivel_diagnostico: asStr(row.nivel),
           cf_dimensao_fraca: dimensaoFraca(row),
@@ -183,7 +233,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ diag: diagStatus, diag_erro: diagErro, raiox: raioxRespStatus }),
+      JSON.stringify({ inicio: inicioStatus, diag: diagStatus, diag_erro: diagErro, raiox: raioxRespStatus }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   } catch (e) {

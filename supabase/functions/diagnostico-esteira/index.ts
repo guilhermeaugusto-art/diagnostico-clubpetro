@@ -41,6 +41,18 @@
 // 5c agora dispara para QUALQUER card sem anexo: gera o rapport se ainda nao
 // existe (pdf_rapport_url) e anexa. O comercial do app segue so como link na
 // nota; os cards que ja subiram com o comercial (29/07) ficam como estao.
+// v17 (29/07): anexo tambem vira NOTA de anexo na timeline do card — arquivo
+// so pela files API fica na aba Arquivos e o comercial nao ve (caso Vinicius).
+// v18 (30/07): reabertura de card perdido leva a TAG no MESMO PATCH da mudanca
+// de status — antes a tag entrava num segundo PATCH ~1s depois, e automacao do
+// Kommo que dispara na entrada do estagio via o card sem identificacao (caso
+// Gladson, 30/07). kommoEnsureTag continua depois como rede de seguranca.
+// v19 (31/07): acao manual ?reativar=<ficha_id> (botao da ESTRELA de
+// reincidencia no BI, via funil-kommo-bi): o dono decide devolver a fila quem
+// refez o diagnostico (3+ vezes) ou voltou ao Raio-X. Reabre card perdido (ou
+// acha/cria por contato exato via kommoPush), anexa o rapport da ficha MAIS
+// RECENTE, escreve nota de reincidencia e re-marca a oportunidade no RD.
+// Exclusoes de sempre valem; nada automatico — so dispara pelo botao.
 // ?dry=1 simula: nao chama RD/Kommo nem grava nada.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -72,6 +84,21 @@ function asStr(v: unknown): string | undefined {
   if (v === null || v === undefined) return undefined;
   const s = String(v).trim();
   return s ? s : undefined;
+}
+// Origem de trafego para atribuicao no RD (mesma regra da
+// rd-diagnostico-conversion): utm_source manda, senao o source inferido do
+// referrer. Campo vazio fica FORA do payload.
+function trafficFields(row: any): Record<string, string> {
+  const out: Record<string, string> = {};
+  const source = asStr(row.utm_source) ?? asStr(row.origem_source);
+  if (source) out.traffic_source = source;
+  const medium = asStr(row.utm_medium);
+  if (medium) out.traffic_medium = medium;
+  const campaign = asStr(row.utm_campaign);
+  if (campaign) out.traffic_campaign = campaign;
+  const term = asStr(row.utm_term);
+  if (term) out.traffic_value = term;
+  return out;
 }
 function dimensaoFraca(row: any): string | undefined {
   const raw = row.pontuacao_pilares;
@@ -351,7 +378,7 @@ function notaKommo(row: any): string {
   ].filter(Boolean);
   return partes.join("\n");
 }
-// ---- Anexo do PDF comercial no card (5c) ----
+// ---- Anexo do PDF no card (5c) ----
 // Drive do Kommo: descoberto uma vez por execucao via /account?with=drive_url.
 let kommoDriveCache: string | null = null;
 async function kommoDriveUrl(): Promise<string | null> {
@@ -451,12 +478,23 @@ async function gerarRapport(id: string): Promise<{ ok: boolean; url?: string; de
 // Card PERDIDO (status 143) de quem participou volta ao INICIO do pipeline
 // Fidelidade — regra do dono (21/07): perdido no passado nao segura o lead
 // fora; se participou do Raio-X, e prospeccao ativa de novo.
-async function kommoReabrir(leadId: number): Promise<{ ok: boolean; detalhe: string }> {
+// v18: a tag de identificacao vai no MESMO PATCH da reabertura — automacao do
+// Kommo disparada na entrada do estagio ja ve o card identificado (antes
+// havia ~1s de card reaberto sem tag; caso Gladson, 30/07). Se o GET das tags
+// atuais falhar, reabre sem tags no corpo (nunca sobrescrever com lista
+// parcial) e o kommoEnsureTag do chamador cobre em seguida.
+async function kommoReabrir(leadId: number, tagName?: string): Promise<{ ok: boolean; detalhe: string }> {
   const meta = await kommoMeta();
-  const r = await kfetch(`/leads/${leadId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ pipeline_id: KOMMO_PIPELINE, status_id: meta.statusId }),
-  });
+  const body: any = { pipeline_id: KOMMO_PIPELINE, status_id: meta.statusId };
+  if (tagName) {
+    const d = await kfetch(`/leads/${leadId}`);
+    if (d.json?.id) {
+      const tags = (d.json._embedded?.tags || []).map((t: any) => ({ name: t.name }));
+      if (!tags.some((t: any) => t.name === tagName)) tags.push({ name: tagName });
+      body._embedded = { tags };
+    }
+  }
+  const r = await kfetch(`/leads/${leadId}`, { method: "PATCH", body: JSON.stringify(body) });
   if (!r.ok) return { ok: false, detalhe: `reabrir lead ${leadId}: HTTP ${r.status} ${r.text}` };
   return { ok: true, detalhe: "lead perdido reaberto no inicio do funil" };
 }
@@ -466,7 +504,7 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
   if (existente?.id) {
     let detalhe = "lead existente atualizado com tag";
     if (existente.status_id === 143) {
-      const rb = await kommoReabrir(existente.id);
+      const rb = await kommoReabrir(existente.id, tagKommo(row));
       if (!rb.ok) return { ok: false, detalhe: rb.detalhe };
       detalhe = rb.detalhe;
     }
@@ -543,6 +581,96 @@ Deno.serve(async (req) => {
     // origem do webhook: o trigger de concluiu chama com ?gatilho=concluiu
     // (a etapa 1 e pulada nesse caso — ver comentario la)
     const gatilho = url.searchParams.get("gatilho") || "";
+
+    // ---- v19: reativacao manual pela estrela de reincidencia do BI ----
+    // A pessoa refez o diagnostico (3+) ou voltou ao Raio-X e o dono DECIDIU
+    // devolve-la a fila (botao no painel, proxy funil-kommo-bi). Mexe SO na
+    // ficha pedida; exclusoes de sempre valem.
+    const reativarId = url.searchParams.get("reativar");
+    if (reativarId) {
+      const resp = (body: unknown, status = 200) =>
+        new Response(JSON.stringify(body, null, 2), { status, headers: { "Content-Type": "application/json" } });
+      const { data: f0 } = await supabase.from("diagnostico_respostas").select("*").eq("id", reativarId).maybeSingle();
+      if (!f0) return resp({ ok: false, motivo: "ficha nao encontrada" }, 404);
+      // pediram uma ficha refeita? quem conta e a canonica
+      let canon = f0;
+      if (f0.duplicado_de) {
+        const { data: c } = await supabase.from("diagnostico_respostas").select("*").eq("id", f0.duplicado_de).maybeSingle();
+        if (c) canon = c;
+      }
+      if (isFrentista(canon)) return resp({ ok: false, motivo: "frentista nao vai para o Kommo (regra da esteira)" });
+      if (ehCliente(canon)) return resp({ ok: false, motivo: "ja e cliente: nao vira card (regra da esteira)" });
+      if (ehFamiliaPires(canon)) return resp({ ok: false, motivo: "pessoal interno nao vira card (regra da esteira)" });
+      if (!temEmail(canon) && !canon.telefone) return resp({ ok: false, motivo: "ficha sem e-mail e sem telefone: nao da para casar nem criar card" });
+      const { data: refeitas } = await supabase.from("diagnostico_respostas")
+        .select("id, concluiu, concluido_em, created_at, score, nivel, interesse, telefone, pdf_rapport_url")
+        .eq("duplicado_de", canon.id);
+      const grupo = [canon, ...(refeitas || [])];
+      const vezes = grupo.filter((g: any) => g.concluiu === true).length;
+      const maisRecente = grupo.filter((g: any) => g.concluiu === true)
+        .sort((a: any, b: any) => String(b.concluido_em ?? b.created_at).localeCompare(String(a.concluido_em ?? a.created_at)))[0] ?? canon;
+      // nota e rapport falam do AGORA da pessoa: dados frescos por cima da canonica
+      const row = {
+        ...canon,
+        score: maisRecente.score ?? canon.score,
+        nivel: maisRecente.nivel ?? canon.nivel,
+        interesse: maisRecente.interesse ?? canon.interesse,
+        telefone: maisRecente.telefone || canon.telefone,
+      };
+      const feito: string[] = [];
+      const falhas: string[] = [];
+      const push = await kommoPush(row);
+      if (!push.ok || !push.leadId) return resp({ ok: false, motivo: "Kommo: " + push.detalhe });
+      feito.push(push.detalhe);
+      const ultimaData = String(maisRecente.concluido_em ?? maisRecente.created_at ?? "").slice(0, 10);
+      try {
+        const nt = await kfetch(`/leads/${push.leadId}/notes`, {
+          method: "POST",
+          body: JSON.stringify([{ note_type: "common", params: {
+            text: `REINCIDENTE: fez o diagnostico ${vezes}x (ultima em ${ultimaData}).`
+              + `\nDevolvida a fila pelo painel do funil — a pessoa esta interagindo de novo com a gente.`,
+          } }]),
+        });
+        if (nt.ok) feito.push("nota de reincidencia no card");
+        else falhas.push(`nota de reincidencia: HTTP ${nt.status} ${nt.text}`);
+      } catch (e) { falhas.push("nota de reincidencia: " + String(e).slice(0, 200)); }
+      // rapport da ficha MAIS RECENTE (gera na hora se a refeita ainda nao tem)
+      let pdfOk = false;
+      try {
+        let urlPdf = String(maisRecente.pdf_rapport_url || "").trim();
+        if (!urlPdf) {
+          const g = await gerarRapport(String(maisRecente.id));
+          if (g.ok && g.url) urlPdf = g.url;
+          else falhas.push(g.detalhe);
+        }
+        if (urlPdf) {
+          const nomeArq = `Rapport - ${String(row.nome || row.email || "lead").slice(0, 60)}.pdf`;
+          const ax = await kommoAnexarPdf({ kommo_lead_id: push.leadId }, urlPdf, nomeArq);
+          if (ax.ok) { pdfOk = true; feito.push("rapport mais recente anexado ao card"); }
+          else falhas.push("anexo do rapport: " + ax.detalhe);
+        }
+      } catch (e) { falhas.push("anexo do rapport: " + String(e).slice(0, 200)); }
+      let rdOk = false;
+      if (temEmail(row)) {
+        try {
+          const ro = await rdMarkOpportunity(row.email);
+          if (ro.ok) { rdOk = true; feito.push("oportunidade re-marcada no RD"); }
+          else falhas.push(`oportunidade no RD: HTTP ${ro.status} ${ro.text}`);
+        } catch (e) { falhas.push("oportunidade no RD: " + String(e).slice(0, 200)); }
+      }
+      const patch: Record<string, unknown> = {
+        kommo_enviado: true, kommo_lead_id: push.leadId, kommo_enviado_em: new Date().toISOString(), kommo_erro: null,
+      };
+      if (pdfOk) patch.kommo_pdf_enviado = true;
+      if (rdOk) { patch.rd_oportunidade_enviado = true; patch.rd_oportunidade_em = new Date().toISOString(); }
+      const eFlag = await marcar(canon.id, patch);
+      if (eFlag) falhas.push("flags na ficha: " + eFlag);
+      await supabase.from("diagnostico_esteira_log").insert({ resumo: {
+        modo: "reativar", lead: canon.nome, ficha: canon.id, kommo_lead_id: push.leadId,
+        vezes_diagnostico: vezes, acoes: feito, erros: falhas, quando: new Date().toISOString(),
+      } });
+      return resp({ ok: true, lead_id: push.leadId, vezes_diagnostico: vezes, feito, falhas });
+    }
 
     let rows: any[] = [];
     let modo = "sweep";
@@ -664,6 +792,7 @@ Deno.serve(async (req) => {
             const r = await rdConversion(rdToken, {
               conversion_identifier: "fez-diagnostico-posto",
               email: row.email, name: row.nome ?? undefined, job_title: jobTitle,
+              mobile_phone: asStr(row.telefone), ...trafficFields(row),
               cf_score_diagnostico: asStr(row.score), cf_nivel_diagnostico: asStr(row.nivel),
               cf_dimensao_fraca: dimensaoFraca(row), cf_frente_interesse: asStr(row.interesse),
               tags: ["diagnostico-realizado"],
@@ -703,10 +832,10 @@ Deno.serve(async (req) => {
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "rd-oportunidade", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
           }
         }
-        // 5b) Card ja enviado + PARTICIPOU DE NOVO depois do envio: se o card
-        // esta perdido, reabre no inicio do funil (tag + nota) e re-marca a
-        // oportunidade no RD. kommo_enviado_em avanca apos a checagem para nao
-        // reconsultar o Kommo a cada varredura.
+        // 5b) Card ja enviado + PARTICIPOU depois do envio: card aberto ganha a
+        // tag raiox-realizado + nota (uma vez); card perdido reabre no inicio do
+        // funil (tag + nota) e re-marca a oportunidade no RD. kommo_enviado_em
+        // avanca apos a checagem para nao reconsultar o Kommo a cada varredura.
         if (row.participou_raiox === true && row.kommo_enviado === true && row.kommo_lead_id &&
             !isFrentista(row) && !ehCliente(row) && !ehFamiliaPires(row) &&
             row.ultima_participacao_raiox && row.kommo_enviado_em &&
@@ -744,7 +873,7 @@ Deno.serve(async (req) => {
                 }
               }
               if (ld.json.status_id === 143) {
-                const rb = await kommoReabrir(Number(row.kommo_lead_id));
+                const rb = await kommoReabrir(Number(row.kommo_lead_id), tagKommo(row));
                 if (rb.ok) {
                   const tg = await kommoEnsureTag(Number(row.kommo_lead_id));
                   if (!tg.ok) { tudoOk = false; erros.push({ lead: row.nome, etapa: "kommo-reaberto-tag", erro: `HTTP ${tg.status} ${tg.text}` }); }
@@ -805,7 +934,7 @@ Deno.serve(async (req) => {
               const r = await kommoAnexarPdf(row, urlPdf, nomeArq);
               if (r.ok) {
                 await marcarLog(row, "kommo-pdf", { kommo_pdf_enviado: true });
-                acoes.push({ lead: row.nome, etapa: "kommo-pdf", kommo_lead_id: row.kommo_lead_id });
+                acoes.push({ lead: row.nome, etapa: "kommo-pdf", detalhe: r.detalhe, kommo_lead_id: row.kommo_lead_id });
               } else {
                 erros.push({ lead: row.nome, etapa: "kommo-pdf", erro: r.detalhe });
               }

@@ -5,11 +5,14 @@ interface WelcomePageProps {
   resumable: boolean;
   name: string;
   phone: string;
-  entryValid: boolean; // nome + WhatsApp preenchidos: libera o quiz
+  email: string;
+  entryValid: boolean; // nome + WhatsApp + e-mail preenchidos: libera o quiz
 }
 
 /* Tela inicial:
-   - Coluna esquerda: copy consultiva + campo nome obrigatório + CTA primário.
+   - Coluna esquerda: copy consultiva + nome, WhatsApp e e-mail obrigatórios +
+     CTA primário. O e-mail entra AQUI (não mais no portão do resultado) para o
+     lead subir ao RD Station logo no início, com a origem de tráfego junto.
    - Coluna direita: ilustração da equipe do posto (o vídeo em loop saiu; a
      imagem estática carrega leve e cumpre o mesmo papel visual).
    - Banner de retomada substitui o CTA quando há sessão.
@@ -68,17 +71,30 @@ export function WelcomePage(p: WelcomePageProps): string {
             value="${escHtml(p.phone)}"
           >
         </label>
+        <label class="welcome-field" for="welcomeEmail">
+          <span class="welcome-field-label">Seu melhor e-mail</span>
+          <input
+            id="welcomeEmail"
+            class="welcome-field-input"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            maxlength="120"
+            placeholder="voce@empresa.com"
+            aria-invalid="false"
+            value="${escHtml(p.email)}"
+          >
+        </label>
         <div class="welcome-cta-row">
           ${Button({
             variant: "primary",
             size: "lg",
-            label: "Quero saber onde meu posto perde dinheiro",
+            label: "Quero ver a nota do meu posto",
             iconRight: "arrow",
             dataAction: "start",
             id: "btnStartDiag",
             disabled: !p.entryValid,
           })}
-          <span class="welcome-cta-note">É gratuito. O WhatsApp é pra te mandar o convite do Raio-X.</span>
         </div>
       </form>
     `;
@@ -89,13 +105,12 @@ export function WelcomePage(p: WelcomePageProps): string {
         <div class="welcome-main">
           <span class="eyebrow anim-rise delay-0">Saúde do seu posto</span>
           <h1 class="display anim-rise delay-1">
-            As 6 frentes que definem o <span class="ink-accent">lucro</span> do seu posto.
+            Onde o seu posto está <span class="ink-accent">perdendo dinheiro</span>?
           </h1>
           <p class="lede measure anim-rise delay-2">
-            Em poucos minutos você vê onde o seu posto perde dinheiro: margem da
-            bomba, galonagem, aditivada, ticket médio e a fidelização do cliente.
-            Nenhum posto está totalmente otimizado, e é por isso que sempre sobra
-            frente pra ganhar mais.
+            Em poucos minutos você descobre a nota do seu posto nas 6 frentes
+            que definem o lucro e o que ajustar primeiro pra ganhar mais.
+            É grátis.
           </p>
           ${ctaArea}
         </div>

@@ -478,17 +478,20 @@ body:has(.question) .cp-header {
 .welcome-main .display { margin-top: var(--sp-4); }
 .welcome-main .lede    { margin-top: var(--sp-4); }
 
-/* Form de nome */
+/* Form de contato. Largura contida (pedido do dono, 05/08: campos um pouco
+   mais estreitos que os 520px originais — o formulário lê como um bloco, não
+   como uma faixa). */
 .welcome-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-5);
-  max-width: 520px;
+  max-width: 440px;
 }
-/* Desktop/tablet: nome e WhatsApp lado a lado, visíveis sem rolar; o CTA ocupa a
-   linha inteira. No mobile seguem empilhados (grid de 1 coluna). (Fase 4 #4) */
+/* Desktop/tablet: nome e WhatsApp lado a lado; e-mail e CTA em linha cheia
+   (sem célula vazia no grid de 2 colunas). No mobile seguem empilhados. */
 @media (min-width: 720px) {
   .welcome-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--sp-4); }
+  .welcome-form .welcome-field:has(#welcomeEmail) { grid-column: 1 / -1; }
   .welcome-form .welcome-cta-row { grid-column: 1 / -1; }
 }
 .welcome-field {
@@ -778,7 +781,7 @@ body:has(.question) .cp-header {
    do desktop". */
 @media (max-width: 720px) {
   /* Stage padding-block mais comportado: libera fold sem cortar. */
-  .stage { padding-block: var(--sp-5) var(--sp-12); }
+  .stage { padding-block: var(--sp-4) var(--sp-12); }
 
   /* HEADER mobile: logo CENTRALIZADA no topo, progresso em linha cheia abaixo. */
   .cp-header-row {
@@ -800,13 +803,16 @@ body:has(.question) .cp-header {
   .bars-name { font-size: 8px; }
 
   /* WELCOME mobile: TEXTO primeiro (hero real), vídeo abaixo como apoio.
-     Ritmo vertical apertado pra colocar título + nome + CTA acima da dobra. */
-  .welcome { gap: var(--sp-6); }
+     Ritmo vertical apertado pro formulário INTEIRO (nome + WhatsApp + e-mail
+     + CTA) caber na primeira tela (pedido do dono, 05/08): título menor,
+     margens e campos mais enxutos. A compactação é por espaçamento — a fonte
+     dos inputs fica em 16px pra não disparar o auto-zoom do iOS. */
+  .welcome { gap: var(--sp-5); }
   .welcome-main { order: 1; }
   .welcome-visual { order: 2; min-height: 0; display: block; }
-  .welcome-main > * + * { margin-top: var(--sp-4); }
-  .welcome-main .display { margin-top: var(--sp-3); font-size: clamp(1.875rem, 9vw, 2.5rem); line-height: 1.05; }
-  .welcome-main .lede { margin-top: var(--sp-3); font-size: var(--fs-15); line-height: 1.55; }
+  .welcome-main > * + * { margin-top: var(--sp-3); }
+  .welcome-main .display { margin-top: var(--sp-2); font-size: clamp(1.625rem, 7.5vw, 2rem); line-height: 1.08; }
+  .welcome-main .lede { margin-top: var(--sp-2); font-size: var(--fs-14); line-height: 1.5; }
   /* No mobile a ilustração fecha as duas extremidades da tela (full-bleed):
      as margens negativas anulam o padding do shell até a borda da viewport.
      Faixa baixa (a cena inteira não precisa aparecer), com as bordas
@@ -818,18 +824,23 @@ body:has(.question) .cp-header {
     aspect-ratio: 15 / 8;
   }
   .welcome-hero { object-position: 50% 22%; }
-  .welcome-form { max-width: 100%; gap: var(--sp-4); }
-  .welcome-field-input { font-size: 16px; padding: var(--sp-3) var(--sp-4); min-height: 52px; }
+  .welcome-form { max-width: 100%; gap: var(--sp-3); }
+  .welcome-field { gap: var(--sp-1); }
+  .welcome-field-input { font-size: 16px; padding: var(--sp-2) var(--sp-4); min-height: 48px; }
   .welcome-field-label { font-size: var(--fs-12); }
   /* CTA principal: largura total, peso maior pro polegar. O rótulo longo pode
      quebrar em duas linhas: nowrap aqui estourava a largura da página inteira
      (min-content do botão subia pelos grids) e o mobile abria cortado. */
+  /* Eyebrow sai no mobile: ~30px a mais pro formulário caber com o botão na
+     primeira tela (a promessa já está no título). */
+  .welcome .eyebrow { display: none; }
+  .welcome-main .display { margin-top: 0; }
   .welcome-cta-row { flex-direction: column; align-items: stretch; gap: var(--sp-3); margin-top: var(--sp-1); }
   .welcome-cta-row > button,
   .welcome-cta-row > .btn {
     width: 100%;
     min-width: 0;
-    min-height: 56px;
+    min-height: 52px;
     font-size: var(--fs-16);
     white-space: normal;
     line-height: 1.3;
@@ -1371,7 +1382,9 @@ a.btn { text-decoration: none; }
 .result-gate-micro { font-size: var(--fs-13); line-height: 1.5; color: var(--ink-400); }
 
 /* ---------- Nota do CTA de entrada (welcome) ---------- */
-.welcome-cta-note { display: block; margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--ink-400); }
+/* .welcome-cta-note removida (05/08): o texto de apoio do CTA ("WhatsApp pro
+   convite do Raio-X") saiu da home a pedido do dono — o "gratuita" foi pro
+   próprio rótulo do botão. */
 
 /* ---------- Mobile do resultado redesenhado ---------- */
 @media (max-width: 720px) {
@@ -1572,17 +1585,21 @@ a.btn { text-decoration: none; }
 .rr-illus {
   mix-blend-mode: multiply;
 }
+/* Fades LONGOS (05/08): a faixa de 8% era curta demais — o sombreado desenhado
+   na própria arte chegava quase intacto à borda e lia como moldura escura.
+   Começando a dissolver em 14% (e o radial em 55%), a transição fica gradual
+   o bastante pra borda sumir de forma imperceptível no fundo da página. */
 .welcome-hero,
 .rr-illus img {
   -webkit-mask-image:
-    radial-gradient(135% 135% at 50% 45%, #000 70%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 8%, #000 92%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    radial-gradient(140% 140% at 50% 45%, #000 55%, transparent 98%),
+    linear-gradient(to right,  transparent 0%, #000 14%, #000 86%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
   -webkit-mask-composite: source-in;
           mask-image:
-    radial-gradient(135% 135% at 50% 45%, #000 70%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, #000 8%, #000 92%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    radial-gradient(140% 140% at 50% 45%, #000 55%, transparent 98%),
+    linear-gradient(to right,  transparent 0%, #000 14%, #000 86%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
           mask-composite: intersect;
 }
 

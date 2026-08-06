@@ -118,13 +118,29 @@ export async function completeSession(id: string, mql: boolean): Promise<void> {
   });
 }
 
-/* Marca que o lead já foi enviado ao RD Station (após o POST na Edge Function). */
-export async function markRdSent(id: string): Promise<void> {
-  await updateRow(id, {
-    rd_enviado: true,
-    rd_enviado_em: new Date().toISOString(),
+/* Âncora de conversão da tela final ("Sua análise está pronta", id
+   #analise-pronta). PATCH separado do resultado e condicional (filtro
+   resultado_visto_em=is.null): a primeira abertura grava o horário, retomadas
+   e re-renders não sobrescrevem, e um erro aqui não derruba o persistResult. */
+export async function markResultadoVisto(id: string): Promise<void> {
+  if (!id) return;
+  await safe("markResultadoVisto", async () => {
+    const res = await fetch(
+      `${REST_URL}?${ID_COL}=eq.${encodeURIComponent(id)}&resultado_visto_em=is.null`,
+      {
+        method: "PATCH",
+        headers: restHeaders(),
+        body: JSON.stringify({ resultado_visto_em: new Date().toISOString() }),
+        keepalive: true,
+      },
+    );
+    if (!res.ok) throw new Error(`markResultadoVisto HTTP ${res.status}: ${await res.text()}`);
   });
 }
+
+/* markRdSent REMOVIDO (05/08): a coluna rd_enviado pertence ao backend (Edge
+   Function + esteira marcam só após 2xx do RD). O front marcava true após uma
+   chamada que não enviava nada, silenciando o retry do sweep. */
 
 /* ============== Respostas ============== */
 

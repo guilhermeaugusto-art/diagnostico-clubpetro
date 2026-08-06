@@ -8,7 +8,7 @@ Eventos gravados em `diagnostic_events` durante o fluxo do usuário.
 | Evento | Quando | Metadata |
 |---|---|---|
 | `page_viewed` | Boot da página | landing_url, referrer, utm_source, utm_campaign |
-| `diagnostic_started` | Usuário clica em "Iniciar diagnóstico" | name |
+| `diagnostic_started` | Usuário clica em "Iniciar diagnóstico" (exige nome + WhatsApp + **e-mail** desde 05/08) | name |
 | `name_submitted` | Idem (junto com diagnostic_started) | — |
 | `diagnostic_restarted` | Usuário clica em "Recomeçar do zero" | — |
 | `diagnostic_abandoned` | Pagehide sem ter chegado em result | last_screen, last_cursor, time_total |
@@ -32,6 +32,19 @@ Eventos gravados em `diagnostic_events` durante o fluxo do usuário.
 | Evento | Quando | Metadata |
 |---|---|---|
 | `result_viewed` | Hero do resultado renderiza | score_total, nivel, signal |
+
+> **Âncora fixa de conversão na tela final:** o elemento "Sua análise está pronta"
+> tem `id="analise-pronta"` (permanente — não renomear; [src/pages/ResultPage.ts](src/pages/ResultPage.ts)).
+> Serve para o gatilho de **Visibilidade do elemento** no GTM: método de seleção
+> "Código" → `analise-pronta`, "Uma vez por página", "Observar alterações do DOM"
+> ligado (a tela é SPA, o elemento nasce sem reload). A primeira abertura do
+> resultado também grava `diagnostico_respostas.resultado_visto_em` no Supabase
+> (via `markResultadoVisto` — migration `20260724120000_resultado_visto_em.sql`),
+> então GTM e banco medem o mesmo momento.
+> Atenção: essa tela abre para TODAS as trilhas (frentista incluso); conversão
+> de lead de verdade continua sendo `conversao_diagnostico`. Desde 05/08 o
+> e-mail é capturado na TELA INICIAL (o portão de e-mail do resultado virou
+> fallback de sessão antiga), então dono/gerente chegam aqui já convertidos.
 | `report_generation_started` | Geração do PDF inicia | — |
 | `report_generated` | Upload do PDF concluído | path, size |
 | `report_generation_failed` | Erro na geração ou upload | reason |
@@ -70,3 +83,24 @@ WHERE created_at >= now() - interval '30 days';
 
 ## Eventos enviados também para GA/Pixel
 Tudo que passa por `track()` em [src/lib/tracking.ts](src/lib/tracking.ts) também dispara `gtag('event', ...)` e `fbq('trackCustom', ...)`. Configurar GA4/Pixel via `<script>` no index.html (não está no projeto hoje — é pendência se quiser tracking duplo).
+
+## Conversões no RD Station (backend — 05/08)
+
+O envio ao RD é 100% do banco/Edge Functions (o front NÃO chama mais a função
+RD; o antigo best-effort era um no-op que marcava `rd_enviado` à toa e foi
+removido). Endpoint: evento de conversão padrão
+(`POST /platform/conversions?api_key=…`, corpo `event_type: CONVERSION`).
+
+| Conversão (identifier) | Quando dispara | Payload relevante |
+|---|---|---|
+| `iniciou-diagnostico-posto` | Coluna `email` é preenchida (trigger `rd_diagnostico_inicio` → `rd-diagnostico-conversion`). Como o e-mail entra na tela inicial, o lead sobe pro RD no COMEÇO do fluxo. Dedup: `rd_inicio_enviado`. Não roda se a ficha já concluiu. | email, name, mobile_phone, **traffic_source/medium/campaign/value** (utm_* da linha; fallback `origem_source`), tag `diagnostico-iniciado` |
+| `fez-diagnostico-posto` | Flip de `concluiu` (trigger `rd_diagnostico_conversion`; retry no sweep da esteira). Dedup: `rd_enviado` + ficha irmã. Lógica de conclusão INALTERADA. | + job_title, mobile_phone, **traffic_***, cf_score/nivel/dimensao_fraca/frente_interesse, tag `diagnostico-realizado` |
+| `confirmou-raiox-posto` | `raiox_status = confirmado`. Dedup: `rd_raiox_enviado`. | tag `raiox-confirmado` |
+| `fez-raiox-posto` | `participou_raiox` (só esteira). Dedup: `rd_participou_enviado`. | tag `raiox-realizado` |
+
+> **Validação do tráfego pago:** a campanha deve apontar pro quiz com UTMs
+> (`?utm_source=…&utm_medium=…&utm_campaign=…`). Elas são gravadas no INSERT da
+> sessão e viajam nos campos `traffic_*` da conversão — no RD, o lead aparece
+> com origem da conversão preenchida e dá pra segmentar/contar por
+> `iniciou-diagnostico-posto` + campanha. Frentista continua fora do RD e o
+> e-mail é obrigatório na entrada, então todo lead que inicia o quiz sobe.
