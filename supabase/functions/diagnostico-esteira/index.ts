@@ -792,6 +792,9 @@ Deno.serve(async (req) => {
             const r = await rdConversion(rdToken, {
               conversion_identifier: "fez-diagnostico-posto",
               email: row.email, name: row.nome ?? undefined, job_title: jobTitle,
+              // cf_relacao_com_o_posto: campo do contato que abastece o
+              // BD_Conversoes_RD.relacao_posto (funil Vende Mais).
+              cf_relacao_com_o_posto: jobTitle,
               mobile_phone: asStr(row.telefone), ...trafficFields(row),
               cf_score_diagnostico: asStr(row.score), cf_nivel_diagnostico: asStr(row.nivel),
               cf_dimensao_fraca: dimensaoFraca(row), cf_frente_interesse: asStr(row.interesse),
@@ -809,7 +812,7 @@ Deno.serve(async (req) => {
           if (dry) { simular(row.nome, "confirmou-raiox"); } else {
             const r = await rdConversion(rdToken, {
               conversion_identifier: "confirmou-raiox-posto", email: row.email,
-              job_title: jobTitle, tags: ["raiox-confirmado"],
+              job_title: jobTitle, cf_relacao_com_o_posto: jobTitle, tags: ["raiox-confirmado"],
             });
             if (r.ok) await marcarLog(row, "confirmou-raiox", { rd_raiox_enviado: true });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "confirmou-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });
@@ -820,7 +823,7 @@ Deno.serve(async (req) => {
           if (dry) { simular(row.nome, "fez-raiox"); } else {
             const r = await rdConversion(rdToken, {
               conversion_identifier: "fez-raiox-posto", email: row.email,
-              name: row.nome ?? undefined, job_title: jobTitle, tags: ["raiox-realizado"],
+              name: row.nome ?? undefined, job_title: jobTitle, cf_relacao_com_o_posto: jobTitle, tags: ["raiox-realizado"],
             });
             if (r.ok) await marcarLog(row, "fez-raiox", { rd_participou_enviado: true });
             (r.ok ? acoes : erros).push({ lead: row.nome, etapa: "fez-raiox", status: r.status, ...(r.ok ? {} : { erro: r.text }) });

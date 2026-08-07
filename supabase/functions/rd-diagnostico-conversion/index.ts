@@ -192,6 +192,10 @@ serve(async (req) => {
           email,
           name: row.nome ?? undefined,
           job_title: jobTitle,
+          // Alem do job_title, a relacao vai no campo custom do CONTATO no RD:
+          // e ele que o webhook do RD repassa pra BD_Conversoes_RD.relacao_posto,
+          // de onde o funil Vende Mais tira o "qualificado".
+          cf_relacao_com_o_posto: jobTitle,
           mobile_phone: asStr(row.telefone),
           ...trafficFields(row),
           cf_score_diagnostico: asStr(row.score),
@@ -225,7 +229,7 @@ serve(async (req) => {
       const r = await sendConversion(token, {
         event_type: "CONVERSION",
         event_family: "CDP",
-        payload: { conversion_identifier: "confirmou-raiox-posto", email, job_title: jobTitle, tags: ["raiox-confirmado"] },
+        payload: { conversion_identifier: "confirmou-raiox-posto", email, job_title: jobTitle, cf_relacao_com_o_posto: jobTitle, tags: ["raiox-confirmado"] },
       });
       raioxRespStatus = r.status;
       if (r.ok) {
