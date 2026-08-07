@@ -94,7 +94,7 @@ removido). Endpoint: evento de conversão padrão
 | Conversão (identifier) | Quando dispara | Payload relevante |
 |---|---|---|
 | `iniciou-diagnostico-posto` | Coluna `email` é preenchida (trigger `rd_diagnostico_inicio` → `rd-diagnostico-conversion`). Como o e-mail entra na tela inicial, o lead sobe pro RD no COMEÇO do fluxo. Dedup: `rd_inicio_enviado`. Não roda se a ficha já concluiu. | email, name, mobile_phone, **traffic_source/medium/campaign/value** (utm_* da linha; fallback `origem_source`), tag `diagnostico-iniciado` |
-| `fez-diagnostico-posto` | Flip de `concluiu` (trigger `rd_diagnostico_conversion`; retry no sweep da esteira). Dedup: `rd_enviado` + ficha irmã. Lógica de conclusão INALTERADA. | + job_title, mobile_phone, **traffic_***, cf_score/nivel/dimensao_fraca/frente_interesse, tag `diagnostico-realizado` |
+| `fez-diagnostico-posto` | Flip de `concluiu` (trigger `rd_diagnostico_conversion`; retry no sweep da esteira). Dedup: `rd_enviado` + ficha irmã. Lógica de conclusão INALTERADA. | + job_title, mobile_phone, **traffic_***, cf_score/nivel/dimensao_fraca/frente_interesse, `cf_url_do_diagnostico` (URL do quiz — a API do RD não tem "URL da Conversão" nativo; o campo custom precisa existir no RD), tag `diagnostico-realizado` |
 | `confirmou-raiox-posto` | `raiox_status = confirmado`. Dedup: `rd_raiox_enviado`. | tag `raiox-confirmado` |
 | `fez-raiox-posto` | `participou_raiox` (só esteira). Dedup: `rd_participou_enviado`. | tag `raiox-realizado` |
 

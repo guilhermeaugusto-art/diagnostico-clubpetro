@@ -198,6 +198,11 @@ serve(async (req) => {
           cf_nivel_diagnostico: asStr(row.nivel),
           cf_dimensao_fraca: dimensaoFraca(row),
           cf_frente_interesse: asStr(row.interesse),
+          // A API do RD nao tem o "URL da Conversao" nativo (so conversao de
+          // formulario/LP do proprio RD tem). A URL do quiz vai como campo
+          // custom — o campo PRECISA existir no RD, senao a conversao inteira
+          // volta 400.
+          cf_url_do_diagnostico: "https://diagnostico-clubpetro.web.app/",
           tags: ["diagnostico-realizado"],
         },
       });

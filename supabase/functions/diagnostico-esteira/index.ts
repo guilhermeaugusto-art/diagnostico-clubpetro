@@ -795,6 +795,9 @@ Deno.serve(async (req) => {
               mobile_phone: asStr(row.telefone), ...trafficFields(row),
               cf_score_diagnostico: asStr(row.score), cf_nivel_diagnostico: asStr(row.nivel),
               cf_dimensao_fraca: dimensaoFraca(row), cf_frente_interesse: asStr(row.interesse),
+              // Mesmo campo custom da rd-diagnostico-conversion: URL do quiz no
+              // evento (a API do RD nao tem "URL da Conversao" nativo).
+              cf_url_do_diagnostico: "https://diagnostico-clubpetro.web.app/",
               tags: ["diagnostico-realizado"],
             });
             if (r.ok) await marcarLog(row, "fez-diagnostico", { rd_enviado: true, rd_enviado_em: new Date().toISOString() });
