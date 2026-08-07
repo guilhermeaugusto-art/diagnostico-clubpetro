@@ -12,3 +12,4 @@ dist/
 # OS
 Thumbs.db
 .DS_Store
+supabase/.temp/
