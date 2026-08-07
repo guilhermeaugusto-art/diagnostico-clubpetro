@@ -27,10 +27,42 @@ export interface RequestContext {
 export function captureContext(): RequestContext {
   if (typeof window === "undefined") return emptyContext();
   const url = new URL(window.location.href);
-  const params = url.searchParams;
   const ua = navigator.userAgent || "";
+
+  // Referrer da própria app (reload/navegação interna) não é origem de tráfego.
+  let refExterno = "";
+  try {
+    if (document.referrer && new URL(document.referrer).origin !== url.origin) refExterno = document.referrer;
+  } catch { refExterno = document.referrer || ""; }
+
+  // Primeiro toque: os UTMs só existem na URL da PRIMEIRA pageview — reload
+  // ou aba nova dentro do quiz perdia a atribuição e o lead caía como
+  // "direto" no RD (ficha de 07/08 com os UTMs presos no referrer). A origem
+  // da entrada fica na sessionStorage; sem ela, resgata do referrer quando
+  // ele é a própria app ainda com UTMs.
+  let params = url.searchParams;
+  let source = params.get("source") || (refExterno ? inferSource(refExterno) : null);
+  if (temOrigem(params)) {
+    salvarOrigem(url.search, source);
+  } else {
+    let salva = lerOrigemSalva();
+    if (!salva) {
+      try {
+        const ref = new URL(document.referrer);
+        if (ref.origin === url.origin && temOrigem(ref.searchParams)) {
+          salva = { search: ref.search, source: null };
+          salvarOrigem(salva.search, salva.source);
+        }
+      } catch { /* sem referrer utilizável */ }
+    }
+    if (salva) {
+      params = new URLSearchParams(salva.search);
+      source = params.get("source") || salva.source || source;
+    }
+  }
+
   return {
-    source: params.get("source") || inferSource(document.referrer),
+    source: source || "direct",
     utm_source:   params.get("utm_source"),
     utm_medium:   params.get("utm_medium"),
     utm_campaign: params.get("utm_campaign"),
@@ -55,6 +87,23 @@ function emptyContext(): RequestContext {
     user_agent: null, device_type: null, browser: null, os: null,
     screen_width: null, screen_height: null, locale: null,
   };
+}
+
+const ORIGEM_KEY = "diag_origem_primeiro_toque";
+
+function temOrigem(p: URLSearchParams): boolean {
+  return !!(p.get("utm_source") || p.get("utm_medium") || p.get("utm_campaign") || p.get("source"));
+}
+
+function lerOrigemSalva(): { search: string; source: string | null } | null {
+  try {
+    const raw = sessionStorage.getItem(ORIGEM_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function salvarOrigem(search: string, source: string | null): void {
+  try { sessionStorage.setItem(ORIGEM_KEY, JSON.stringify({ search, source })); } catch { /* storage bloqueado */ }
 }
 
 function inferSource(ref: string): string | null {
