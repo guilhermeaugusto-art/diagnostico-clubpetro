@@ -520,7 +520,10 @@ async function kommoPush(row: any): Promise<{ ok: boolean; leadId?: number; deta
   const meta = await kommoMeta();
   const cf: any[] = [];
   if (meta.origemEnum) cf.push({ field_id: CF_ORIGEM, values: [{ enum_id: meta.origemEnum }] });
-  if (meta.suborigem?.type === "text") cf.push({ field_id: CF_SUBORIGEM, values: [{ value: "diagnostico-raiox" }] });
+  // Sub Origem do card = identificador da conversao principal no RD: e por
+  // esse valor que o funil Vende Mais pendura MQL/SQL/agenda/venda no evento
+  // (era "diagnostico-raiox", que nao casa com evento nenhum — tela zerada).
+  if (meta.suborigem?.type === "text") cf.push({ field_id: CF_SUBORIGEM, values: [{ value: "fez-diagnostico-posto" }] });
   else if (meta.suborigem?.type === "enum") cf.push({ field_id: CF_SUBORIGEM, values: [{ enum_id: meta.suborigem.id }] });
   const contactCf: any[] = [];
   if (row.telefone) contactCf.push({ field_code: "PHONE", values: [{ value: String(row.telefone), enum_code: "MOB" }] });
