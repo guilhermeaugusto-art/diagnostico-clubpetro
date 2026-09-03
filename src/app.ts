@@ -4,6 +4,7 @@ import { CONFIG } from "./lib/config";
 import { calendarTemplateUrl } from "./lib/raiox";
 import { BLOCKS, BLOCK_ORDER } from "./data/blocks";
 import {
+  getQuestionById,
   type Question,
   type ScoreQuestion,
   type NoScoreOption,
@@ -36,6 +37,9 @@ import { captureContext, type RequestContext } from "./lib/context";
 import {
   createSession,
   setSessionContact,
+  getTokenSessao,
+  adoptTokenSessao,
+  hydrateLocalAnswers,
   completeSession,
   markResultadoVisto,
   persistAnswer,
@@ -62,6 +66,11 @@ import { ResultPage } from "./pages/ResultPage";
 
 let state: AppState = freshState();
 let hasResumable = false;
+/* Promessa do INSERT da sessão pré-criada no boot (primeira interação).
+   Resolve true quando a linha confirmou no banco; false quando o INSERT
+   falhou (o startDiagnostic usa isso para reparar com um novo INSERT). Os
+   PATCHes encadeiam nela para nunca correrem antes de a linha existir. */
+let sessionReady: Promise<boolean> | null = null;
 let questionStartTime = 0;
 let transitionTimer: number | null = null;
 let raioxConfirmed = false; // clicou em garantir a vaga (abriu a agenda), idempotente
@@ -271,11 +280,18 @@ function startDiagnostic(): void {
   const keptName = state.name.trim();
   const keptPhone = state.phone;
   const keptEmail = state.email.trim();
+  // Reaproveita a sessão pré-criada na primeira interação (boot): a linha já
+  // existe no banco com as UTMs; aqui só entra o contato. Sem pré-criada
+  // (listener não disparou, ex. navegação por acessibilidade), cria agora.
+  const preId = state.diagId;
+  const preToken = state.diagToken;
+  const preReady = sessionReady;
   state = freshState();
   state.name = keptName;
   state.phone = keptPhone;
   state.email = keptEmail;
-  state.diagId = uuid();
+  state.diagId = preId || uuid();
+  state.diagToken = preId ? preToken : getTokenSessao();
   state.startedAt = new Date().toISOString();
   state.screen = "question";
   state.cursor = 0;
@@ -286,8 +302,18 @@ function startDiagnostic(): void {
   resetLocalAnswers();
   if (state.diagId) {
     const id = state.diagId;
-    createSession(id, CONFIG.VERSION, bootContext || captureContext())
-      .then(() => setSessionContact(id, keptName, keptEmail, keptPhone));
+    // Garante a LINHA antes do PATCH de contato. Reusando um id pré-criado,
+    // só confia no INSERT que confirmou (preReady === true); INSERT que
+    // falhou nesta carga (rede/adblock) ou id restaurado de carga anterior
+    // (preReady nulo) ganham um INSERT de reparo — na linha já existente é um
+    // 409 inofensivo (engolido pelo safe), na inexistente é o que salva o
+    // funil de gravar 0 linhas em silêncio.
+    const ready: Promise<boolean> = preId
+      ? (preReady || Promise.resolve(false)).then((ok) =>
+          ok === true ? true : createSession(id, CONFIG.VERSION, bootContext || captureContext()))
+      : createSession(id, CONFIG.VERSION, bootContext || captureContext());
+    sessionReady = ready;
+    ready.then(() => setSessionContact(id, keptName, keptEmail, keptPhone));
   }
   track("diagnostic_started", {}, state.diagId); // não enviar PII (nome) a GTM/Meta Pixel (SEC-03)
   render();
@@ -295,6 +321,25 @@ function startDiagnostic(): void {
 }
 function resumeDiagnostic(): void {
   hasResumable = false;
+  // Reancora o cursor na primeira pergunta ainda NÃO respondida: o índice
+  // salvo pode ter sido gravado sob outra ordem de exibição (ex.: reordenação
+  // da trilha do dono em 26/08/2026) e não é confiável entre versões. Com as
+  // respostas em mãos, a posição correta é derivável — não o índice cru.
+  {
+    const list = visibleQuestions(state);
+    let first = list.length;
+    for (let i = 0; i < list.length; i++) {
+      const a = state.answers[list[i].id];
+      // "Respondida" exige conteúdo: multi marcada-e-desmarcada fica com
+      // selectedIndexes vazio (estado inalcançável no fluxo normal, que exige
+      // >=1 pra avançar) e pergunta aberta grava a cada tecla, inclusive "".
+      const respondida = !!a
+        && !(a.kind === "multi" && a.selectedIndexes.length === 0)
+        && !(a.kind === "text" && a.text.trim() === "");
+      if (!respondida) { first = i; break; }
+    }
+    state.cursor = first;
+  }
   // Já respondeu tudo antes de sair: volta direto ao resultado (o gate de
   // telefone vive lá). Senão, retoma na pergunta onde parou.
   if (state.cursor >= visibleQuestions(state).length) {
@@ -320,6 +365,7 @@ function discardAndStart(): void {
   state.phone = keptPhone;
   state.email = keptEmail;
   state.diagId = uuid();
+  state.diagToken = getTokenSessao(); // linha nova, mesmo token desta aba
   state.startedAt = new Date().toISOString();
   state.screen = "question";
   state.cursor = 0;
@@ -327,8 +373,11 @@ function discardAndStart(): void {
   saveState(state);
   if (state.diagId) {
     const id = state.diagId;
-    createSession(id, CONFIG.VERSION, bootContext || captureContext())
-      .then(() => setSessionContact(id, keptName, keptEmail, keptPhone));
+    // Recomeço intencional cria linha NOVA (sessão anterior fica órfã de
+    // propósito, para o BI ver o descarte); guarda a promise para o mesmo
+    // encadeamento INSERT -> PATCH do startDiagnostic.
+    sessionReady = createSession(id, CONFIG.VERSION, bootContext || captureContext());
+    sessionReady.then(() => setSessionContact(id, keptName, keptEmail, keptPhone));
   }
   track("diagnostic_restarted", {}, state.diagId);
   render();
@@ -493,9 +542,13 @@ function afterAnswer(q: Question): void {
   );
 
   // Persiste a resposta na linha da sessão (coluna answer_<qid> + jsonb).
+  // Encadeado em sessionReady: em rede lenta o INSERT da sessão pode ainda
+  // estar em voo quando a primeira resposta (S1) chega — sem esperar, o PATCH
+  // casaria 0 linhas e a coluna `papel` ficaria nula para sempre.
   const a = state.answers[q.id];
   if (a && state.diagId) {
-    persistAnswer(state.diagId, q.id, a);
+    const id = state.diagId;
+    (sessionReady || Promise.resolve(true)).then(() => persistAnswer(id, q.id, a));
   }
 
   // Sinal de checkpoint: recalcula sempre que todos os checkpoints estão
@@ -1134,7 +1187,64 @@ export function boot(): void {
     // portão/confirmação numa retomada de sessão já convertida (BUG-03).
     leadSent = state.leadSent === true;
     raioxConfirmed = state.raioxConfirmed === true;
+    // Readota o token RLS salvo com o estado: retomada em OUTRA aba (ou dia
+    // seguinte) ganha sessionStorage novo; sem readotar, todo PATCH casaria
+    // 0 linhas em silêncio e a sessão retomada não gravaria mais nada.
+    if (typeof state.diagToken === "string") adoptTokenSessao(state.diagToken);
+    // Reidrata o buffer de respostas do api.ts: sem isso, o próximo
+    // persistAnswer/persistResult apagaria do jsonb tudo que veio antes
+    // do reload (o buffer nasce vazio a cada carga da página).
+    hydrateLocalAnswers(state.answers);
+  } else if (saved) {
+    // Sessão pré-criada (interagiu mas não começou o quiz) ou formulário já
+    // digitado: restaura o contato para o formulário voltar preenchido, e o
+    // id SÓ quando o token RLS daquela linha veio salvo junto (sem o token os
+    // PATCHes não enxergariam a linha — nesse caso é melhor criar sessão
+    // nova). Não é retomada (nenhuma resposta dada): sem banner de continuar.
+    const savedToken = typeof saved.diagToken === "string" ? saved.diagToken : null;
+    if (typeof saved.diagId === "string" && saved.diagId && savedToken) {
+      adoptTokenSessao(savedToken);
+      state.diagId = saved.diagId;
+      state.diagToken = savedToken;
+    }
+    if (typeof saved.name === "string") state.name = saved.name;
+    if (typeof saved.phone === "string") state.phone = saved.phone;
+    if (typeof saved.email === "string") state.email = saved.email;
   }
+
+  // Topo do funil mensurável: a linha da sessão nasce na PRIMEIRA interação
+  // real com a página (pointer/teclado), antes do formulário. Quem desiste na
+  // welcome passa a existir no banco (linha com UTMs, sem nome e sem
+  // respostas); bot/preview que não interage não cria linha. O contato — que
+  // dispara o RD via trigger na coluna email — segue entrando SÓ no clique de
+  // começar, então nada muda na esteira comercial.
+  if (!hasResumable && !state.diagId) {
+    const preCreateSession = () => {
+      if (state.diagId || state.screen !== "welcome") return;
+      state.diagId = uuid();
+      state.diagToken = getTokenSessao(); // salvo junto: retomada readota (RLS)
+      saveState(state);
+      sessionReady = createSession(state.diagId, CONFIG.VERSION, bootContext || captureContext());
+      track("session_precreated", {}, state.diagId);
+    };
+    window.addEventListener("pointerdown", preCreateSession, { once: true, passive: true });
+    window.addEventListener("keydown", preCreateSession, { once: true });
+  }
+
+  // Pré-carrega as ilustrações da primeira pergunta (S1) enquanto a pessoa lê
+  // a welcome: S1 é ponto de abandono medido (ago/2026) e passa a abrir
+  // instantânea. ~135KB, só com a página ociosa, sem competir com o first paint.
+  const warmS1Images = () => {
+    // Caminhos derivados das options da S1 (fonte única): renomear a imagem
+    // em questions.ts não deixa este prefetch apontando pra 404 em silêncio.
+    const s1 = getQuestionById("S1");
+    const srcs = s1 && "options" in s1
+      ? s1.options.map((o) => (o as NoScoreOption).image).filter((x): x is string => !!x)
+      : [];
+    srcs.forEach((src) => { const im = new Image(); im.src = src; });
+  };
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(warmS1Images, { timeout: 3000 });
+  else window.setTimeout(warmS1Images, 1200);
   window.addEventListener("pagehide", () => {
     // transition = diagnostico ja concluido (contato entregue), so animacao: nao e abandono.
     if (state.screen === "result" || state.screen === "welcome" || state.screen === "transition") return;

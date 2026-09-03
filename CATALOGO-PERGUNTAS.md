@@ -8,9 +8,14 @@ Fonte: `src/data/questions.ts`. Ordem de exibição conforme `QUESTION_ORDER_BY_
 > `QUESTION_ORDER_BY_TRACK`. Fora do fluxo hoje (objetos ainda no banco, mas não
 > exibidos): Dono → `D_PT_TEMPO, D_P1, D_P5, D_P6, D_M3, D_C4, D_F2` (18 base +
 > condicionais). Gerente → `G_PT_TEMPO, G_PT_REDE, G_P1, G_P5, G_P6, G_P7,
-> G_C3, G_F2` (16 base + condicionais). Fidelização vem primeiro. Frentista
-> inalterada. Os 6 pilares seguem pontuando em cada trilha (Dados e Resiliência
-> têm um único item cada e nunca saem).
+> G_C3, G_F2` (16 base + condicionais). **Dono (ajuste 26/08/2026):** o fluxo
+> abre com 3 perguntas de perfil (`D_PT_POSTOS, D_PT_MIX, D_DOR`) como
+> aquecimento — os dados de jul-ago mostraram 44% dos abandonos nas 3 primeiras
+> telas, que eram as duas perguntas expositivas de fidelização; a fidelização
+> segue como primeiro bloco pontuado e os checkpoints de sinal não mudaram.
+> Gerente segue com fidelização primeiro; frentista inalterada. Os 6 pilares
+> seguem pontuando em cada trilha (Dados e Resiliência têm um único item cada e
+> nunca saem).
 
 ---
 

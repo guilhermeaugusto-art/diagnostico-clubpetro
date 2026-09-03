@@ -58,6 +58,10 @@ export interface AppState {
   startedAt: string | null;
   finishedAt: string | null;
   diagId: string | null;
+  /* Token RLS da sessão (x-quiz-token) salvo JUNTO do estado: uma retomada em
+     outra aba/dia readota o token e os UPDATEs continuam enxergando a linha.
+     Sem ele, sessionStorage novo = token novo = PATCHes casando 0 linhas. */
+  diagToken: string | null;
   /* Marcadores de conversão persistidos: evitam reenviar o lead ao RD e reabrir
      o portão/UI de confirmação numa retomada de sessão (BUG-03). */
   leadSent: boolean;
@@ -76,6 +80,7 @@ export function freshState(): AppState {
     startedAt: null,
     finishedAt: null,
     diagId: null,
+    diagToken: null,
     leadSent: false,
     raioxConfirmed: false,
   };

@@ -1672,10 +1672,16 @@ export function getQuestionById(id: string): Question | undefined {
    Condicionais são filtradas em runtime pelo engine.
 
    Enxugamento (mantém os 6 pilares se movimentando em cada trilha):
-   - Fidelização vem primeiro, é o pilar de maior peso e o que mais move o
-     ranking na hora. Depois marca e comercial (diferencial e preço), e cedo a
-     pergunta identitária de aditivada. Perfil de rede e condicionais no meio,
-     fechamento no fim.
+   - Dono (ajuste 26/08/2026, dados de jul-ago): o fluxo abre com 3 perguntas
+     de perfil fáceis (postos, mix, dor) como aquecimento — 44% dos abandonos
+     de julho e 5 de 6 de agosto aconteciam nas 3 primeiras telas, que eram
+     justamente as duas perguntas mais expositivas de fidelização (D_F1/D_F3,
+     "não faço nada" / "não sei dizer"). A fidelização segue como PRIMEIRO
+     BLOCO PONTUADO, logo depois do aquecimento: os checkpoints de sinal
+     (D_F1, D_F3, D_M2, D_C2, D_C3) continuam sendo as 5 primeiras perguntas
+     score do fluxo, então SIGNAL_CHECKPOINT_IDS_BY_TRACK não muda.
+   - Gerente e frentista mantêm fidelização/perfil na ordem anterior: a taxa
+     de conclusão delas (77% e 82% em julho) não justificou mexer.
    - Dono: fica em 18 perguntas base (fora as condicionais). Foram tirados do
      fluxo D_PT_TEMPO, D_P1, D_P5, D_P6, D_M3, D_C4 e D_F2 (baixo peso ou
      sobreposição). D_PADRAO e D_EXPANDIR seguem como condicionais de rede.
@@ -1687,7 +1693,11 @@ export function getQuestionById(id: string): Question | undefined {
      entram em nenhuma ordem: o motor só exibe o que está listado aqui. */
 export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
   dono: [
-    // Fidelização primeiro (maior peso, move o ranking)
+    // Aquecimento: perfil factual primeiro (pergunta que ninguém "erra" cria
+    // compromisso progressivo antes das que expõem). Também define plural
+    // (D_PT_POSTOS) e condicionais (D_PT_MIX) logo no início.
+    "D_PT_POSTOS", "D_PT_MIX", "D_DOR",
+    // Fidelização (maior peso, move o ranking) — primeiro bloco pontuado
     "D_F1", "D_F3",
     // Diferencial fora o preço + decisão de preço da bomba
     "D_M2", "D_C2",
@@ -1695,8 +1705,7 @@ export const QUESTION_ORDER_BY_TRACK: Record<TrackId, string[]> = {
     "D_C3",
     // Resto da fidelização + margem
     "D_FCHURN", "D_C1",
-    // Perfil de rede e serviços (define plural e condicionais), depois a dor
-    "D_PT_POSTOS", "D_PT_MIX", "D_DOR",
+    // Condicionais de serviços (D_PT_MIX já respondida no aquecimento)
     "D_C_SERV", "D_C_LOJA",
     // Marca, pessoas, dados, resiliência
     "D_M1", "D_P2", "D_P3", "D_P4", "D_DA1", "D_R1",
