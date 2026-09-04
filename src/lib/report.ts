@@ -3,7 +3,7 @@
    pra não pesar no bundle inicial.
 
    Dois PDFs saem daqui:
-   - generateReportPdf: o RAIO-X COMERCIAL do lead (interno, sobe pro Kommo).
+   - generateReportPdf: a ANÁLISE COMERCIAL do lead (interno, sobe pro Kommo).
      Reestruturado em 29/07/2026 a pedido do dono: página 1 é um dossiê de
      uma olhada (quem é, onde dói, onde é forte e como abrir a ligação);
      página 2 são as 6 frentes da pior pra melhor + leitura comercial;
@@ -29,7 +29,7 @@ interface Cursor {
   y: number;
 }
 
-/* ============== PDF COMERCIAL (Raio-X do lead) ============== */
+/* ============== PDF COMERCIAL (análise do lead) ============== */
 
 export async function generateReportPdf(content: ReportContent): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
@@ -105,7 +105,7 @@ function drawDossier(doc: any, content: ReportContent, c: Cursor) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
   doc.setTextColor(ORANGE);
-  doc.text("CLUBPETRO · DIAGNÓSTICO DO POSTO · RAIO-X DO LEAD", PAGE_PADDING, 46);
+  doc.text("CLUBPETRO · DIAGNÓSTICO DO POSTO · ANÁLISE DO LEAD", PAGE_PADDING, 46);
 
   // Nome + linha de qualificação
   doc.setFontSize(25);

@@ -204,7 +204,7 @@ export async function setSessionContact(id: string, name: string, email: string,
   });
 }
 
-/* Marca a conclusão do diagnóstico (chegou ao fim do raio-x) e se virou MQL
+/* Marca a conclusão do diagnóstico (chegou ao fim da análise) e se virou MQL
    (dono ou gerente que deixou contato). created_at já marca o início.
    OBS: a coluna `concluiu` é GERADA no banco (calculada automaticamente), então
    NÃO pode ser setada aqui (PostgREST rejeita o PATCH inteiro com 400). Gravamos
@@ -455,28 +455,22 @@ export async function markReportFailed(sessionId: string, _error: string): Promi
   });
 }
 
-/* ============== Raio X ============== */
+/* ============== Especialista ==============
 
-/* Lead clicou em "Garantir minha vaga no Raio X" no app.
-   Regra de negocio (opcao A): agendar JA conta como CONFIRMADO. Entao grava
-   agendou_raiox + raiox_status='confirmado' + raiox_data, o que dispara a tag
-   `raiox-confirmado` no RD (via o gatilho de conversao). Libera tambem o PDF.
-   O cron `?sync=confirmados` segue marcando participou_raiox para quem de fato
-   aceita o convite (presenca real). */
-export async function persistAgendouRaiox(sessionId: string): Promise<void> {
-  await updateRow(sessionId, {
-    agendou_raiox: true,
-    raiox_status: "confirmado",
-    raiox_data: new Date().toISOString(),
-    // Ao garantir a vaga no Raio X, o PDF do cliente fica liberado para envio.
-    pdf_liberado: true,
-  });
-}
+   O Raio-X saiu do fluxo em 04/09/2026 (evento semanal descontinuado). Com ele
+   saiu o persistAgendouRaiox e todo o agendamento automatico em calendario.
+   As colunas de raiox (agendou_raiox, raiox_status, raiox_data,
+   participou_raiox) seguem no banco com o HISTORICO, mas o app nao escreve
+   mais nelas. A conversao da tela final agora e o contato com o especialista. */
 
-export async function persistSpecialistCta(sessionId: string, score: number): Promise<void> {
-  // Marca no banco que a pessoa acionou o contato direto com o especialista.
+
+export async function persistSpecialistCta(sessionId: string, _score: number): Promise<void> {
+  // Marca no banco que a pessoa acionou o contato com o especialista — a
+  // conversao da tela final. Libera tambem o PDF do cliente: essa liberacao
+  // vinha do agendamento do Raio-X, que nao existe mais.
   await updateRow(sessionId, {
     contato_especialista: true,
     contato_especialista_em: new Date().toISOString(),
+    pdf_liberado: true,
   });
 }

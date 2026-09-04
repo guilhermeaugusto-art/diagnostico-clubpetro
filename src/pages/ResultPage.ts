@@ -4,7 +4,6 @@ import { planFor } from "../data/recommendations";
 import { RadarChart } from "../components/RadarChart";
 import { rankedBlocks, totalScore } from "../lib/scoring";
 import { currentTrack } from "../lib/engine";
-import { dataProximaSessao } from "../lib/raiox";
 import type { AppState } from "../lib/state";
 import { escHtml } from "../lib/format";
 import { Icons } from "../lib/icons";
@@ -77,7 +76,7 @@ function radarBars(state: AppState): string {
 
 /* ============================================================
    SEÇÃO 1 · HERO (nota + radar)
-   CTA leva pro próximo passo guiado (o Raio-X, logo abaixo).
+   CTA desce pros pontos de melhoria, logo abaixo.
    O id "analise-pronta" é âncora de conversão no GTM (gatilho de
    visibilidade do elemento): não renomear nem remover.
    ============================================================ */
@@ -119,64 +118,9 @@ function hero(state: AppState, score: number): string {
 }
 
 /* ============================================================
-   SEÇÃO 2 · RAIO-X (importância + garantir a vaga)
-   Bloco escuro único: explicação + card de confirmação juntos.
-   É o único ponto de ação da tela e o alvo dos dois CTAs.
-   ============================================================ */
-
-function raioxSection(state: AppState): string {
-  const data = dataProximaSessao();
-  const first = firstNameOf(state);
-  return `
-    <section class="rr-raiox" id="raiox">
-      <div class="rr-raiox-head">
-        <span class="rr-section-eyebrow rr-eyebrow-light">O seu próximo passo guiado</span>
-        <h2 class="rr-section-title rr-title-light">O que é o Raio-X do Posto</h2>
-        <p class="rr-raiox-lead">
-          Um encontro ao vivo, em grupo, toda terça, de cerca de 30 minutos. Um
-          Especialista ClubPetro abre estratégias reais de postos junto com outros
-          revendedores e mostra, no seu caso, onde o posto perde dinheiro e o que fazer.
-        </p>
-      </div>
-
-      <ul class="rr-value">
-        <li class="rr-value-item">
-          <span class="rr-value-k">Por que importa</span>
-          <p class="rr-value-v">Você sai da teoria. Vê o que postos parecidos com o seu fizeram pra virar o resultado, sem tentativa e erro no seu caixa.</p>
-        </li>
-        <li class="rr-value-item">
-          <span class="rr-value-k">O que você leva</span>
-          <p class="rr-value-v">A leitura do seu diagnóstico comentada por um especialista e um caminho claro pras frentes que mais pesam no seu posto.</p>
-        </li>
-        <li class="rr-value-item">
-          <span class="rr-value-k">Pra quem é</span>
-          <p class="rr-value-v">Só pra quem concluiu a análise. Grupo pequeno, então a sua vaga é limitada à próxima sessão.</p>
-        </li>
-      </ul>
-
-      <div class="rr-gate" id="gate">
-        <div class="rr-gate-chips">
-          <span class="rr-gate-chip rr-gate-chip-live"><span class="rr-gate-dot"></span>Ao vivo, toda terça</span>
-          <span class="rr-gate-chip">Próxima sessão: terça, ${escHtml(data)}, às 11h</span>
-        </div>
-        <h3 class="rr-gate-title">${first ? `${escHtml(first)}, garanta ` : "Garanta "}a sua vaga no próximo Raio-X</h3>
-        <p class="rr-gate-text">
-          O Raio-X entra direto na sua agenda. Basta entrar com a sua conta Google
-          e salvar o evento.
-        </p>
-        <button class="rr-cta rr-cta-primary rr-cta-lg rr-cta-block" type="button" data-action="confirm-presence" id="btnConfirmPresence">
-          Quero marcar o Raio-X no meu Google Agenda
-        </button>
-        <span class="rr-gate-micro">Leva 30 segundos. Você entra com o Google e a sua vaga fica garantida.</span>
-        <p class="rr-gate-done" id="rrConfirmDone" aria-live="polite"></p>
-      </div>
-    </section>`;
-}
-
-/* ============================================================
-   SEÇÃO 3 · PONTOS DE MELHORIA (3 abertos + resto borrado)
-   O CTA fica logo após o 3º passo e SOBE pro bloco do Raio-X.
-   Os passos borrados são teaser permanente (não destravam).
+   SEÇÃO 2 · PONTOS DE MELHORIA (os 3 primeiros passos)
+   O CTA logo após o 3º passo abre o WhatsApp do especialista
+   DIRETO, com a mensagem do diagnóstico já pronta.
    ============================================================ */
 
 interface Step { block: BlockId; text: string; }
@@ -229,34 +173,50 @@ function pontosSection(state: AppState): string {
       </div>
 
       <div class="rr-apply">
-        <p class="rr-apply-line">Esses 3 você começa hoje. O plano completo das seis frentes você recebe no Raio-X.</p>
-        <button class="rr-cta rr-cta-primary rr-cta-lg" type="button" data-action="goto-raiox">
-          Quero aplicar isso agora
+        <p class="rr-apply-line">Esses 3 você começa hoje. O plano completo das seis frentes, aplicado ao seu posto, um Especialista ClubPetro monta com você.</p>
+        <button class="rr-cta rr-cta-wpp rr-cta-lg" type="button" data-action="cta-especialista">
+          <span class="rr-cta-wpp-icon" aria-hidden="true">${Icons.whatsapp}</span>
+          Falar com um Especialista no WhatsApp
         </button>
       </div>
     </section>`;
 }
 
 /* ============================================================
-   SEÇÃO 4 · FALE COM ESPECIALISTA (só no fim)
+   SEÇÃO 3 · ESPECIALISTA — a peça final da tela.
+   Único ponto de conversão: abre o WhatsApp DIRETO, com a
+   mensagem do diagnóstico pronta (nota, frentes fracas, dor).
+   Sem agenda, sem evento, sem confirmação: o especialista marca
+   o horário dentro da própria conversa.
    ============================================================ */
 
-function specialistSection(): string {
+function specialistSection(state: AppState): string {
+  const first = firstNameOf(state);
+  const ranked = rankedBlocks(state);
+  const weak = ranked[0];
+  const frente = weak ? BLOCKS[weak.id].name : "";
   return `
-    <footer class="rr-specialist">
+    <footer class="rr-specialist" id="especialista">
       <div class="rr-specialist-card">
         <img class="rr-specialist-photo" src="/especialista.jpg" alt="Especialista ClubPetro" loading="lazy" decoding="async" onerror="this.style.display='none'">
         <div class="rr-specialist-body">
-          <span class="rr-specialist-eyebrow">Já entendi o que preciso melhorar</span>
-          <h3 class="rr-specialist-title">Prefere falar direto com um especialista?</h3>
+          <span class="rr-specialist-eyebrow">O seu próximo passo</span>
+          <h3 class="rr-specialist-title">
+            ${first ? `${escHtml(first)}, fale com um especialista` : "Fale com um especialista"}
+            ${frente ? ` sobre ${escHtml(frente)}` : ""}
+          </h3>
           <p class="rr-specialist-text">
-            Se você já sabe onde o posto aperta e quer resolver agora, chame um
-            Especialista ClubPetro no WhatsApp.
+            Um Especialista ClubPetro pega o resultado que você acabou de ver e te
+            mostra, no seu caso, o que fazer primeiro${frente ? ` pra destravar ${escHtml(frente)}` : ""}.
+            Sem custo e sem compromisso.
           </p>
-          <button class="rr-cta rr-cta-wpp" type="button" data-action="cta-especialista">
+          <button class="rr-cta rr-cta-wpp rr-cta-lg rr-cta-block" type="button" data-action="cta-especialista" id="btnEspecialista">
             <span class="rr-cta-wpp-icon" aria-hidden="true">${Icons.whatsapp}</span>
-            Fale com um Especialista ClubPetro
+            Falar agora no WhatsApp
           </button>
+          <span class="rr-specialist-micro">
+            Abre a conversa com a sua análise já escrita. É só apertar enviar.
+          </span>
         </div>
       </div>
       <span class="rr-save" id="saveMsg"></span>
@@ -279,16 +239,16 @@ export function ResultPage(state: AppState): string {
     <div class="shell stage rr">
       <article class="rr-result">
         ${hero(state, score)}
-        ${raioxSection(state)}
         ${pontosSection(state)}
-        ${specialistSection()}
+        ${specialistSection(state)}
       </article>
     </div>
     <span id="rScoreTarget" data-target="${score}" hidden></span>
   `;
 }
 
-/* Tela final do frentista: mesmo hero claro, sem gate nem Raio-X. */
+/* Tela final do frentista: mesmo hero claro, sem gate nem CTA comercial.
+   Frentista não gera MQL: o caminho é levar o retrato pra quem decide. */
 function frentistaResult(state: AppState, score: number): string {
   const shareUrl =
     "https://wa.me/?text=Fiz%20um%20diagn%C3%B3stico%20r%C3%A1pido%20do%20posto%20e%20vale%20voc%C3%AA%20ver.%20Leva%204%20minutos%20e%20mostra%20onde%20d%C3%A1%20para%20melhorar%3A%20https%3A%2F%2Fdiagnostico-clubpetro.web.app%2F";

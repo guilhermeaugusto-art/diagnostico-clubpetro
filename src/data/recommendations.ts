@@ -129,9 +129,9 @@ export function buildResultRecommendations(weakBlocks: BlockId[]): {
    Cada frente fraca traz dois itens, conforme Bloco 2.1c:
    - estaSemana: ação executável sem comprar nada, com primeiro passo
      físico claro (quem faz, onde, quando).
-   - comApoio: frase que conecta com o Raio X, sem citar produto nem módulo.
+   - comApoio: frase que conecta com o especialista, sem citar produto nem módulo.
    Critério: o lead começa hoje sozinho, ou o texto deixa claro que esse
-   ponto é tratado no Raio X. Tudo em segunda pessoa.
+   ponto é tratado com um especialista. Tudo em segunda pessoa.
    ============================================================ */
 
 export interface FrentePlan {
@@ -144,37 +144,37 @@ export const FRENTE_PLAN: Record<BlockId, FrentePlan> = {
     estaSemana:
       "Monte a escala da semana num quadro ou planilha simples, prevendo folgas e horários de pico, e deixe visível para a equipe na troca de turno.",
     comApoio:
-      "Estruture metas e incentivo por desempenho na pista, para o atendimento parar de depender de esforço individual. É um dos pontos que mostramos ao vivo no Raio X.",
+      "Estruture metas e incentivo por desempenho na pista, para o atendimento parar de depender de esforço individual. É um dos pontos que um Especialista ClubPetro destrava com você.",
   },
   marca: {
     estaSemana:
       "Pare o carro a 200 metros do seu posto, olhe como um cliente novo olharia e anote os três primeiros pontos da fachada que pedem ajuste. Resolva o mais simples ainda esta semana.",
     comApoio:
-      "Construa um motivo de escolha além do preço, que o seu cliente reconheça. É um dos caminhos que abrimos ao vivo no Raio X.",
+      "Construa um motivo de escolha além do preço, que o seu cliente reconheça. É um dos caminhos que um Especialista ClubPetro abre com você.",
   },
   comercial: {
     estaSemana:
       "Abra uma planilha simples e, por uma semana, anote o custo e o preço de venda por litro. No fim da semana você já enxerga a margem que está deixando passar.",
     comApoio:
-      "Estruture o acompanhamento de margem e a oferta de aditivado na pista, para parar de decidir preço sem o número na mão. É um dos pontos que tratamos no Raio X.",
+      "Estruture o acompanhamento de margem e a oferta de aditivado na pista, para parar de decidir preço sem o número na mão. É um dos pontos que um Especialista ClubPetro trata com você.",
   },
   fidelizacao: {
     estaSemana:
       "Combine com a equipe de pedir o WhatsApp de todo cliente fiel no caixa, a partir de amanhã, e anote num caderno ou planilha quem já volta sempre.",
     comApoio:
-      "Estruture a fidelização, integre a gestão com a pista e ative estratégias de relacionamento com a sua base de clientes. É um dos pontos que mostramos no Raio X.",
+      "Estruture a fidelização, integre a gestão com a pista e ative estratégias de relacionamento com a sua base de clientes. É um dos pontos que um Especialista ClubPetro mostra pra você.",
   },
   dados: {
     estaSemana:
       "Escolha três números do seu posto (litros do dia, ticket médio e venda de aditivado) e anote todo dia, no mesmo horário, num quadro à vista da equipe.",
     comApoio:
-      "Organize os dados da operação para a rotina virar decisão, sem depender de planilha solta. É um dos caminhos que abrimos no Raio X.",
+      "Organize os dados da operação para a rotina virar decisão, sem depender de planilha solta. É um dos caminhos que um Especialista ClubPetro abre com você.",
   },
   resiliencia: {
     estaSemana:
       "Liste numa folha as entradas e saídas de caixa das próximas quatro semanas, e marque o primeiro ponto onde o dinheiro aperta.",
     comApoio:
-      "Construa fôlego de caixa e reduza a exposição à guerra de preço da praça. É um dos pontos que mostramos no Raio X.",
+      "Construa fôlego de caixa e reduza a exposição à guerra de preço da praça. É um dos pontos que um Especialista ClubPetro mostra pra você.",
   },
 };
 

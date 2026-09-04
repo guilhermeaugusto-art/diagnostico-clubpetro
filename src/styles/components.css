@@ -1235,52 +1235,6 @@ a.btn { text-decoration: none; }
 .rr-input:focus { outline: none; border-color: var(--cp-orange-500); }
 .rr-input.is-invalid { border-color: var(--danger); }
 
-/* ---------- RAIO-X (banda de contraste, deep slate) ---------- */
-.rr-raiox {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-6);
-  scroll-margin-top: var(--sp-6); /* ao rolar até aqui, sobra respiro no topo e a intro aparece primeiro (Fase 4 #5) */
-  padding: var(--sp-8) var(--sp-6);
-  background: linear-gradient(165deg, var(--cp-blue-800), var(--cp-blue-900));
-  border-radius: var(--rd-2xl);
-  color: #fff;
-}
-@media (min-width: 720px) { .rr-raiox { padding: var(--sp-12); } }
-.rr-eyebrow-light { color: var(--cp-orange-400); }
-.rr-title-light { color: #fff; }
-.rr-raiox-lead {
-  margin-top: var(--sp-3);
-  font-size: var(--fs-16);
-  line-height: 1.6;
-  color: rgba(255,255,255,.82);
-  max-width: 64ch;
-}
-.rr-value {
-  list-style: none;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-4);
-}
-@media (min-width: 720px) { .rr-value { grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); } }
-.rr-value-item {
-  padding: var(--sp-5);
-  background: rgba(255,255,255,.05);
-  border: 1px solid var(--border-on-dark);
-  border-radius: var(--rd-lg);
-}
-.rr-value-k {
-  display: block;
-  font-family: var(--font-ui);
-  font-size: var(--fs-12);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--cp-orange-400);
-  margin-bottom: var(--sp-2);
-}
-.rr-value-v { font-size: var(--fs-14); line-height: 1.55; color: rgba(255,255,255,.85); }
-
 /* ---------- ESPECIALISTA (fim) ---------- */
 .rr-specialist {
   display: flex;
@@ -1306,6 +1260,11 @@ a.btn { text-decoration: none; }
 }
 .rr-specialist-text { font-size: var(--fs-14); line-height: 1.55; color: var(--ink-500); max-width: 56ch; }
 .rr-save { font-size: var(--fs-12); color: var(--ink-300); }
+.rr-specialist-micro { font-size: var(--fs-13); line-height: 1.5; color: var(--ink-400); }
+/* O bloco do especialista é a peça final: o CTA ocupa a largura do card,
+   como o CTA principal do hero, e o card ganha respiro de fechamento. */
+.rr-specialist-body .rr-cta-block { width: 100%; max-width: 420px; }
+.rr-specialist { scroll-margin-top: var(--sp-6); padding-bottom: var(--sp-10); }
 
 /* Card do especialista: foto + texto + CTA de WhatsApp lado a lado (empilha no mobile). */
 .rr-specialist-card {
@@ -1393,52 +1352,7 @@ a.btn { text-decoration: none; }
   .rr-hero-radar { padding: var(--sp-4); }
   .rr-cta { width: 100%; }
   .rr-hero-copy .rr-cta-lg { width: 100%; }
-  .rr-raiox { padding: var(--sp-6) var(--sp-5); }
   .rr-bar { grid-template-columns: 72px 1fr 26px; }
-}
-
-/* ============================================================
-   CARD DE GARANTIR VAGA (rr-gate) — dentro do bloco escuro do Raio-X.
-   Redesenho: painel elevado com acento laranja, chips de sessão,
-   e-mail e CTA únicos.
-   ============================================================ */
-.rr-gate {
-  margin-top: var(--sp-6);
-  padding: var(--sp-6);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  background: linear-gradient(165deg, rgba(242,102,0,.18), rgba(255,255,255,.05));
-  border: 1px solid var(--cp-orange-400);
-  border-radius: var(--rd-2xl);
-  box-shadow: 0 22px 48px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.06);
-}
-@media (min-width: 720px) { .rr-gate { padding: var(--sp-8); } }
-.rr-gate-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.rr-gate-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-ui); font-size: var(--fs-12); font-weight: 600;
-  color: rgba(255,255,255,.85);
-  background: rgba(255,255,255,.08);
-  border: 1px solid var(--border-on-dark);
-  padding: 5px 12px; border-radius: var(--rd-full);
-}
-.rr-gate-chip-live { color: #fff; }
-.rr-gate-dot { width: 7px; height: 7px; border-radius: 50%; background: #ff5a4d; box-shadow: 0 0 8px #ff5a4d; }
-.rr-gate-title {
-  font-family: var(--font-display); font-weight: 600;
-  font-size: clamp(1.375rem, 3.5vw, 1.875rem); line-height: 1.15;
-  letter-spacing: -0.02em; color: #fff;
-}
-.rr-gate-text { font-size: var(--fs-15); line-height: 1.55; color: rgba(255,255,255,.82); max-width: 54ch; }
-.rr-gate-micro { font-size: var(--fs-13); line-height: 1.5; color: rgba(255,255,255,.55); }
-.rr-gate-done:empty { display: none; }
-.rr-gate-done {
-  margin-top: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-  font-size: var(--fs-14); font-weight: 600; line-height: 1.5;
-  color: #0f2a1c; background: #7fe3b0; border-radius: var(--rd-md);
 }
 
 /* ---------- CTA "aplicar isso agora" (logo após o 3º passo) ---------- */

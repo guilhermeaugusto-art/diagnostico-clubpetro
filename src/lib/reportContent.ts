@@ -352,8 +352,8 @@ function buildCommercialReading(state: AppState, weakest: BlockId[]): ReportCont
   ];
 
   const proximosPassos = [
-    "Confirmar participação no Raio X (próxima terça, ao vivo).",
-    "Enviar PDF completo do diagnóstico por e-mail após confirmação do Raio X.",
+    "Falar com um Especialista ClubPetro pelo WhatsApp, com o diagnóstico em mãos.",
+    "Enviar PDF completo do diagnóstico por e-mail após o contato com o especialista.",
     "Agendar follow-up em 7 dias caso não compareça.",
   ];
 

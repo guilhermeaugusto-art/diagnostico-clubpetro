@@ -1,7 +1,6 @@
 import "./styles/index.css";
 
 import { CONFIG } from "./lib/config";
-import { calendarTemplateUrl } from "./lib/raiox";
 import { BLOCKS, BLOCK_ORDER } from "./data/blocks";
 import {
   getQuestionById,
@@ -44,7 +43,6 @@ import {
   markResultadoVisto,
   persistAnswer,
   persistResult,
-  persistAgendouRaiox,
   persistSpecialistCta,
   uploadReports,
   markReportFailed,
@@ -54,6 +52,7 @@ import { buildReportContent } from "./lib/reportContent";
 import { urgencyFor } from "./data/urgency";
 import { mainPain, nextImprovementFor, radarReading, strongestBlock, weakestBlock } from "./data/radar-reading";
 import { buildResultRecommendations } from "./data/recommendations";
+import { Icons } from "./lib/icons";
 
 let bootContext: RequestContext | null = null;
 
@@ -73,7 +72,7 @@ let hasResumable = false;
 let sessionReady: Promise<boolean> | null = null;
 let questionStartTime = 0;
 let transitionTimer: number | null = null;
-let raioxConfirmed = false; // clicou em garantir a vaga (abriu a agenda), idempotente
+let especialistaAcionado = false; // abriu o WhatsApp do especialista, idempotente
 let leadSent = false;       // idempotência do envio do lead (contato + RD + PDF)
 let exitRescueShown = false; // idempotência do pop-up de recuperação
 let navDir: "fwd" | "back" = "fwd"; // direção da navegação, para a transição da pergunta
@@ -188,10 +187,8 @@ function handleAction(action: string): void {
     case "back":           return prevStep();
     case "advance-multi":  return advanceFromMulti();
     case "advance-open":   return advanceFromOpen();
-    case "see-next-steps": return gotoRaiox();
-    case "goto-raiox":     return gotoRaiox();
+    case "see-next-steps": return gotoPontos();
     case "unlock-results": return submitResultGate();
-    case "confirm-presence": return confirmPresence();
     case "cta-especialista": return ctaEspecialista();
     case "rescue-confirm": return rescueConfirm();
     case "rescue-close":   return closeExitRescue();
@@ -199,54 +196,12 @@ function handleAction(action: string): void {
   }
 }
 
-/* Todos os CTAs (hero e "aplicar isso agora") levam ao bloco do Raio-X, que fica
-   logo abaixo do hero. O do "aplicar" sobe, o do hero desce: os dois convergem lá. */
-function gotoRaiox(): void {
-  const el = document.getElementById("raiox");
-  // Alinha o TOPO do bloco ao topo da tela (antes centralizava e escondia a
-  // intro "O que é o Raio-X", fazendo a pessoa nem começar a ler). (Fase 4 #5)
+/* CTA do hero: desce pros pontos de melhoria, logo abaixo. A conversão em si
+   (falar com o especialista) fica no fim dos passos e no bloco final. */
+function gotoPontos(): void {
+  const el = document.getElementById("pontos");
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  track("result_goto_raiox", { diag_id: state.diagId }, state.diagId);
-}
-
-/* Ação principal: garantir a vaga no Raio-X. Salva o e-mail e o lead na hora
-   (sempre), abre o Google Agenda com o e-mail pré-preenchido, adiciona a pessoa
-   como convidada no evento e grava o agendamento. Não destrava nada: os 3 passos
-   já estão visíveis e o resto é teaser permanente. Idempotente. */
-/* CTA do bloco do Raio-X. O e-mail já foi capturado no portão do resultado, então
-   aqui é só (re)abrir a agenda da pessoa e confirmar a vaga. Não pede e-mail de novo. */
-function confirmPresence(): void {
-  const email = state.email.trim();
-  if (!email) { gotoRaiox(); return; }
-  markRaioxScheduled(email);
-}
-
-/* Envia o lead (idempotente), abre o Google Agenda com o evento pré-preenchido,
-   confirma a presença no evento compartilhado e grava o agendamento. É o "marcar
-   na agenda" acionado tanto pelo portão de e-mail quanto pelo CTA do bloco Raio-X. */
-function markRaioxScheduled(email: string): void {
-  // 1) lead sempre (contato + RD + PDF), idempotente
-  submitLead();
-  // 2) abre a agenda da pessoa com o evento pronto (e-mail pré-preenchido)
-  openInNewTab(calendarTemplateUrl(email));
-  // 3) confirma a presença: convidado no evento compartilhado + agendamento no banco
-  if (!raioxConfirmed) {
-    raioxConfirmed = true;
-    state.raioxConfirmed = true; // persiste para restaurar a UI confirmada numa retomada (BUG-03)
-    saveState(state);
-    const fnUrl = CONFIG.SUPABASE_URL + CONFIG.CONFIRMAR_RAIOX_FN + "?email=" + encodeURIComponent(email);
-    try { fetch(fnUrl, { mode: "no-cors", keepalive: true }).catch(() => {}); } catch { /* ignore */ }
-    if (state.diagId) persistAgendouRaiox(state.diagId);
-  }
-  revealConfirmed();
-  track("raiox_presence_confirmed", { diag_id: state.diagId }, state.diagId);
-}
-
-/* Mostra a linha de confirmação no card. Não mexe nos passos borrados (o resto
-   é teaser permanente) nem relabela o botão. */
-function revealConfirmed(): void {
-  const done = document.getElementById("rrConfirmDone");
-  if (done) done.textContent = "Pronto. Sua vaga está garantida e o convite entrou na sua agenda. Você recebe o plano completo das seis frentes no Raio-X.";
+  track("result_goto_pontos", { diag_id: state.diagId }, state.diagId);
 }
 
 /* Compartilhamento do frentista: o link abre nativamente (target _blank).
@@ -258,11 +213,11 @@ function trackShareFrentista(): void {
 
 /* ============== Welcome / boot actions ============== */
 
-/* Zera os travões de idempotência do resultado (destrave, lead, Raio X, resgate)
+/* Zera os travões de idempotência do resultado (destrave, lead, especialista, resgate)
    para um novo diagnóstico não herdar o estado de um anterior na mesma aba. */
 function resetFlowFlags(): void {
   leadSent = false;
-  raioxConfirmed = false;
+  especialistaAcionado = false;
   exitRescueShown = false;
   resultPersistedFor = null;
 }
@@ -836,10 +791,10 @@ function submitResultGate(): void {
     }
     return;
   }
-  // O portão captura o e-mail e já LEVA a pessoa pra agenda (abre o Google
-  // Agenda) além de enviar o lead ao RD. Depois libera o resultado por baixo.
+  // O portão captura o e-mail (fallback de sessão antiga), envia o lead ao RD
+  // e libera o resultado por baixo. A conversão fica no CTA do especialista.
   track("result_gate_submitted", { diag_id: state.diagId }, state.diagId);
-  markRaioxScheduled(state.email.trim());
+  submitLead();
   unlockResults();
 }
 
@@ -850,9 +805,8 @@ function unlockResults(): void {
   document.body.style.overflow = "";
   const article = document.querySelector<HTMLElement>(".rr-result");
   if (article) article.classList.remove("is-gated");
-  // Retomada já convertida: mostra a linha de confirmação; senão arma o resgate.
-  if (raioxConfirmed) revealConfirmed();
-  else setupExitRescue();
+  // Quem já acionou o especialista não leva o resgate de saída de novo.
+  if (!especialistaAcionado) setupExitRescue();
 }
 
 function onTransitionRendered(): void {
@@ -1049,42 +1003,64 @@ async function generateAndUploadReport(): Promise<void> {
 
 /* ============== CTAs ============== */
 
-/* CTA secundário (ghost) do resultado: falar agora com um Especialista
-   ClubPetro pelo WhatsApp. Número da Camila entra via WHATSAPP_ESPECIALISTA. */
+/* CONVERSÃO DA TELA FINAL: abre o WhatsApp do Especialista ClubPetro DIRETO,
+   com a mensagem do diagnóstico já escrita (a pessoa só aperta enviar). É o
+   único caminho de conversão do resultado — o Raio-X saiu do fluxo em 04/09/2026
+   e com ele o agendamento automático em calendário. O especialista combina o
+   horário dentro da própria conversa. Número via WHATSAPP_ESPECIALISTA. */
 function ctaEspecialista(): void {
   const score = totalScore(state);
   track("specialist_cta_clicked", { score_total: score }, state.diagId);
   if (state.diagId) persistSpecialistCta(state.diagId, score);
+  // Marca que a conversão foi acionada: silencia o resgate de saída e
+  // sobrevive a uma retomada da sessão.
+  if (!especialistaAcionado) {
+    especialistaAcionado = true;
+    state.especialistaAcionado = true;
+    saveState(state);
+  }
 
-  // Mensagem personalizada com os dados da análise, pronta pra puxar conversa:
-  // nome, perfil, nota, nível e as frentes mais fracas (resumo pelas respostas).
+  // Mensagem pronta com o diagnóstico da pessoa: quem recebe já sabe quem é,
+  // qual a nota, onde dói e por onde começar — sem precisar perguntar nada.
   const first = state.name.trim().split(/\s+/)[0] || "";
   const nivel = levelFor(score).name;
   const perfil = currentTrack(state) === "gerente" ? "gerente" : "dono";
   const ranked = rankedBlocks(state);
   const fracas = ranked.slice(0, 2).map((r) => BLOCKS[r.id].name).join(" e ");
+  /* A dor vem da resposta que a PRÓPRIA pessoa deu em "o que mais tira o seu
+     sono" (D_DOR/G_DOR): curta e na voz dela. Não usar mainPain() aqui — aquilo
+     é o laudo do diagnóstico, um parágrafo de ~400 caracteres em terceira
+     pessoa ("Suas respostas indicam..."), que numa mensagem enviada PELO lead
+     vira textão na voz errada. */
+  const dorAns = state.answers["D_DOR"] || state.answers["G_DOR"];
+  const dor = dorAns && (dorAns.kind === "qualify" || dorAns.kind === "single")
+    ? dorAns.label.replace(/\.$/, "")
+    : "";
 
   const linhas = [
-    `Olá, tudo bem? Aqui é ${first || "o responsável pelo posto"}.`,
+    `Olá! Aqui é ${first || "o responsável pelo posto"}, ${perfil} de posto.`,
     ``,
-    `Acabei de fazer a análise das 6 frentes do meu posto e queria bater um papo pra entender como vocês podem me ajudar.`,
+    `Acabei de fazer o diagnóstico das 6 frentes no site da ClubPetro e quero falar com um especialista sobre o meu resultado.`,
     ``,
-    `Sou ${perfil} do posto.`,
-    `Minha nota foi ${score} de 100 (${nivel}).`,
+    `*Minha nota:* ${score}/100 (${nivel})`,
   ];
-  if (fracas) linhas.push(`As frentes que mais pesam hoje: ${fracas}.`);
-  linhas.push(``, `Podemos conversar?`);
+  if (fracas) linhas.push(`*Onde fiquei pior:* ${fracas}`);
+  if (dor) linhas.push(`*O que mais me incomoda hoje:* ${dor}`);
+  linhas.push(
+    ``,
+    `Pode me ajudar a entender o que fazer primeiro?`,
+  );
 
   const msg = linhas.join("\n");
   const url = "https://wa.me/" + CONFIG.WHATSAPP_ESPECIALISTA + "?text=" + encodeURIComponent(msg);
-  window.open(url, "_blank", "noopener,noreferrer");
+  openInNewTab(url);
 }
 
 /* Abre uma URL em nova aba via navegação real (clique num <a target="_blank">).
    Mais confiável que window.open com string de features, que alguns navegadores
    tratam como popup programático e bloqueiam (sintoma: o clique não abre nada).
    A aba nova carrega a URL; o app continua vivo na aba original para o PATCH
-   de agendou_raiox concluir. */
+   de contato_especialista concluir. */
 function openInNewTab(url: string): void {
   const a = document.createElement("a");
   a.href = url;
@@ -1098,16 +1074,16 @@ function openInNewTab(url: string): void {
 
 /* ============== Resgate na saída ============== */
 
-/* Arma o resgate: no desktop, se a pessoa ainda não garantiu a vaga e leva o
-   cursor pra fora pela borda de cima (intenção de fechar), chama de volta pro
-   bloco do Raio-X. No mobile não dá pra interceptar a saída a tempo, então lá
-   o resgate não aparece (o lead já ficou salvo na entrada). */
+/* Arma o resgate: no desktop, se a pessoa ainda não falou com o especialista e
+   leva o cursor pra fora pela borda de cima (intenção de fechar), oferece a
+   conversa. No mobile não dá pra interceptar a saída a tempo, então lá o
+   resgate não aparece (o lead já ficou salvo na entrada). */
 function setupExitRescue(): void {
   if (exitRescueBound) return; // o listener global é registrado uma única vez (BUG-05)
   exitRescueBound = true;
   const onMouseOut = (e: MouseEvent) => {
     if (state.screen !== "result") return;
-    if (exitRescueShown || raioxConfirmed) return;
+    if (exitRescueShown || especialistaAcionado) return;
     if (e.clientY <= 0 && !e.relatedTarget) {
       showExitRescue();
     }
@@ -1115,26 +1091,27 @@ function setupExitRescue(): void {
   document.addEventListener("mouseout", onMouseOut);
 }
 
-/* Pop-up de recuperação: um CTA só, que leva de volta pro bloco de garantir a
-   vaga. O nome e o WhatsApp já vieram na entrada. */
+/* Pop-up de recuperação: um CTA só, que abre o WhatsApp do especialista com a
+   mensagem pronta. O nome e o WhatsApp já vieram na entrada. */
 function showExitRescue(): void {
-  if (exitRescueShown || raioxConfirmed) return;
+  if (exitRescueShown || especialistaAcionado) return;
   exitRescueShown = true;
   const first = state.name.trim().split(/\s+/)[0] || "";
   const wrap = document.createElement("div");
   wrap.className = "rescue-overlay";
   wrap.id = "rescueOverlay";
   wrap.innerHTML = `
-    <div class="rescue-card" role="dialog" aria-modal="true" aria-label="Garantir vaga no Raio-X">
+    <div class="rescue-card" role="dialog" aria-modal="true" aria-label="Falar com um especialista">
       <button class="rescue-close" type="button" data-action="rescue-close" aria-label="Fechar">&times;</button>
       <span class="rescue-eyebrow">Espera</span>
       <h3 class="rescue-title">Você está a um passo${first ? `, ${first}` : ""}.</h3>
       <p class="rescue-text">
-        A sua vaga no próximo Raio-X ainda não está garantida. Leva 30 segundos e o
-        evento entra direto na sua agenda.
+        Leva um minuto: um Especialista ClubPetro olha o resultado que você
+        acabou de ver e te diz o que fazer primeiro. A mensagem já vai pronta.
       </p>
-      <button class="rr-cta rr-cta-primary rr-cta-block" type="button" data-action="rescue-confirm" id="btnRescueConfirm">
-        Quero garantir minha vaga agora
+      <button class="rr-cta rr-cta-wpp rr-cta-block" type="button" data-action="rescue-confirm" id="btnRescueConfirm">
+        <span class="rr-cta-wpp-icon" aria-hidden="true">${Icons.whatsapp}</span>
+        Falar no WhatsApp agora
       </button>
       <button class="rescue-dismiss" type="button" data-action="rescue-close">
         Fechar
@@ -1145,13 +1122,11 @@ function showExitRescue(): void {
   track("exit_rescue_shown", { diag_id: state.diagId }, state.diagId);
 }
 
-/* Botão do pop-up: fecha e leva de volta pro bloco de garantir a vaga. Se já há
-   e-mail válido, confirma direto. */
+/* Botão do pop-up: fecha e abre direto a conversa com o especialista. */
 function rescueConfirm(): void {
   track("exit_rescue_confirm", { diag_id: state.diagId }, state.diagId);
   closeExitRescue();
-  if (emailValid(state)) confirmPresence();
-  else gotoRaiox();
+  ctaEspecialista();
 }
 
 function closeExitRescue(): void {
@@ -1186,7 +1161,7 @@ export function boot(): void {
     // Restaura os travões de conversão para não reenviar o lead nem reabrir o
     // portão/confirmação numa retomada de sessão já convertida (BUG-03).
     leadSent = state.leadSent === true;
-    raioxConfirmed = state.raioxConfirmed === true;
+    especialistaAcionado = state.especialistaAcionado === true;
     // Readota o token RLS salvo com o estado: retomada em OUTRA aba (ou dia
     // seguinte) ganha sessionStorage novo; sem readotar, todo PATCH casaria
     // 0 linhas em silêncio e a sessão retomada não gravaria mais nada.

@@ -9,11 +9,6 @@ export const CONFIG = {
   /* RD_CONVERSION_FN removido (05/08): o envio ao RD é 100% do backend, via
      triggers do banco (rd_diagnostico_inicio no e-mail, rd_diagnostico_conversion
      no flip de concluiu) + sweep da esteira. O front não chama mais a função. */
-  /* Confirmacao de presenca no Raio X: a Edge Function adiciona o lead como
-     convidado do evento UNICO compartilhado e o redireciona para o RSVP.
-     Mesma sala para todos, sem gerar Meet dinamico. */
-  CONFIRMAR_RAIOX_FN: "/functions/v1/confirmar-raiox",
-  RAIOX_MEET_URL: "https://meet.google.com/ado-rhwa-kvx",
   STATE_KEY: "clubpetro_diag_v5_state",
   STATE_TTL_DAYS: 7,
   TRANSITION_MS: 5500,

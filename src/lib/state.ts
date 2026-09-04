@@ -65,7 +65,9 @@ export interface AppState {
   /* Marcadores de conversão persistidos: evitam reenviar o lead ao RD e reabrir
      o portão/UI de confirmação numa retomada de sessão (BUG-03). */
   leadSent: boolean;
-  raioxConfirmed: boolean;
+  /* Acionou o CTA do especialista (WhatsApp). Substituiu raioxConfirmed em
+     04/09/2026, quando o Raio-X saiu do fluxo. */
+  especialistaAcionado: boolean;
 }
 
 export function freshState(): AppState {
@@ -82,6 +84,6 @@ export function freshState(): AppState {
     diagId: null,
     diagToken: null,
     leadSent: false,
-    raioxConfirmed: false,
+    especialistaAcionado: false,
   };
 }
