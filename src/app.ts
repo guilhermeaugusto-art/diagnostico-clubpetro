@@ -1026,7 +1026,10 @@ function ctaEspecialista(): void {
   const nivel = levelFor(score).name;
   const perfil = currentTrack(state) === "gerente" ? "gerente" : "dono";
   const ranked = rankedBlocks(state);
-  const fracas = ranked.slice(0, 2).map((r) => BLOCKS[r.id].name).join(" e ");
+  /* .short, NAO .name: todo nome longo ja contem " e " ("Cliente e
+     fidelizacao"), entao o join(" e ") virava "Cliente e fidelizacao e Dados
+     e digital" — ilegivel pra quem recebe. */
+  const fracas = ranked.slice(0, 2).map((r) => BLOCKS[r.id].short).join(" e ");
   /* A dor vem da resposta que a PRÓPRIA pessoa deu em "o que mais tira o seu
      sono" (D_DOR/G_DOR): curta e na voz dela. Não usar mainPain() aqui — aquilo
      é o laudo do diagnóstico, um parágrafo de ~400 caracteres em terceira

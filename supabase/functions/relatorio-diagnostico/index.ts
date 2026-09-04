@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
   const { data: rows, error } = await supabase
     .from("diagnostico_respostas")
-    .select("nome, telefone, email, papel, conhece, score, concluiu, mql, agendou_raiox, participou_raiox, raiox_observacao, interesse, pontuacao_pilares, pdf_comercial_url, respostas, created_at")
+    .select("nome, telefone, email, papel, conhece, score, concluiu, mql, contato_especialista, contato_especialista_em, agendou_raiox, participou_raiox, raiox_observacao, interesse, pontuacao_pilares, pdf_comercial_url, respostas, created_at")
     .order("created_at", { ascending: false })
     .limit(1000);
   if (error) {

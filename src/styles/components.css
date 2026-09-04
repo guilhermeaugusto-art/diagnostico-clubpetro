@@ -1189,7 +1189,11 @@ a.btn { text-decoration: none; }
 .rr-bar.is-weak .rr-bar-val { color: var(--danger); }
 
 /* ---------- PRÓXIMOS PASSOS ---------- */
-.rr-steps { display: flex; flex-direction: column; }
+.rr-steps {
+  /* Alvo do CTA do hero (id="pontos"). O header e sticky (72px), entao sem
+     scroll-margin o scrollIntoView({block:"start"}) esconde a eyebrow e o
+     titulo atras dele. Era o papel do scroll-margin do bloco do Raio-X. */
+  scroll-margin-top: calc(var(--header-h) + var(--sp-4)); display: flex; flex-direction: column; }
 .rr-steplist { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-6); }
 .rr-step {
   --accent: var(--cp-orange-500);
@@ -1264,7 +1268,7 @@ a.btn { text-decoration: none; }
 /* O bloco do especialista é a peça final: o CTA ocupa a largura do card,
    como o CTA principal do hero, e o card ganha respiro de fechamento. */
 .rr-specialist-body .rr-cta-block { width: 100%; max-width: 420px; }
-.rr-specialist { scroll-margin-top: var(--sp-6); padding-bottom: var(--sp-10); }
+.rr-specialist { padding-bottom: var(--sp-10); }
 
 /* Card do especialista: foto + texto + CTA de WhatsApp lado a lado (empilha no mobile). */
 .rr-specialist-card {
@@ -1300,7 +1304,9 @@ a.btn { text-decoration: none; }
   box-shadow: 0 12px 26px rgba(31, 138, 92, .30);
 }
 .rr-cta-wpp-icon { display: inline-flex; align-items: center; }
-.rr-cta-wpp-icon svg { width: 20px; height: 20px; }
+.rr-cta-wpp-icon svg { width: 21px; height: 21px; }
+/* O glifo do WhatsApp e solido: sem stroke herdado, so o fill em currentColor. */
+.rr-cta-wpp-icon svg path { fill: currentColor; stroke: none; }
 @media (max-width: 560px) {
   .rr-specialist-card { flex-direction: column; align-items: flex-start; }
   .rr-specialist-photo { width: 72px; height: 72px; }

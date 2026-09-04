@@ -354,7 +354,7 @@ function buildCommercialReading(state: AppState, weakest: BlockId[]): ReportCont
   const proximosPassos = [
     "Falar com um Especialista ClubPetro pelo WhatsApp, com o diagnóstico em mãos.",
     "Enviar PDF completo do diagnóstico por e-mail após o contato com o especialista.",
-    "Agendar follow-up em 7 dias caso não compareça.",
+    "Agendar follow-up em 7 dias caso não responda no WhatsApp.",
   ];
 
   return {

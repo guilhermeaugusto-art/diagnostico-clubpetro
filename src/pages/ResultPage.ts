@@ -81,7 +81,7 @@ function radarBars(state: AppState): string {
    visibilidade do elemento): não renomear nem remover.
    ============================================================ */
 
-function hero(state: AppState, score: number): string {
+function hero(state: AppState, score: number, comCta = true): string {
   const lvl = levelFor(score);
   const first = firstNameOf(state);
   return `
@@ -103,9 +103,9 @@ function hero(state: AppState, score: number): string {
           </div>
         </div>
 
-        <button class="rr-cta rr-cta-primary rr-cta-lg" type="button" data-action="see-next-steps">
+        ${comCta ? `<button class="rr-cta rr-cta-primary rr-cta-lg" type="button" data-action="see-next-steps">
           Quero ver meus próximos passos
-        </button>
+        </button>` : ""}
         <span class="rr-reassure">${escHtml(shortRead(score))}</span>
       </div>
 
@@ -194,7 +194,9 @@ function specialistSection(state: AppState): string {
   const first = firstNameOf(state);
   const ranked = rankedBlocks(state);
   const weak = ranked[0];
-  const frente = weak ? BLOCKS[weak.id].name : "";
+  /* .short: "destravar Resiliencia" funciona, "destravar Resiliencia e
+     mercado" nao. Vale pros 6 nomes. */
+  const frente = weak ? BLOCKS[weak.id].short : "";
   return `
     <footer class="rr-specialist" id="especialista">
       <div class="rr-specialist-card">
@@ -255,7 +257,7 @@ function frentistaResult(state: AppState, score: number): string {
   return `
     <div class="shell stage rr">
       <article class="rr-result">
-        ${hero(state, score)}
+        ${hero(state, score, false)}
         <section class="rr-frentista">
           <p class="rr-frentista-text">
             O que você respondeu mostra onde o dia a dia do seu posto aperta e onde dá

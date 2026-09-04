@@ -263,10 +263,10 @@
       <div class="f-field"><span class="f-lb" id="lb-status">Status (age na tabela)</span>
         <div class="seg" role="group" aria-labelledby="lb-status" id="seg-status">
           <button type="button" data-v="todos" class="active" aria-pressed="true">Todos</button>
-          <button type="button" data-v="participou" aria-pressed="false">Participou</button>
+          <button type="button" data-v="especialista" aria-pressed="false">Chamou especialista</button>
           <button type="button" data-v="confirmou" aria-pressed="false">Confirmou</button>
-          <button type="button" data-v="agendou" aria-pressed="false">Agendou</button>
-          <button type="button" data-v="sem_agendar" aria-pressed="false">Sem agendar</button>
+          <button type="button" data-v="participou" aria-pressed="false">Raio-X (histórico)</button>
+          <button type="button" data-v="sem_contato" aria-pressed="false">Sem contato</button>
           <button type="button" data-v="abandonou" aria-pressed="false">Não finalizou</button>
         </div>
       </div>
@@ -372,12 +372,13 @@
     dados: "painel simples para decidir com o número na mão",
     resiliencia: "plano de fôlego de caixa e resposta à guerra de preço"
   };
-  var ST_RANK = { participou: 4, confirmou: 3, agendou: 2, sem_agendar: 1, abandonou: 0 };
+  var ST_RANK = { especialista: 5, participou: 4, confirmou: 3, agendou: 2, sem_contato: 1, abandonou: 0 };
   var ST_CHIP = {
-    participou: '<span class="chip ok">Participou</span>',
-    confirmou: '<span class="chip">Confirmou</span>',
-    agendou: '<span class="chip">Agendou</span>',
-    sem_agendar: '<span class="chip">Sem agendar</span>',
+    especialista: '<span class="chip ok">Chamou especialista</span>',
+    participou: '<span class="chip">Participou (Raio-X)</span>',
+    confirmou: '<span class="chip">Confirmou (Raio-X)</span>',
+    agendou: '<span class="chip">Agendou (Raio-X)</span>',
+    sem_contato: '<span class="chip">Sem contato</span>',
     abandonou: '<span class="chip">Não finalizou</span>'
   };
 
@@ -395,11 +396,16 @@
     });
   });
 
+  /* 04/09/2026: o Raio-X saiu do produto. A conversao da tela final passou a
+     ser contato_especialista (clicou no WhatsApp do especialista). As colunas
+     de raiox seguem sendo lidas porque o historico dos leads antigos vive
+     nelas — nenhum lead novo as preenche. */
   function statusRow(r){
+    if (r.contato_especialista) return "especialista";
     if (r.participou_raiox) return "participou";
     if (!r.concluiu) return "abandonou";
     if (r.agendou_raiox) return confirmouRow(r) ? "confirmou" : "agendou";
-    return "sem_agendar";
+    return "sem_contato";
   }
   function chipConhece(r){
     if (r.conhece === "cliente") return '<span class="chip cli">Já é cliente</span>';
@@ -495,7 +501,7 @@
   }
   function funilDe(rows){
     var pessoas = pessoasDe(rows);
-    var ag = pessoas.filter(function(r){ return r.agendou_raiox; });
+    var ag = pessoas.filter(function(r){ return r.contato_especialista; });
     return {
       pessoas: pessoas,
       comecaram: rows.length,
@@ -503,7 +509,7 @@
       mql: pessoas.filter(function(r){ return r.mql && r.email; }).length,
       ag: ag.length,
       agLista: ag,
-      conf: pessoas.filter(function(r){ return r.participou_raiox; }).length,
+      conf: pessoas.filter(function(r){ return r.participou_raiox; }).length, // historico Raio-X
       cli: pessoas.filter(function(r){ return r.conhece === "cliente"; }).length
     };
   }
@@ -627,10 +633,9 @@
 
     if (state.q && pessoas.length === 1){
       var r = pessoas[0], st = statusRow(r);
-      var acaoP = st === "participou" ? "Já participou do Raio X: conversa de fechamento com um Especialista, usando a frente fraca como pauta."
-        : st === "confirmou" ? "Presença confirmada: preparar a conversa do Raio X com a frente fraca dela como pauta."
-        : st === "agendou" ? "Agendou e ainda não confirmou: vale um toque no WhatsApp antes da sessão."
-        : st === "sem_agendar" ? "Concluiu sem agendar: oferecer a vaga do Raio X diretamente."
+      var acaoP = st === "especialista" ? "Chamou o especialista no WhatsApp: responder rápido, usando a frente fraca dela como pauta."
+        : st === "participou" || st === "confirmou" || st === "agendou" ? "Vem do Raio-X (descontinuado): retomar por WhatsApp com a frente fraca como pauta."
+        : st === "sem_contato" ? "Concluiu e não chamou o especialista: abordagem direta pelo WhatsApp com a nota dela."
         : "Não finalizou o diagnóstico: resgatar pelo telefone e ajudar a concluir.";
       itens.push("<b>" + esc(r.nome || "(sem nome)") + "</b>: nota " + (r.score == null ? "sem nota" : r.score) + ", frente fraca " + pontoFraco(r) + ", " + (CONHECE[r.conhece] || "relação com a marca não informada") + ". " + acaoP);
       return itens;
@@ -649,8 +654,7 @@
     var etapas = [];
     if (fA.comecaram > 0) etapas.push({ rot: "Começaram para Terminaram", pct: pc(fA.terminaram, fA.comecaram), perda: fA.comecaram - fA.terminaram, un: "sessão(ões) sem concluir", acao: "resgatar quem deixou telefone no meio do caminho e revisar onde o questionário perde a pessoa." });
     if (fA.terminaram > 0) etapas.push({ rot: "Terminaram para MQL", pct: pc(fA.mql, fA.terminaram), perda: fA.terminaram - fA.mql, un: "conclusão(ões) que não viraram contato", acao: "perfil Outro ou sem e-mail: decidir se vale abordagem por telefone." });
-    if (fA.mql > 0) etapas.push({ rot: "MQL para agendamento", pct: pc(fA.ag, fA.mql), perda: fA.mql - fA.ag, un: "MQL(s) sem agenda", acao: "MQL esfria rápido: contato direto oferecendo a vaga do Raio X." });
-    if (fA.ag > 0) etapas.push({ rot: "Agendamento para participação", pct: pc(fA.conf, fA.ag), perda: fA.ag - fA.conf, un: "agendado(s) que não participaram", acao: "confirmar presença por WhatsApp antes da sessão e recontatar quem faltou." });
+    if (fA.mql > 0) etapas.push({ rot: "MQL para contato com especialista", pct: pc(fA.ag, fA.mql), perda: fA.mql - fA.ag, un: "MQL(s) que não chamaram o especialista", acao: "MQL esfria rápido: abordagem direta pelo WhatsApp, com a nota e a frente fraca dela." });
     if (etapas.length){
       var pior = etapas.reduce(function(a, b){ return b.pct < a.pct ? b : a; });
       itens.push("<b>Gargalo do recorte: " + pior.rot + " (" + pior.pct + "%).</b> São " + pior.perda + " " + pior.un + " paradas nessa etapa. Próximo passo: " + pior.acao);
@@ -667,15 +671,15 @@
     var donosMql = pessoas.filter(function(r){ return r.papel === "dono" && r.mql && r.email; });
     var gerMql = pessoas.filter(function(r){ return r.papel === "gerente" && r.mql && r.email; });
     if (donosMql.length >= 2 && gerMql.length >= 2){
-      var pd = pc(donosMql.filter(function(r){ return r.agendou_raiox; }).length, donosMql.length);
-      var pg = pc(gerMql.filter(function(r){ return r.agendou_raiox; }).length, gerMql.length);
+      var pd = pc(donosMql.filter(function(r){ return r.contato_especialista; }).length, donosMql.length);
+      var pg = pc(gerMql.filter(function(r){ return r.contato_especialista; }).length, gerMql.length);
       if (Math.abs(pd - pg) >= 20){
         var quem = pd < pg ? "Donos" : "Gerentes";
-        itens.push("<b>Donos agendam a " + pd + "% e gerentes a " + pg + "%.</b> " + quem + " estão ficando para trás no agendamento: vale abordagem específica para esse perfil.");
+        itens.push("<b>Donos chamam o especialista a " + pd + "% e gerentes a " + pg + "%.</b> " + quem + " estão ficando para trás: vale abordagem específica para esse perfil.");
       }
     }
 
-    var resgMql = pessoas.filter(function(r){ return statusRow(r) === "sem_agendar" && r.mql && r.email; });
+    var resgMql = pessoas.filter(function(r){ return statusRow(r) === "sem_contato" && r.mql && r.email; });
     var resgTel = pessoas.filter(function(r){ return statusRow(r) === "abandonou" && r.telefone && !convertidos[chave(r)]; });
     if (resgMql.length || resgTel.length){
       var partes = [];
@@ -698,7 +702,7 @@
         { rot: "sessões", a: fA.comecaram, b: fB.comecaram },
         { rot: "conclusões", a: fA.terminaram, b: fB.terminaram },
         { rot: "MQLs", a: fA.mql, b: fB.mql },
-        { rot: "agendamentos", a: fA.ag, b: fB.ag },
+        { rot: "contatos com especialista", a: fA.ag, b: fB.ag },
         { rot: "participações", a: fA.conf, b: fB.conf }
       ].filter(function(m){ return m.b > 0; });
       if (movs.length){
@@ -712,7 +716,7 @@
 
     if (fA.ag > 0){
       var cliAg = fA.agLista.filter(function(r){ return r.conhece === "cliente"; });
-      if (cliAg.length) itens.push("<b>" + cliAg.length + " de " + fA.ag + " que marcaram o Raio X já são clientes</b> (" + nomesCurto(cliAg, 4) + "). Conversa de expansão de uso, não venda fria.");
+      if (cliAg.length) itens.push("<b>" + cliAg.length + " de " + fA.ag + " que chamaram o especialista já são clientes</b> (" + nomesCurto(cliAg, 4) + "). Conversa de expansão de uso, não venda fria.");
     }
 
     if (dList.length){
@@ -746,8 +750,8 @@
       '<div class="kpi"><b>0</b><span>Começaram</span><span class="delta-l">' + kpiDelta(fA.comecaram, fB, "comecaram", "sessões no período") + '</span></div>' +
       '<div class="kpi"><b>0</b><span>Terminaram</span><span class="delta-l">' + kpiDelta(fA.terminaram, fB, "terminaram", pc(fA.terminaram, fA.comecaram) + "% das sessões") + '</span></div>' +
       '<div class="kpi"><b>0</b><span>Viraram MQL</span><span class="delta-l">' + kpiDelta(fA.mql, fB, "mql", pc(fA.mql, fA.terminaram) + "% de conversão") + '</span></div>' +
-      '<div class="kpi"><b>0</b><span>Marcaram o Raio X</span><span class="delta-l">' + kpiDelta(fA.ag, fB, "ag", pc(fA.ag, fA.mql) + "% dos MQLs") + '</span></div>' +
-      '<div class="kpi"><b>0</b><span>Participaram do Raio X</span><span class="delta-l">' + kpiDelta(fA.conf, fB, "conf", pc(fA.conf, fA.ag) + "% dos agendados") + '</span></div>' +
+      '<div class="kpi"><b>0</b><span>Chamaram o especialista</span><span class="delta-l">' + kpiDelta(fA.ag, fB, "ag", pc(fA.ag, fA.mql) + "% dos MQLs") + '</span></div>' +
+      '<div class="kpi"><b>0</b><span>Raio-X (histórico)</span><span class="delta-l">' + kpiDelta(fA.conf, fB, "conf", "encerrado em 04/09") + '</span></div>' +
       '<div class="kpi"><b>0</b><span>Já são clientes</span><span class="delta-l">' + kpiDelta(fA.cli, fB, "cli", "no período filtrado") + '</span></div>';
     var bs = kpisEl.querySelectorAll(".kpi b");
     for (var i = 0; i < bs.length; i++){
@@ -768,9 +772,8 @@
       bar("Começaram", "sessões abertas" + (fB ? deltaHtml(fA.comecaram, fB.comecaram) : ""), fA.comecaram, w(fA.comecaram), cv("comecaram"), cw("comecaram")) +
       bar("Terminaram", pc(fA.terminaram, fA.comecaram) + "% de conversão" + (fB ? deltaHtml(fA.terminaram, fB.terminaram) : ""), fA.terminaram, w(fA.terminaram), cv("terminaram"), cw("terminaram")) +
       bar("Viraram MQL", pc(fA.mql, fA.terminaram) + "% de conversão" + (fB ? deltaHtml(fA.mql, fB.mql) : ""), fA.mql, w(fA.mql), cv("mql"), cw("mql")) +
-      bar("Marcaram o Raio X", pc(fA.ag, fA.mql) + "% de conversão" + (fB ? deltaHtml(fA.ag, fB.ag) : ""), fA.ag, w(fA.ag), cv("ag"), cw("ag")) +
-      bar("Participaram do Raio X", pc(fA.conf, fA.ag) + "% dos agendados" + (fB ? deltaHtml(fA.conf, fB.conf) : ""), fA.conf, w(fA.conf), cv("conf"), cw("conf")) +
-      '<p class="f-total">Conversão ponta a ponta (começou e marcou o Raio X): <strong>' + pc(fA.ag, fA.comecaram) + '%</strong>' + (fB ? ' - no período de comparação foi ' + pc(fB.ag, fB.comecaram) + '%' : '') + '.</p>';
+      bar("Chamaram o especialista", pc(fA.ag, fA.mql) + "% de conversão" + (fB ? deltaHtml(fA.ag, fB.ag) : ""), fA.ag, w(fA.ag), cv("ag"), cw("ag")) +
+      '<p class="f-total">Conversão ponta a ponta (começou e chamou o especialista): <strong>' + pc(fA.ag, fA.comecaram) + '%</strong>' + (fB ? ' - no período de comparação foi ' + pc(fB.ag, fB.comecaram) + '%' : '') + '.</p>';
     anima(funEl);
 
     var lista = pessoas.slice();
@@ -808,7 +811,7 @@
         : '<span class="who">' + esc(r.nome || "(sem nome)") + '</span>';
       var obs = "";
       if (st === "abandonou" && convertidos[chave(r)]) obs = '<span class="obs">Reabertura: já concluiu em outra sessão.</span>';
-      else if (st === "sem_agendar" && r.mql && r.email) obs = '<span class="obs">MQL com e-mail. Prioridade de resgate.</span>';
+      else if (st === "sem_contato" && r.mql && r.email) obs = '<span class="obs">MQL com e-mail. Prioridade de resgate.</span>';
       else if (r.concluiu && !r.pdf_comercial_url) obs = '<span class="obs">PDF não gerado.</span>';
       var f = foneInfo(r.telefone);
       var fone = f.link ? '<a href="' + f.link + '" target="_blank" rel="noopener">' + esc(f.texto) + '</a>' : esc(f.texto);
@@ -970,7 +973,15 @@
   var maxCriado = RAW.length ? RAW[0].created_at : "";
   var timerBadge = null;
   function buscar(){
-    buscarFuncao().catch(function(){ return buscarBanco(); })
+    /* Se a resposta da Edge Function nao trouxer contato_especialista, ela
+       ainda esta na versao anterior a 04/09: cai pro RPC, que ja devolve o
+       campo. Sem isso o painel mostraria todo lead novo como "sem contato". */
+    buscarFuncao()
+      .then(function(d){
+        if (d && d.length && !("contato_especialista" in d[0])) return buscarBanco();
+        return d;
+      })
+      .catch(function(){ return buscarBanco(); })
       .then(function(dados){
         var novos = dados.filter(function(r){ return maxCriado && r.created_at > maxCriado; }).length;
         if (dados.length) maxCriado = dados[0].created_at;

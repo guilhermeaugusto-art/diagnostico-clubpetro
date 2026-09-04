@@ -445,7 +445,11 @@ export async function uploadReports(sessionId: string, comercial: Blob, cliente:
     pdf_cliente_path: clientePath,
     pdf_cliente_gerado_em: clientePath ? now : null,
     pdf_cliente_url: clienteUrl,
-    pdf_liberado: false,
+    /* pdf_liberado NAO entra aqui (04/09/2026): este PATCH roda em background,
+       segundos depois da abertura do resultado (import do jsPDF + 2 PDFs + 2
+       uploads). Escrevendo false, ele REVOGAVA em silencio a liberacao feita
+       por quem clicou no CTA do especialista nesse meio-tempo — e, sem o
+       Raio-X, esse CTA virou o unico caminho automatico de liberacao. */
   });
 }
 
@@ -468,9 +472,12 @@ export async function persistSpecialistCta(sessionId: string, _score: number): P
   // Marca no banco que a pessoa acionou o contato com o especialista — a
   // conversao da tela final. Libera tambem o PDF do cliente: essa liberacao
   // vinha do agendamento do Raio-X, que nao existe mais.
+  const agora = new Date().toISOString();
   await updateRow(sessionId, {
     contato_especialista: true,
-    contato_especialista_em: new Date().toISOString(),
+    contato_especialista_em: agora,
     pdf_liberado: true,
+    pdf_liberado_em: agora,
+    pdf_liberado_motivo: "contato_especialista",
   });
 }
