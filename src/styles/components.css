@@ -1361,15 +1361,17 @@ a.btn { text-decoration: none; }
   .rr-bar { grid-template-columns: 72px 1fr 26px; }
 }
 
-/* ---------- CTA "aplicar isso agora" (logo após o 3º passo) ---------- */
+/* ---------- CTA do especialista dentro da secao de passos ----------
+   Fica ANTES da lista (04/09/2026): depois do 3o passo ele so aparecia
+   depois de rolar as ilustracoes, e a conversao ficava escondida. */
 .rr-apply {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--sp-3);
   text-align: center;
-  margin: var(--sp-6) 0;
-  padding: var(--sp-5) var(--sp-4);
+  margin: var(--sp-2) 0 var(--sp-4);
+  padding: 0 var(--sp-4);
 }
 .rr-apply-line { font-size: var(--fs-14); line-height: 1.5; color: var(--ink-500); max-width: 48ch; }
 .rr-apply .rr-cta { width: 100%; max-width: 420px; }

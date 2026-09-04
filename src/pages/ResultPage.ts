@@ -165,19 +165,19 @@ function pontosSection(state: AppState): string {
         </figure>
       </div>
 
+      <div class="rr-apply">
+        <p class="rr-apply-line">Os 3 primeiros passos estão logo abaixo. O plano completo das seis frentes, aplicado ao seu posto, um Especialista ClubPetro monta com você.</p>
+        <button class="rr-cta rr-cta-wpp rr-cta-lg" type="button" data-action="cta-especialista">
+          <span class="rr-cta-wpp-icon" aria-hidden="true">${Icons.whatsapp}</span>
+          Falar com um Especialista no WhatsApp
+        </button>
+      </div>
+
       <div class="rr-steps-row">
         <ol class="rr-steplist">${openHtml}</ol>
         <figure class="rr-illus rr-illus-plan" aria-hidden="true">
           <img src="/resultado/gerente-frentes.webp" alt="" loading="lazy" decoding="async">
         </figure>
-      </div>
-
-      <div class="rr-apply">
-        <p class="rr-apply-line">Esses 3 você começa hoje. O plano completo das seis frentes, aplicado ao seu posto, um Especialista ClubPetro monta com você.</p>
-        <button class="rr-cta rr-cta-wpp rr-cta-lg" type="button" data-action="cta-especialista">
-          <span class="rr-cta-wpp-icon" aria-hidden="true">${Icons.whatsapp}</span>
-          Falar com um Especialista no WhatsApp
-        </button>
       </div>
     </section>`;
 }
